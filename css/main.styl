@@ -41,6 +41,9 @@ body {
 }
 
 html {
+	// Browsers other than Firefox have bad vw size calculation and include the scrollbars
+	overflow-x: hidden;
+
 	// Forces browser to correctly calculate size of vw on platforms with scrollbars
 	overflow-y: scroll;
 }
