@@ -488,23 +488,19 @@ footer {
 		position: relative;
 	}
 
-	.copyright {
-		width: 50%;
-	}
-
 	.selfTests {
 		bottom: -2px; // aligning text baseline
 		font-size: 0.7rem;
 		position: absolute;
-		right: 0;
+		right: 60px;
 		text-align: right;
 
 		&:before {
-			background: url('images/browserstack.svg') no-repeat right 0 / contain;
-			content: '';
+			content: url('images/browserstack.svg');
 			display: block;
-			margin: -9px 0;
 			height: 50px;
+			margin: -9px 0 -9px auto;
+			width: 150px;
 		}
 	}
 }
@@ -512,14 +508,6 @@ footer {
 @media (max-width: 959px) {
 	.title {
 		margin-left: 80px;
-	}
-
-	.get {
-		text-align: center;
-
-		a {
-			margin-left: 0;
-		}
 	}
 }
 
@@ -541,7 +529,7 @@ footer {
 	.get {
 		margin-left: 0;
 
-		a {
+		.action {
 			line-height: 1;
 			padding-left: 1rem;
 			padding-right: @padding-left;
@@ -578,14 +566,14 @@ footer {
 	footer {
 		.copyright {
 			margin-bottom: $lh;
-			width: auto;
 		}
 		.selfTests {
 			position: static;
 			text-align: left;
 
 			&:before {
-				background-position: 0 0;
+				margin-left: 0;
+				margin-right: auto;
 			}
 		}
 	}
