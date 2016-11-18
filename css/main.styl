@@ -180,7 +180,7 @@ a {
 
 main {
 	> * {
-		margin-bottom: $lh * 6;
+		margin-bottom: $lh * 3;
 	}
 
 	p,
@@ -492,11 +492,19 @@ footer {
 	}
 
 	.selfTests {
-		bottom: -2px; // aligning text baseline
-		font-size: 0.7rem;
-		position: absolute;
-		right: 60px;
-		text-align: right;
+		> * {
+			vertical-align: middle;
+		}
+
+		text-align: center;
+		margin-bottom: $lh * 2;
+
+		img {
+			height: 1.5em;
+		}
+		a {
+			border: none;
+		}
 	}
 }
 
@@ -561,15 +569,6 @@ footer {
 	footer {
 		.copyright {
 			margin-bottom: $lh;
-		}
-		.selfTests {
-			position: static;
-			text-align: left;
-
-			&:before {
-				margin-left: 0;
-				margin-right: auto;
-			}
 		}
 	}
 }
