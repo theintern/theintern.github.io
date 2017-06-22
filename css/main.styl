@@ -31,6 +31,7 @@ $internGrey = #F0F0F0;
 $internLightGrey = #F5F5F5;
 $primaryFont = aktiv-grotesk-std, sans-serif;
 $secondaryFont = jubilat, serif;
+$contentWidth = 800px;
 
 html,
 body {
@@ -70,7 +71,7 @@ a {
 
 .content {
 	margin: 0 auto;
-	max-width: 640px;
+	max-width: $contentWidth;
 	padding: 0 60px;
 }
 
@@ -353,7 +354,7 @@ main {
 		z-index: 2;
 
 		tr {
-			max-width: 640px;
+			max-width: $contentWidth;
 		}
 
 		th {
