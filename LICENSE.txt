@@ -1,8 +1,8 @@
 # Design and Layout
 
-The design, layout, and look-and-feel of dojo-website content - including all
+The design, layout, and look-and-feel of theintern.io content - including all
 CSS, images, and icons, except as noted above - are copyright JS Foundation and
-are not licensed for use. Designs and CSS from dojo-website may not be used on
+are not licensed for use. Designs and CSS from theintern.io may not be used on
 any site, personal or commercial, without prior written consent from the JS
 Foundation.
 
