@@ -2,6 +2,7 @@
 
 	.navbar-item {
 		font-family: 'Zilla Slab', serif;
+		font-size: $size-6;
 		font-weight: 500;
 		text-transform: uppercase;
 	}
@@ -11,7 +12,9 @@
 			+above($desktop) {
 				padding-left: 0;
 			}
-
+			&:hover {
+				background: transparent;
+			}
 			img.site-logo {
 				width: 278px;
 				max-height: none;

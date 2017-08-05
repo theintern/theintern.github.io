@@ -1,8 +1,8 @@
 # Header
 menu:
-  Home: /
-  Archives: /archives
-rss: /atom.xml
+  Docs: /docs
+  Tutorials: /tutorials
+  Github: https://github.com/theintern/intern
 
 # Content
 excerpt_link: Read More
