@@ -3,12 +3,16 @@
 	<div class="container">
 		<div class="columns is-tablet">
 			<div class="column is-6">
-				<h1 class="title is-2">You deserve some help, get an Intern</h1>
+				<h1 class="title is-1">You deserve some help, get an Intern</h1>
 				<a href="https://github.com/theintern/intern" class="button is-primary">Download Intern from Github</a>
 				<h2 class="subtitle is-6">or just run <code>npm install intern</code></h2>
 			</div>
 			<div class="column is-6 anim">
-				<%- inline_svg("/images/intern-hero.svg") %>
+				<div id="animation_container">
+					<canvas id="canvas" width="100%" height="73.2%" style="position: absolute; display: block;"></canvas>
+					<div id="dom_overlay_container" style="pointer-events:none; overflow:hidden; width:100%; height:73.2%; position: absolute; left: 0px; top: 0px; display: block;">
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -19,11 +23,17 @@
 			<div class="column is-6">
 				<h1 class="title is-3">What can it do?</h1>
 				<p>Curabitur vulputate, ligula lacinia scelerisque tempor, lacus lacus ornare ante, ac egestas est urna sit amet arcu. Class aptent taciti sociosqu ad litora torquent per.</p>
-				<h2 class="title is-5">Ok, what else?</h2>
+				<h2 class="title is-4">Ok, what else?</h2>
 			</div>
 			<div class="column is-6">
-
+				
 			</div>
 		</div>
 	</div>
 </section>
+
+<script src="https://code.createjs.com/createjs-2015.11.26.min.js"></script>
+<script src="/js/hero.js"></script>
+<script>
+	init();
+</script>
