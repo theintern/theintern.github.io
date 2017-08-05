@@ -1,0 +1,47 @@
+.page-docs {
+	
+	.header {
+		border-bottom: 1px solid $border-color;
+	}
+
+	.navbar {
+		.container {
+			margin-left: 24px;
+			margin-right: 24px;
+			max-width: none;
+			width: 100%;
+		}
+		.navbar-brand {
+			.navbar-item,
+			.navbar-item:hover {
+				background: url("/images/intern-logo-docs.svg") no-repeat left 50%;
+				
+			}
+			.site-logo {
+				visibility: hidden;
+				height: 33px;
+			}
+		}
+	}
+
+	.main-content {
+		display: flex;
+		overflow: hidden;
+	}
+
+	.docs-layout {
+		margin-top: 0;
+		width: 100%;
+
+		.docs-nav {
+			background: $light;
+			border-right: 1px solid $border-color;
+			overflow-y: auto;
+		}
+
+		.docs-content {
+			overflow-y: auto;
+		}
+	}
+
+}
