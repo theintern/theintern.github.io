@@ -4,15 +4,47 @@
 	.hero {
 		border-bottom: 1px solid $light;
 		padding-top: 5vw;
-		.button {
-			box-shadow: 0 2px 2px 0 rgba(0,0,0,0.28);
-			border-radius: 5px;
-		}
 
 		.anim {
 			background: radial-gradient(30% 45%, rgba(#A2EDFD, 0.4) 51%, rgba(188,235,240,0.00) 98%) no-repeat;
 			background-size: contain;
 		}
-		
+	}
+
+	.features {
+		border-bottom: 1px solid $light;
+	}
+
+	.who {
+		border-bottom: 1px solid $light;
+
+		.column {
+			text-align: center;
+
+			svg {
+				margin: 0 auto;
+				max-width: 100%;
+			}
+		}
+	}
+
+	.workwith {
+		.underline {
+			display: inline-block;
+			border-bottom: 2px solid $dark;
+			width: 6rem;
+		}
+	}
+
+	.docs {
+		.viewGuide {
+			background: radial-gradient(30% 45%, rgba(#A2EDFD, 0.4) 51%, rgba(188,235,240,0.00) 98%) no-repeat;
+			background-size: contain;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			align-content: center;
+			justify-content: center;
+		}
 	}
 }
