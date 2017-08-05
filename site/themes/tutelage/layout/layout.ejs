@@ -2,9 +2,7 @@
 	<body <% if(page.bodyClass){ %>class="<%= page.bodyClass %>"<% } %>>
 		<%- partial('_partial/header', null, {cache: !config.relative_link}) %>
 		<div class="main-content">
-			<div class="container">
-				<section class="section"><%- body %></section>
-			</div>
+				<%- body %>
 		</div>
 		<%- partial('_partial/footer', null, {cache: !config.relative_link}) %>
 		<%- partial('_partial/after-footer') %>

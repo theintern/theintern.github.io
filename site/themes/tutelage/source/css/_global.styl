@@ -14,6 +14,12 @@ body {
 		flex: none;
 	}
 
+	.container {
+		+above($widescreen) {
+			max-width: 1152px;
+		}
+	}
+
 	.main-content {
 		flex: 1 0 auto;
 	}

@@ -78,3 +78,14 @@ theme: tutelage
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type:
+
+
+
+
+yasr:
+  axis: false              # Enables Axis (Recommends Nib) 
+  compress: false         # Disables Compression 
+  jeet: false              # Enables Jeet 
+  nib: true               # Enables Nib 
+  rupture: true           # Enables Rupture 
+  typographic: true       # Enables Typographic 
