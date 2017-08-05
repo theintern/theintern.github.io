@@ -1,4 +1,6 @@
 <% page.bodyClass = 'page-home' %>
+<script src="/js/anime.min.js"></script>
+<script src="/js/hero.js"></script>
 <section class="section hero">
 	<div class="container">
 		<div class="columns is-tablet">
@@ -8,11 +10,7 @@
 				<h2 class="subtitle is-6">or just run <code>npm install intern</code></h2>
 			</div>
 			<div class="column is-6 anim">
-				<div id="animation_container">
-					<canvas id="canvas" width="100%" height="73.2%" style="position: absolute; display: block;"></canvas>
-					<div id="dom_overlay_container" style="pointer-events:none; overflow:hidden; width:100%; height:73.2%; position: absolute; left: 0px; top: 0px; display: block;">
-					</div>
-				</div>
+				<%- inline_svg('/images/intern-hero.svg') %>
 			</div>
 		</div>
 	</div>
@@ -26,14 +24,8 @@
 				<h2 class="title is-4">Ok, what else?</h2>
 			</div>
 			<div class="column is-6">
-				
+	
 			</div>
 		</div>
 	</div>
 </section>
-
-<script src="https://code.createjs.com/createjs-2015.11.26.min.js"></script>
-<script src="/js/hero.js"></script>
-<script>
-	init();
-</script>
