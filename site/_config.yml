@@ -80,6 +80,22 @@ deploy:
   type:
 
 
+# Markdown
+## Docs: https://github.com/celsomiranda/hexo-renderer-markdown-it/wiki
+
+markdown:
+  html: true
+  anchors:
+    level: 2
+    collisionSuffix: 'v'
+    permalink: true
+    permalinkClass: header-anchor
+    permalinkSymbol: ''
+  plugins:
+    - markdown-it-classy
+    - markdown-it-abbr
+    - markdown-it-footnote
+
 
 
 yasr:
