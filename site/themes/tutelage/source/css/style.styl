@@ -3,19 +3,10 @@
 @import "_variables";
 @import "../../../../node_modules/bulma.styl/bulma";
 @import "_util/mixin";
-@import "_extend";
 @import "_global";
 @import "_partial/*";
 @import "_views/*";
 
 typographic()
+@import "_extend";
 
-
-for $size, $i in $sizes
-  h{$i+1} {
-    color $title-color
-    font-size $title-size
-    font-weight $title-weight
-    line-height 1.125
-    font-family: $heading-font;
-  }

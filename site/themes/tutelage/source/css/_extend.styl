@@ -1,4 +1,47 @@
 // Helpers
+//Fixes for bulma.styl
+
+for $size, $i in $sizes
+  h{$i+1} {
+    color $title-color
+    font-size $title-size
+    font-weight $title-weight
+    line-height 1.125
+    font-family: $heading-font;
+  }
+
+.title
+  color $title-color
+  font-size $title-size
+  font-weight $title-weight
+  line-height 1.125
+  strong
+    color $title-strong-color
+    font-weight $title-strong-weight
+  & + .highlight
+    margin-top -0.75rem
+  &:not(.is-spaced) + .subtitle
+    margin-top -1.5rem
+  // Sizes
+  for $size, $i in $sizes
+    &.is-{$i+1}
+      font-size $size
+
+.subtitle
+  color $subtitle-color
+  font-size $subtitle-size
+  font-weight $subtitle-weight
+  line-height 1.25
+  strong
+    color $subtitle-strong-color
+    font-weight $subtitle-strong-weight
+  &:not(.is-spaced) + .title
+    margin-top -1.5rem
+  // Sizes
+  for $size, $i in $sizes
+    &.is-{$i+1}
+      font-size $size
+
 
 .align-center {
 	align-items: center;
