@@ -19,6 +19,7 @@
     "hexo-server": "^0.2.0",
     "markdown-it": "^8.3.1",
     "markdown-it-classy": "^0.2.0",
-    "markdown-it-container": "^2.0.0"
+    "markdown-it-container": "^2.0.0",
+    "markdown-it-table-of-contents": "^0.3.2"
   }
 }

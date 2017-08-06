@@ -95,6 +95,7 @@ markdown:
     - markdown-it-classy
     - markdown-it-abbr
     - markdown-it-footnote
+    - markdown-it-table-of-contents
 
 
 
