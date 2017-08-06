@@ -1,5 +1,4 @@
-# API
-
+#API
 <!-- vim-markdown-toc GFM -->
 * [Executor](#executor)
     * [.addSuite((parent) => void)](#addsuiteparent--void)
