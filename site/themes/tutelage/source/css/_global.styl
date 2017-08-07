@@ -2,9 +2,6 @@ body {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-	line-height 1.5
-	font-size: 16px;
-	font-family: $body-font;
 	min-height: 100vh;
 
 	.title,
@@ -33,6 +30,11 @@ body {
 		.header {
 			.container {
 				max-width: 100%;
+				width: 100%;
+
+				> .navbar {
+					margin: 0;
+				}
 			}
 		}
 	}

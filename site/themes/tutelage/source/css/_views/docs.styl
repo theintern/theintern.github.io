@@ -2,7 +2,10 @@
 .page-docs {
   height:100%;
   min-height:100%;
-  overflow: hidden;
+
+  +above($tablet) {
+  	overflow: hidden;
+  }
 }
 
 
@@ -10,17 +13,19 @@
 	display: flex;
 	flex-direction: column;
 
-	.docs-layout {
-	 	flex: 1 1 auto;
-		overflow: hidden;
-		margin: 0;
-		width: 100%;
+	+above($tablet) {
+		.docs-layout {
+			flex: 1 1 auto;
+			overflow: hidden;
+			margin: 0;
+			width: 100%;
 
-		.docs-column {
-			overflow-y: auto;
+			.docs-column {
+				overflow-y: auto;
+			}
 		}
 	}
-		
+
 	.header {
 		flex: 0 0 auto;
 		border-bottom: 1px solid $border-color;
@@ -34,6 +39,10 @@
 		background: $light;
 		border-right: 1px solid $border-color;
 		padding: 0;
+
+		+below($desktop) {
+			padding-top: 0.5rem;
+		}
 
 		.field {
 			margin-bottom: 0;
