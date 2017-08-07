@@ -39,9 +39,21 @@ body {
 		}
 	}
 
+	.button {
+		transition: all 0.2s;
+	}
+
+	.button.is-small {
+		border-radius: 5px;
+	}
+
 	.button.is-primary {
 		&:not(.is-outlined) {
 			box-shadow: 0 2px 2px 0 rgba(0,0,0,0.28);
+		}
+
+		&.is-outlined {
+			border-color: $button-border-color;
 		}
 	}
 
