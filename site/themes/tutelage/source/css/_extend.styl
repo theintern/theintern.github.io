@@ -1,7 +1,11 @@
 body,
 html {
-	font-size: 16px;
 	font-family: $body-font;
+	+below($desktop) {
+		font-size: 16px;
+	}	
+		
+
 }
 
 // Helpers
@@ -76,6 +80,7 @@ for $size, $i in $sizes
 	.menu-label {
 		background-color: $gray;
 		color: rgba($dark-gray, 0.8);
+		font-size: 0.7rem;
 		font-weight: 600;
 		padding: 0.5em 0.75em;
 
@@ -86,6 +91,10 @@ for $size, $i in $sizes
 
 	.menu-list {
 		margin: 0 1rem;
+
+		a {
+			font-size: 0.8rem;
+		}
 
 		a:not(.is-active):hover {
 			background: #fff;
