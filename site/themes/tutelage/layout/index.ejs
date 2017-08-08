@@ -2,8 +2,6 @@
 <%- partial('_partial/head') %>
 	<body <% if(page.bodyClass){ %>class="<%= page.bodyClass %>"<% } %>>
 		<%- partial('_partial/header', null, {cache: !config.relative_link}) %>
-		<script src="/js/anime.min.js"></script>
-		<script src="/js/hero.js"></script>
 		<section class="section hero">
 			<div class="container">
 				<div class="columns align-center is-tablet">

@@ -1,11 +1,11 @@
 .html-fixed,
 .page-docs {
-  height:100%;
-  min-height:100%;
+	height:100%;
+	min-height:100%;
 
-  +above($tablet) {
-  	overflow: hidden;
-  }
+	+above($tablet) {
+		overflow: hidden;
+	}
 }
 
 
@@ -59,5 +59,15 @@
 	.docs-content {
 		padding-left: 5vw;
 		padding-right: 5vw;
+
+		> h1 {
+			border-bottom: 1px solid $border-color;
+			padding-bottom: 1.5rem;
+			margin-bottom: 2rem;
+		}
 	}
+}
+
+.coming-soon {
+	max-width: 300px;
 }
