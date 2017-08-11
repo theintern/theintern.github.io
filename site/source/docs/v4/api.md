@@ -1,5 +1,27 @@
 # API
 
+<!-- vim-markdown-toc GFM -->
+* [Executor](#executor)
+    * [.addSuite((parent) => void)](#addsuiteparent--void)
+    * [.configure(options)](#configureoptions)
+    * [.emit(name, data)](#emitname-data)
+    * [.getInterface(name)](#getinterfacename)
+    * [.getPlugin(name)](#getpluginname)
+    * [.getReporter(name)](#getreportername)
+    * [.log(arg...)](#logarg)
+    * [.on(eventName, callback)](#oneventname-callback)
+    * [.registerInterface(name, interface)](#registerinterfacename-interface)
+    * [.registerLoader(callback)](#registerloadercallback)
+    * [.registerPlugin(id, callback)](#registerpluginid-callback)
+    * [.registerReporter(name, Reporter)](#registerreportername-reporter)
+    * [.run()](#run)
+* [Suite](#suite)
+    * [.skip(message)](#skipmessage)
+* [Test](#test)
+    * [.async(timeout, numCallsUntilResolution)](#asynctimeout-numcallsuntilresolution)
+    * [.skip(message)](#skipmessage-1)
+
+<!-- vim-markdown-toc -->
 
 ## Executor
 

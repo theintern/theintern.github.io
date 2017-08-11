@@ -97,7 +97,6 @@ markdown:
     permalinkClass: header-anchor
     permalinkSymbol: ''
   plugins:
-    - markdown-it-classy
     - markdown-it-abbr
     - markdown-it-footnote
 
