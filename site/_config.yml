@@ -38,10 +38,15 @@ post_asset_folder: true
 relative_link: false
 future: true
 highlight:
-  enable: true
+  enable: false
   line_number: true
-  auto_detect: false
+  auto_detect: true
   tab_replace:
+
+prism_plugin:
+  mode: 'preprocess'    # realtime/preprocess
+  theme: 'default'
+  line_number: false    # default false
   
 # Home page setting
 # path: Root path for your blogs index page. (default = '')
@@ -95,7 +100,49 @@ markdown:
     - markdown-it-classy
     - markdown-it-abbr
     - markdown-it-footnote
-    - markdown-it-table-of-contents
+
+# Hexo Filter Cleanup
+# https://github.com/mamboer/hexo-filter-cleanup
+hfc_useref:
+  enable: false
+  concat: true
+  exclude: 
+
+hfc_css:
+  enable: false
+  exclude: 
+    - '*.min.css'
+
+hfc_js:
+  enable: false
+  mangle: true
+  output:
+  compress:
+  exclude: 
+    - '*.min.js'
+
+hfc_html:
+  enable: false
+  exclude: 
+
+hfc_img:
+  enable: false
+  interlaced: false
+  multipass: false
+  optimizationLevel: 2
+  pngquant: false
+  progressive: false
+  webp: true
+  webpQuality: 75
+  gifslice: true
+  jpegtran: true
+  jpegrecompress: false
+  jpegrecompressQuality: 'medium'
+  optipng: true
+  svgo: true
+
+hfc_favicons:
+  enable: false
 
 
 

@@ -1,6 +1,5 @@
 # API
 
-[[toc]]
 
 ## Executor
 
