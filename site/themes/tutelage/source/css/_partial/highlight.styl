@@ -6,170 +6,130 @@
 }
 
 
-/*
- * highlightjs-material-dark-theme
- * Material Dark theme for Highlight.js
- * Based off of https://github.com/equinusocio/material-theme
- * For use with Highlight.js, https://github.com/isagalaev/highlight.js
- */
-/* cyrillic-ext */
-@font-face {
-  font-family: 'Fira Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(https://fonts.gstatic.com/s/firamono/v5/zU7WTKudYj3kyp83WUTNRIX0hVgzZQUfRDuZrPvH3D8.woff2) format('woff2');
-  unicode-range: U+0460-052F, U+20B4, U+2DE0-2DFF, U+A640-A69F;
-}
-/* cyrillic */
-@font-face {
-  font-family: 'Fira Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(https://fonts.gstatic.com/s/firamono/v5/1Ci0A82NC1vmnBGZ40JtDIX0hVgzZQUfRDuZrPvH3D8.woff2) format('woff2');
-  unicode-range: U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
-}
-/* greek-ext */
-@font-face {
-  font-family: 'Fira Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(https://fonts.gstatic.com/s/firamono/v5/CNcOMq0eKtUFFFCp0lHQLIX0hVgzZQUfRDuZrPvH3D8.woff2) format('woff2');
-  unicode-range: U+1F00-1FFF;
-}
-/* greek */
-@font-face {
-  font-family: 'Fira Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(https://fonts.gstatic.com/s/firamono/v5/15JCs9lpil7lsTP978NDCoX0hVgzZQUfRDuZrPvH3D8.woff2) format('woff2');
-  unicode-range: U+0370-03FF;
-}
-/* latin-ext */
-@font-face {
-  font-family: 'Fira Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(https://fonts.gstatic.com/s/firamono/v5/4JBDq56CMkU462bp0T-W9IX0hVgzZQUfRDuZrPvH3D8.woff2) format('woff2');
-  unicode-range: U+0100-024F, U+1E00-1EFF, U+20A0-20AB, U+20AD-20CF, U+2C60-2C7F, U+A720-A7FF;
-}
-/* latin */
-@font-face {
-  font-family: 'Fira Mono';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Fira Mono Regular'), local('FiraMono-Regular'), url(https://fonts.gstatic.com/s/firamono/v5/SlRWfq1zeqXiYWAN-lnG-pBw1xU1rKptJj_0jans920.woff2) format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+:not(pre) > code {
+	//border: 1px solid $border-color;
+	border-radius: 3px;
+	color: $color-inline-code;
+	font-size: 0.7rem;
+	//padding: 3px 4px;
+	white-space: nowrap;
 }
 
-.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 1em;
-  background: #2B2B2D;
-  color: #CDD3D8;
-  font-family: "Fira Mono", monospace;
-  font-size: 1em;
-}
-.hljs > *::selection {
-  background-color: #3e4451;
+.highlight,
+.code,
+pre,
+code,
+.highlight .title,
+.highlight .number {
+	font-family: $font-mono !important;
+	font-size: 0.7rem;
 }
 
-.hljs-comment {
-  color: #656565;
-  font-style: italic;
+.highlight .title,
+.highlight .number {
+	background: transparent;
+	display: inline-block;
+	height: auto;
+	margin: 0;
+	padding: 0;
 }
 
-.hljs-selector-tag {
-  color: #C792EA;
-}
+.highlight {
+	display: block;
+	overflow-x: auto;
+	padding: 0.5em;
+	color: #abb2bf;
+	background: #282c34;
+	
+	table {
+		margin-bottom: 0;
 
-.hljs-string,
-.hljs-subst {
-  color: #C3E88D;
-}
+		td {
+			padding: 0;
+		}
 
-.hljs-number,
-.hljs-regexp,
-.hljs-variable,
-.hljs-template-variable {
-  color: #F77669;
-}
+		.gutter {
+			//border-right: 1px solid lighten(#282c34, 20%);
+			//padding-right: 0.25rem;
+		}
 
-.hljs-keyword {
-  color: #C792EA;
-}
-.hljs-function > .hljs-title {
-  color: #75A5FF;
-}
-.hljs-tag {
-  color: #abb2bf;
-}
-.hljs-name {
-  color: #e06c75;
-}
-.hljs-type {
-  color: #da4939;
-}
+		.code {
+			padding-left: 0.5rem;
+		}
 
-.hljs-attribute {
-  color: #80CBBF;
-}
+	}
 
-.hljs-symbol,
-.hljs-bullet,
-.hljs-built_in,
-.hljs-builtin-name,
-.hljs-link {
-  color: #C792EA;
-}
+	pre {
+		color: #abb2bf;
+		background: #282c34;
+	}
 
-.hljs-params {
-  color: #EEFFF7;
-}
+	.comment,
+	.quote {
+		color: #5c6370;
+		font-style: italic;
+	}
 
+	.doctag,
+	.keyword,
+	.formula {
+		color: #c678dd;
+	}
 
-.hljs-meta {
-  color: #75A5FF;
-}
+	.section,
+	.name,
+	.selector-tag,
+	.deletion,
+	.subst {
+		color: #e06c75;
+	}
 
-.hljs-title {
-  color: #75A5FF;
-}
+	.literal {
+		color: #56b6c2;
+	}
 
-.hljs-section {
-  color: #ffc66d;
-}
+	.string,
+	.regexp,
+	.addition,
+	.attribute,
+	.meta-string {
+		color: #98c379;
+	}
 
-.hljs-addition {
-  background-color: #144212;
-  color: #e6e1dc;
-  display: inline-block;
-  width: 100%;
-}
+	.built_in,
+	.class .title {
+		color: #e6c07b;
+	}
 
-.hljs-deletion {
-  background-color: #600;
-  color: #e6e1dc;
-  display: inline-block;
-  width: 100%;
-}
+	.attr,
+	.variable,
+	.template-variable,
+	.type,
+	.selector-class,
+	.selector-attr,
+	.selector-pseudo,
+	.number {
+		color: #d19a66;
+	}
 
-.hljs-selector-class {
-  color: #FFCB68;
-}
+	.symbol,
+	.bullet,
+	.link,
+	.meta,
+	.selector-id,
+	.title {
+		color: #61aeee;
+	}
 
-.hljs-selector-id {
-  color: #F77669;
-}
+	.emphasis {
+		font-style: italic;
+	}
 
-.hljs-emphasis {
-  font-style: italic;
-}
+	.strong {
+		font-weight: bold;
+	}
 
-.hljs-strong {
-  font-weight: bold;
-}
-
-.hljs-link {
-  text-decoration: underline;
+	.link {
+		text-decoration: underline;
+	}
 }

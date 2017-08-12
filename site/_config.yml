@@ -38,15 +38,11 @@ post_asset_folder: true
 relative_link: false
 future: true
 highlight:
-  enable: false
+  enable: true
   line_number: true
   auto_detect: true
   tab_replace:
 
-prism_plugin:
-  mode: 'preprocess'    # realtime/preprocess
-  theme: 'default'
-  line_number: false    # default false
   
 # Home page setting
 # path: Root path for your blogs index page. (default = '')
@@ -84,21 +80,6 @@ theme: tutelage
 deploy:
   type:
 
-
-# Markdown
-## Docs: https://github.com/celsomiranda/hexo-renderer-markdown-it/wiki
-
-markdown:
-  html: true
-  anchors:
-    level: 2
-    collisionSuffix: 'v'
-    permalink: true
-    permalinkClass: header-anchor
-    permalinkSymbol: ''
-  plugins:
-    - markdown-it-abbr
-    - markdown-it-footnote
 
 # Hexo Filter Cleanup
 # https://github.com/mamboer/hexo-filter-cleanup

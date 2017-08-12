@@ -19,30 +19,27 @@
 						Using Intern
 					</p>
 					<ul class="menu-list">
-						<li>
-							<a class="is-active">Getting started with Intern</a>
-							<ul>
-								<li><a>What can Intern test?</a></li>
-								<li><a>Step 1: Download Intern</a></li>
-								<li><a>Step 2: Configure Intern</a></li>
-								<li><a>Step 3: Write a unit test</a></li>
-								<li><a>Step 4: Write a functional test</a></li>
-								<li><a>Step 5: Code coverage</a></li>
-								<li><a>Step 6: Remote testing</a></li>
-							</ul>
-						</li>
-						<li><a>How To</a></li>
-						<li><a>Concepts</a></li>
-						<li><a>Architecture</a></li>
-						<li><a>Configuration</a></li>
-						<li><a>Writing tests</a></li>
-						<li><a>Running</a></li>
-						<li><a>Continuous integration</a></li>
-						<li><a>Extending</a></li>
-						<li><a>API</a></li>
-						<li><a>Developing</a></li>
-						<li><a>Contributing</a></li>
+						<li><a href="<%- url_for('docs/v4/getting_started.html') %>">Getting Started</a></li>
+						<li><a href="<%- url_for('docs/v4/how_to.html') %>">How To</a></li>
+						<li><a href="<%- url_for('docs/v4/concepts.html') %>">Concepts</a></li>
+						<li><a href="<%- url_for('docs/v4/architecture.html') %>">Architecture</a></li>
+						<li><a href="<%- url_for('docs/v4/configuration.html') %>">Configuration</a></li>
+						<li><a href="<%- url_for('docs/v4/writing_tests.html') %>">Writing tests</a></li>
+						<li><a href="<%- url_for('docs/v4/running.html') %>">Running</a></li>
+						<li><a href="<%- url_for('docs/v4/ci.html') %>">Continuous integration</a></li>
+						<li><a href="<%- url_for('docs/v4/extending.html') %>">Extending</a></li>
+						<li><a href="<%- url_for('docs/v4/api.html') %>">API</a></li>
+						<li><a href="<%- url_for('docs/v4/developing.html') %>">Developing</a></li>
+						<li><a href="<%- url_for('docs/v4/contributing.html') %>">Contributing</a></li>
 					</ul>
+
+					<p class="menu-label">
+						Tutorials
+					</p>
+					<ul class="menu-list">
+						<li><a href="<%- url_for('docs/v4/intern-tutorial.html') %>">Using Intern</a>
+					</ul>
+
 				</aside>
 			</div>
 			<div class="column is-9 docs-column docs-content">
