@@ -4,43 +4,8 @@
 		<%- partial('_partial/header', null, {cache: !config.relative_link}) %>
 		<div class="columns docs-layout">
 			<div class="column docs-column docs-nav">
-				<div class="field">
-					<div class="control">
-						<div class="select is-primary is-small">
-						<select>
-							<option>Intern 3</option>
-							<option>Intern 4</option>
-						</select>
-						</div>
-					</div>
-				</div>
-				<aside class="menu">
-					<p class="menu-label">
-						Using Intern
-					</p>
-					<ul class="menu-list">
-						<li><a href="<%- url_for('docs/v4/getting_started.html') %>">Getting Started</a></li>
-						<li><a href="<%- url_for('docs/v4/how_to.html') %>">How To</a></li>
-						<li><a href="<%- url_for('docs/v4/concepts.html') %>">Concepts</a></li>
-						<li><a href="<%- url_for('docs/v4/architecture.html') %>">Architecture</a></li>
-						<li><a href="<%- url_for('docs/v4/configuration.html') %>">Configuration</a></li>
-						<li><a href="<%- url_for('docs/v4/writing_tests.html') %>">Writing tests</a></li>
-						<li><a href="<%- url_for('docs/v4/running.html') %>">Running</a></li>
-						<li><a href="<%- url_for('docs/v4/ci.html') %>">Continuous integration</a></li>
-						<li><a href="<%- url_for('docs/v4/extending.html') %>">Extending</a></li>
-						<li><a href="<%- url_for('docs/v4/api.html') %>">API</a></li>
-						<li><a href="<%- url_for('docs/v4/developing.html') %>">Developing</a></li>
-						<li><a href="<%- url_for('docs/v4/contributing.html') %>">Contributing</a></li>
-					</ul>
-
-					<p class="menu-label">
-						Tutorials
-					</p>
-					<ul class="menu-list">
-						<li><a href="<%- url_for('docs/v4/intern-tutorial.html') %>">Using Intern</a>
-					</ul>
-
-				</aside>
+				
+				<%- partial('_partial/docs-nav', {data: site.data.docs[page.version], path: page.path}) %>
 			</div>
 			<div class="column is-10 docs-column docs-content">
         		<%- page.content %>
