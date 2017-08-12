@@ -3,7 +3,7 @@
 	<body class="page-secondary page-docs <% if(page.version){ %> <%= page.version %><% } %>">
 		<%- partial('_partial/header', null, {cache: !config.relative_link}) %>
 		<div class="columns docs-layout">
-			<div class="column is-3 docs-column docs-nav">
+			<div class="column docs-column docs-nav">
 				<div class="field">
 					<div class="control">
 						<div class="select is-primary is-small">
@@ -42,7 +42,7 @@
 
 				</aside>
 			</div>
-			<div class="column is-9 docs-column docs-content">
+			<div class="column is-10 docs-column docs-content">
         		<%- page.content %>
 			</div>
 		</div>
