@@ -10,11 +10,11 @@ module.exports = function(grunt){
 		'curl': {
 			'v4tutorial': {
 				src: 'https://raw.githubusercontent.com/theintern/intern-tutorial/master/README.md',
-				dest: './source/tutorials/v4/intern-tutorial.md'
+				dest: './source/docs/v4/intern-tutorial.md'
 			},
 			'v3tutorial': {
 				src: 'https://raw.githubusercontent.com/theintern/intern-tutorial/intern-3/README.md',
-				dest: './source/tutorials/v3/intern-tutorial.md'
+				dest: './source/docs/v3/intern-tutorial.md'
 			}
 		}
 	});

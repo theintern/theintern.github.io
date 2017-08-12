@@ -1,8 +1,6 @@
-<% page.htmlClass = 'html-fixed' %>
-<% page.bodyClass = 'page-secondary page-docs' %>
-
+<html class="html-fixed">
 <%- partial('_partial/head') %>
-	<body <% if(page.bodyClass){ %>class="<%= page.bodyClass %>"<% } %>>
+	<body class="page-secondary page-docs <% if(page.version){ %> <%= page.version %><% } %>">
 		<%- partial('_partial/header', null, {cache: !config.relative_link}) %>
 		<div class="columns docs-layout">
 			<div class="column is-3 docs-column docs-nav">
@@ -10,7 +8,7 @@
 					<div class="control">
 						<div class="select is-primary is-small">
 						<select>
-							<option>Intern 3.x</option>
+							<option>Intern 3</option>
 							<option>Intern 4</option>
 						</select>
 						</div>

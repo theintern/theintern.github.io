@@ -1,5 +1,6 @@
+<html class="html-fixed">
 <%- partial('_partial/head') %>
-	<body <% if(page.bodyClass){ %>class="<%= page.bodyClass %>"<% } %>>
+	<body class="page-secondary page-docs">
 		<%- partial('_partial/header', null, {cache: !config.relative_link}) %>
         <%- page.content %>
 	    <%- partial('_partial/footer', null, {cache: !config.relative_link}) %>
