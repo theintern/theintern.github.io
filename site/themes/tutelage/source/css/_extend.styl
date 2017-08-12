@@ -8,6 +8,45 @@ html {
 
 
 
+.container {
+  margin: 0 auto;
+  position: relative;
+  +desktop() {
+		max-width: $desktop - (2 * $gap);
+		width: $desktop - (2 * $gap);
+
+		&.is-fluid {
+			margin-left: $gap;
+			margin-right: $gap;
+			max-width: none;
+			width: auto;
+		}
+	}
+  +until($widescreen) {
+		&.is-widescreen {
+	  	max-width: $widescreen - (2 * $gap);
+	  	width: auto;
+		}
+	}
+
+  +until($fullhd) {
+		&.is-fullhd {
+			max-width: $fullhd - (2 * $gap);
+			width: auto;
+		}
+	}
+	
+  +widescreen() {
+		max-width $widescreen - (2 * $gap);
+		width $widescreen - (2 * $gap);
+	}
+  +fullhd() {
+		max-width: $fullhd - (2 * $gap);
+		width: $fullhd - (2 * $gap);
+	}
+}
+
+
 // Helpers
 //Fixes for bulma.styl
 
@@ -104,17 +143,4 @@ for $size, $i in $sizes
 			border-left: 1px solid $border-color;
 		}
 	}
-}
-
-
-
-@font-face {
-	font-family: FontAwesome;
-	font-style: normal;
-	font-weight: normal;
-	src: url(font-icon-path + ".eot?v=#" + font-icon-version);
-	src: url(font-icon-path + ".eot?#iefix&v=#" + font-icon-version) format("embedded-opentype"),
-		url(font-icon-path + ".woff?v=#" + font-icon-version) format("woff"),
-		url(font-icon-path + ".ttf?v=#" + font-icon-version) format("truetype"),
-		url(font-icon-path + ".svg#fontawesomeregular?v=#" + font-icon-version) format("svg");
 }
