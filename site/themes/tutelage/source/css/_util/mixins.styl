@@ -1,0 +1,19 @@
+fluid($properties, $min-value, $max-value, $min-vw=$mobile, $max-vw=$desktop) {
+	for $property in $properties {
+		{$property}: $min-value;
+	}
+	+below($min-vw) {
+		for $property in $properties {
+			{$property}: calc($min-value + (strip-unit($max-value - $min-value)) * (100vw - ($min-vw)) / (strip-unit($max-vw - $min-vw)));
+		}
+	}
+	+above($max-vw) {
+		for $property in $properties {
+			{$property}: $max-value;
+		}
+	}
+}
+
+strip-unit($value) {
+	$value / ($value * 0 + 1);
+}

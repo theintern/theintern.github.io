@@ -1,24 +1,4 @@
 body {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-	min-height: 100vh;
-
-	.title,
-	.subtitle {
-		font-family: $heading-font;
-	}
-
-	.title {
-		&:first-child {
-			margin-top: 0;
-		}
-	}
-
-	#header,
-	#footer {
-		flex: none;
-	}
 
 	.container {
 		+above($widescreen) {

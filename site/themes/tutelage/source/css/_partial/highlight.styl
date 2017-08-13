@@ -23,7 +23,7 @@ code,
 .highlight .title,
 .highlight .number {
 	font-family: $font-mono !important;
-	font-size: 0.7rem;
+	font-size: $code-font-size;
 }
 
 .highlight .title,
@@ -39,8 +39,8 @@ code,
 	display: block;
 	overflow-x: auto;
 	padding: 0.5em;
-	color: #abb2bf;
-	background: #282c34;
+	color: $code-text-default;
+	background: $code-background;
 	
 	table {
 		margin-bottom: 0;
@@ -61,32 +61,50 @@ code,
 	}
 
 	pre {
-		color: #abb2bf;
-		background: #282c34;
+		color: $code-text-default;
+		background: $code-background;
 	}
 
 	.comment,
 	.quote {
-		color: #5c6370;
-		font-style: italic;
+		color: $code-comment-color;
+		font-style: $code-comment-style;
 	}
 
-	.doctag,
-	.keyword,
+	.doctag {
+		color: $code-doctag;
+	}
+
+	.keyword {
+		color: $code-keyword;
+	}
+
 	.formula {
-		color: #c678dd;
+		color: $code-text-default;
 	}
 
-	.section,
-	.name,
-	.selector-tag,
-	.deletion,
+	.section {
+		color: $code-section;
+	}
+
+	.name {
+		color: $code-name;
+	}
+
+	.selector-tag {
+		color: $code-selector-tag;
+	}
+
+	.deletion {
+		color: $code-deletion;
+	}
+
 	.subst {
-		color: #e06c75;
+		color: $code-text-default;	
 	}
 
 	.literal {
-		color: #56b6c2;
+		color: $code-literal;
 	}
 
 	.string,
@@ -94,7 +112,7 @@ code,
 	.addition,
 	.attribute,
 	.meta-string {
-		color: #98c379;
+		color: $code-string;
 	}
 
 	.built_in,
