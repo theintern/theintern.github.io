@@ -1,7 +1,13 @@
+ <% 
+ 	if (!typeof bodyClass) {
+		bodyClass = '';
+	}
+%> 
+
 <!DOCTYPE html>
 <html>
-		<%- include('partials/head') %>
-	<body <% if(bodyClass) {%> class="<%- bodyClass %>"<% } %>>
+	<%- include('partials/head') %>
+	<body class="<%- bodyClass %>">
 		<%- include('partials/header') %>
 		<%- contents %>
 		<%- include('partials/footer') %>

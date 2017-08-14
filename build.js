@@ -20,10 +20,10 @@ metalsmith(__dirname)
 	.use(markdown())
 	.use(layouts({
 		engine: 'ejs',
-		directory: './resources/layouts',
+		directory: __dirname+'/resources/layouts',
 		default: 'default.ejs',
 		pattern: "**/*.html",
-		partials: "./resources/layouts/partials"
+		partials: __dirname+"resources/layouts/partials"
 	}))
 	.use(sass({
 		outputStyle: "compressed",
