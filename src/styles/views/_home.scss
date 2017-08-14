@@ -10,6 +10,10 @@
 			background: radial-gradient(30% 45%, rgba(#A2EDFD, 0.4) 51%, rgba(188, 235, 240, 0.00) 98%) no-repeat;
 			background-size: contain;
 		}
+
+		.button {
+			margin-bottom: 1.5rem;
+		}
 	}
 	.features {
 		border-bottom: 1px solid $border-color;
