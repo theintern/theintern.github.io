@@ -1,3 +1,12 @@
+/* Tomorrow Night Theme */
+
+
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+
+
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+
 /* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
 
 
@@ -5,7 +14,7 @@
 
 .hljs-comment,
 .hljs-quote {
-	color: #8e908c;
+	color: #969896;
 }
 
 
@@ -19,7 +28,7 @@
 .hljs-selector-class,
 .hljs-regexp,
 .hljs-deletion {
-	color: #c82829;
+	color: #cc6666;
 }
 
 
@@ -33,14 +42,14 @@
 .hljs-params,
 .hljs-meta,
 .hljs-link {
-	color: #f5871f;
+	color: #de935f;
 }
 
 
 /* Tomorrow Yellow */
 
 .hljs-attribute {
-	color: #eab700;
+	color: #f0c674;
 }
 
 
@@ -50,7 +59,7 @@
 .hljs-symbol,
 .hljs-bullet,
 .hljs-addition {
-	color: #718c00;
+	color: #b5bd68;
 }
 
 
@@ -58,7 +67,7 @@
 
 .hljs-title,
 .hljs-section {
-	color: #4271ae;
+	color: #81a2be;
 }
 
 
@@ -66,13 +75,18 @@
 
 .hljs-keyword,
 .hljs-selector-tag {
-	color: #8959a8;
+	color: #b294bb;
 }
 
+
+
 .hljs {
-	color: #4d4d4c;
+	background: $code-background;
+	border-radius: 3px;
+	color: #c5c8c6;
 	display: block;
 	font-family: $font-code;
+	font-size: $code-font-size;
 	margin-bottom: 1.5em;
 	overflow-x: auto;
 	padding: 1em;

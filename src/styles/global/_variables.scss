@@ -16,8 +16,12 @@ $color-inline-code: #C94169;
 $heading-weight: 500;
 $heading-color: $dark-gray;
 
-$font-mono: 'Source Code Pro', monospace;
+$font-mono: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,'Source Code Pro',monospace;
 $font-code: $font-mono;
 
 $body-font: 'Source Sans Pro', sans-serif;
 $body-text: #333;
+
+$inline-code-background: rgba(27, 31, 35, 0.05);
+$code-background: #1d1f21;
+$code-font-size: 0.85rem;
