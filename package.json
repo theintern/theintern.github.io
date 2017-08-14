@@ -6,15 +6,16 @@
 		"bulma": "^0.5.1",
 		"ejs": "^2.5.7",
 		"grunt-curl": "^2.2.1",
-		"handlebars": "^4.0.10",
 		"highlight.js": "~9.12.0",
 		"markdown-it": "^8.3.1",
 		"markdown-it-anchor": "~4.0.0",
 		"markdown-it-classy": "^0.2.0",
 		"markdown-it-container": "^2.0.0",
+		"markdown-it-highlightjs": "^3.0.0",
 		"markdown-it-table-of-contents": "^0.3.2",
 		"metalsmith": "~2.3.0",
 		"metalsmith-assets": "^0.1.0",
+		"metalsmith-code-highlight": "0.0.4",
 		"metalsmith-collections": "~0.9.0",
 		"metalsmith-headings": "~0.2.0",
 		"metalsmith-inline-source": "^1.0.6",
@@ -31,5 +32,6 @@
 	"main": "build.js",
 	"scripts": {
 		"start": "node ."
-	}
+	},
+	"devDependencies": {}
 }

@@ -7,6 +7,7 @@ const watch = require('metalsmith-watch');
 const serve = require('metalsmith-serve');
 const assets = require('metalsmith-assets');
 const inlineSource = require('metalsmith-inline-source');
+const highlight = require('markdown-it-highlightjs');
 
 metalsmith(__dirname)
 	.metadata({
@@ -17,7 +18,7 @@ metalsmith(__dirname)
 	})
 	.source('./src')
 	.destination('./public')
-	.use(markdown())
+	.use(markdown().use(highlight))
 	.use(layouts({
 		engine: 'ejs',
 		directory: __dirname+'/resources/layouts',

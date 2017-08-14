@@ -21,6 +21,14 @@ body {
 	}
 }
 
+@each $size in $sizes {
+	$i: index($sizes, $size);
+	h#{$i} {
+		@extend .title;
+		font-size: $size - 0.5rem;
+	}
+}
+
 p:not(:last-child) {
 	margin-bottom: 1.5em;
 }
