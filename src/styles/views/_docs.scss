@@ -72,6 +72,12 @@
 			padding-bottom: 0.25em;
 		}
 	}
+	.version-select {
+		display: none;
+	}
+	.multi-version .version-select {
+		display: block;
+	}
 }
 
 .coming-soon {

@@ -32,8 +32,24 @@ interface MenuNode {
 		Intern: {
 			v3: {
 				baseUrl:
-					'https://raw.githubusercontent.com/theintern/intern/3.4/',
-				pages: ['README.md']
+					'https://raw.githubusercontent.com/theintern/intern/3.4/docs/',
+				pages: [
+					'getting-started.md',
+					'fundamentals.md',
+					'configuration.md',
+					'interfaces.md',
+					'unit-testing.md',
+					'benchmark-testing.md',
+					'functional-testing.md',
+					'webdriver-server.md',
+					'execution-modes.md',
+					'reporters.md',
+					'ci.md',
+					'customisation.md',
+					'internals.md',
+					'community.md',
+					'faq.md'
+				]
 			},
 			v4: {
 				baseUrl:
@@ -70,6 +86,13 @@ interface MenuNode {
 	let defaultDocs: SetId = { project: 'Intern', version: 'v4' };
 
 	window.addEventListener('hashchange', processHash);
+	document.querySelector('.docs-nav').addEventListener('change', event => {
+		const target: Element = <Element>event.target;
+		if (target.tagName === 'SELECT') {
+			const select = <HTMLSelectElement>target;
+			loadDocset({ project: currentDocs.project, version: select.value });
+		}
+	});
 
 	// If the base docs page is loaded (without a hash), set a default hash to
 	// get a docset to load.
@@ -122,6 +145,7 @@ interface MenuNode {
 				});
 			})
 			.then(() => {
+				updateVersionSelector();
 				showPage(pageNames[0]);
 			});
 	}
@@ -370,8 +394,7 @@ interface MenuNode {
 				const [base, hash] = href[1].split('#');
 				if (!base) {
 					href[1] = createHash(env.page, hash);
-				}
-				else if (/\.md/.test(base)) {
+				} else if (/\.md/.test(base)) {
 					href[1] = createHash(base.replace(/^\.\//, ''), hash);
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
@@ -390,5 +413,29 @@ interface MenuNode {
 		}
 
 		return markdown.render(text, { page });
+	}
+
+	function updateVersionSelector() {
+		const versions = Object.keys(docsets[currentDocs.project]);
+		const layout = document.querySelector('.docs-layout');
+
+		// If more than one version is available, show the version selector
+		if (versions.length > 1) {
+			layout.classList.add('multi-version');
+
+			const selector = document.querySelector('.version-selector select');
+			selector.innerHTML = '';
+			versions.forEach(version => {
+				const option = document.createElement('option');
+				option.value = version;
+				if (version === currentDocs.version) {
+					option.selected = true;
+				}
+				option.textContent = version;
+				selector.appendChild(option);
+			});
+		} else {
+			layout.classList.remove('multi-version');
+		}
 	}
 })();
