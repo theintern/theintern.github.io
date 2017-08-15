@@ -50,6 +50,28 @@
 			margin-bottom: 2rem;
 		}
 	}
+	.menu {
+		ul {
+			list-style: none;
+		}
+
+		.field {
+			margin: 0.5em 1.5em;
+
+			.select {
+				width: 100%;
+
+				select {
+					width: 100%;
+				}
+			}
+		}
+
+		.menu-list a {
+			padding-top: 0.25em;
+			padding-bottom: 0.25em;
+		}
+	}
 }
 
 .coming-soon {
