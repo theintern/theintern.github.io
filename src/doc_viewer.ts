@@ -66,16 +66,26 @@ interface MenuNode {
 	};
 
 	let markdown: any;
-	let currentDocs: SetId = { project: 'Intern', version: 'v4' };
+	let currentDocs: SetId | undefined;
+	let defaultDocs: SetId = { project: 'Intern', version: 'v4' };
 
 	window.addEventListener('hashchange', processHash);
-	processHash();
+
+	// If the base docs page is loaded (without a hash), set a default hash to
+	// get a docset to load.
+	if (!location.hash) {
+		const docset = docsets[defaultDocs.project][defaultDocs.version];
+		location.hash = `#${defaultDocs.project}/${defaultDocs.version}/${docset
+			.pages[0]}`;
+	} else {
+		processHash();
+	}
 
 	/**
 	 * Load a docset, defaulting to `currentDocs`.
 	 */
 	function loadDocset(setId?: SetId) {
-		setId = setId || currentDocs;
+		setId = setId || currentDocs!;
 		const docset = docsets[setId.project][setId.version];
 		const pageNames = docset.pages;
 		const baseUrl = docset.baseUrl;
@@ -89,9 +99,11 @@ interface MenuNode {
 		return jQuery.when
 			.apply(jQuery, loads)
 			.then((...args: any[]) => {
+				currentDocs = setId;
+
 				// If only one argument was provided, args will be a single
 				// result rather than an array.
-				if (typeof(args[0]) === 'string') {
+				if (typeof args[0] === 'string') {
 					args = [args];
 				}
 				const texts = args.map(arg => filterGhContent(arg[0]));
@@ -110,7 +122,6 @@ interface MenuNode {
 				});
 			})
 			.then(() => {
-				currentDocs = setId!;
 				showPage(pageNames[0]);
 			});
 	}
@@ -119,7 +130,7 @@ interface MenuNode {
 	 * Show a new page, optionally re-rendering the menu afterwards
 	 */
 	function showPage(name: string, section?: string) {
-		const docset = docsets[currentDocs.project][currentDocs.version];
+		const docset = docsets[currentDocs!.project][currentDocs!.version];
 		const pages = docset.cache!;
 		const page = pages[name];
 		const content = document.body.querySelector('.docs-content')!;
@@ -142,7 +153,7 @@ interface MenuNode {
 		const menu = document.querySelector('.menu-list')!;
 		menu.innerHTML = '';
 
-		const docset = docsets[currentDocs.project][currentDocs.version];
+		const docset = docsets[currentDocs!.project][currentDocs!.version];
 		const pageNames = docset.pages;
 		const pages = docset.cache!;
 
@@ -183,7 +194,7 @@ interface MenuNode {
 			// If this document's h1 doesn't have any text (maybe it's just an
 			// image), assume this is a README, and use the docset's project
 			// name as the title.
-			const title = root.element.textContent! || currentDocs.project;
+			const title = root.element.textContent! || currentDocs!.project;
 
 			const li = createLinkItem(title, pageName);
 			const pageLink = li.children[0];
@@ -245,7 +256,7 @@ interface MenuNode {
 	 * docset
 	 */
 	function createHash(page: string, section?: string) {
-		const parts = [currentDocs.project, currentDocs.version, page];
+		const parts = [currentDocs!.project, currentDocs!.version, page];
 		if (section) {
 			parts.push(section);
 		}
@@ -286,8 +297,9 @@ interface MenuNode {
 		let load = null;
 
 		if (
-			project !== currentDocs.project ||
-			(version != null && version !== currentDocs.version)
+			currentDocs == null ||
+			project !== currentDocs!.project ||
+			(version != null && version !== currentDocs!.version)
 		) {
 			load = loadDocset({ project: project, version: version });
 		}
