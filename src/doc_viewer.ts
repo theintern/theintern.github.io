@@ -69,7 +69,7 @@ interface MenuNode {
 	let currentDocs: SetId = { project: 'Intern', version: 'v4' };
 
 	window.addEventListener('hashchange', processHash);
-	loadDocset();
+	processHash();
 
 	/**
 	 * Load a docset, defaulting to `currentDocs`.
@@ -81,20 +81,22 @@ interface MenuNode {
 		const baseUrl = docset.baseUrl;
 		const cache = (docset.cache = <{ [name: string]: DocSetCache }>{});
 
-		const loads = pageNames.map(function(name) {
+		const loads = pageNames.map(name => {
 			return jQuery.get(baseUrl + name);
 		});
 
 		// Render the other pages in the background
 		return jQuery.when
 			.apply(jQuery, loads)
-			.then(function() {
-				const args: string[] = Array.prototype.slice.call(arguments);
-				const texts = args.map(function(arg) {
-					return filterGhContent(arg[0]);
-				});
+			.then((...args: any[]) => {
+				// If only one argument was provided, args will be a single
+				// result rather than an array.
+				if (typeof(args[0]) === 'string') {
+					args = [args];
+				}
+				const texts = args.map(arg => filterGhContent(arg[0]));
 
-				pageNames.forEach(function(name, idx) {
+				pageNames.forEach((name, idx) => {
 					const html = render(texts[idx]);
 					const element = document.createElement('div');
 					element.innerHTML = html;
@@ -106,15 +108,10 @@ interface MenuNode {
 						html: html
 					};
 				});
-
-				if (location.hash) {
-					processHash();
-				} else {
-					showPage(pageNames[0]);
-				}
 			})
-			.then(function() {
+			.then(() => {
 				currentDocs = setId!;
+				showPage(pageNames[0]);
 			});
 	}
 
@@ -183,7 +180,11 @@ interface MenuNode {
 				stack[0][0].children = children;
 			}
 
-			const title = root.element.textContent!;
+			// If this document's h1 doesn't have any text (maybe it's just an
+			// image), assume this is a README, and use the docset's project
+			// name as the title.
+			const title = root.element.textContent! || currentDocs.project;
+
 			const li = createLinkItem(title, pageName);
 			const pageLink = li.children[0];
 			pageLink.setAttribute('data-type', 'page');
@@ -260,7 +261,7 @@ interface MenuNode {
 			/<\!-- vim-markdown-toc[^]*?<!-- vim-markdown-toc -->/,
 			/<\!-- start-github-only[^]*?<!-- end-github-only -->/g
 		];
-		markers.forEach(function(marker) {
+		markers.forEach(marker => {
 			if (marker.test(text)) {
 				text = text.replace(marker, '');
 			}
@@ -291,7 +292,7 @@ interface MenuNode {
 			load = loadDocset({ project: project, version: version });
 		}
 
-		jQuery.when(load).then(function() {
+		jQuery.when(load).then(() => {
 			showPage(page, section);
 		});
 	}
@@ -303,7 +304,7 @@ interface MenuNode {
 		if (!markdown) {
 			markdown = markdownit({
 				// Customize the syntax highlighting process
-				highlight: function(str: string, lang: string) {
+				highlight: (str: string, lang: string) => {
 					if (lang && hljs.getLanguage(lang)) {
 						try {
 							return (
@@ -364,7 +365,7 @@ interface MenuNode {
 			// Generate heading anchors with the same format as GitHub pages
 			// (this isn't terribly robust yet)
 			markdown.use(markdownitHeadingAnchor, {
-				slugify: function(str: string) {
+				slugify: (str: string) => {
 					return str
 						.toLowerCase()
 						.replace(/[^A-Za-z0-9_ ]/g, '')
