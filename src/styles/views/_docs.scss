@@ -55,6 +55,14 @@
 			list-style: none;
 		}
 
+		.menu-list > li > ul {
+			display: none;
+		}
+
+		.menu-list > li.is-active > ul {
+			display: block;
+		}
+
 		.field {
 			margin: 0.5em 1.5em;
 

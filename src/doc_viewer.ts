@@ -82,19 +82,27 @@ interface MenuNode {
 	};
 
 	let markdown: any;
-	let currentDocs: SetId | undefined;
-	let defaultDocs: SetId = { project: 'Intern', version: 'v4' };
+	let activeDocs: SetId | undefined;
+	let defaultDocs = { project: 'Intern', version: 'v4' };
 
+	// Super simple router
 	window.addEventListener('hashchange', processHash);
-	document.querySelector('.docs-nav')!.addEventListener('change', event => {
-		const target: Element = <Element>event.target;
-		if (target.tagName === 'SELECT') {
-			const select = <HTMLSelectElement>target;
-			loadDocset({
-				project: currentDocs!.project,
-				version: select.value
-			});
-		}
+
+	window.addEventListener('load', () => {
+		// If the version selector is showing and the user changes it, update
+		// the location hash and the docset will be loaded.
+		document.querySelector(
+			'.docs-nav'
+		)!.addEventListener('change', event => {
+			const target: Element = <Element>event.target;
+			const setId = activeDocs!;
+			if (target.tagName === 'SELECT') {
+				const select = <HTMLSelectElement>target;
+				const docset = docsets[setId.project][select!.value];
+				location.hash = `#${setId.project}/${select.value}/${docset
+					.pages[0]}`;
+			}
+		});
 	});
 
 	// If the base docs page is loaded (without a hash), set a default hash to
@@ -108,167 +116,192 @@ interface MenuNode {
 	}
 
 	/**
-	 * Load a docset, defaulting to `currentDocs`.
+	 * Load a docset.
+	 *
+	 * An optional page and section may be provided. When the docset is
+	 * finished loading, the given page, or the first page in the set, will be
+	 * shown.
 	 */
-	function loadDocset(setId?: SetId) {
-		setId = setId || currentDocs!;
-		const docset = docsets[setId.project][setId.version];
+	function loadDocset(setId: SetId) {
+		const originalDocs = activeDocs;
+
+		activeDocs = setId;
+		const docset = docsets[activeDocs.project][activeDocs.version];
 		const pageNames = docset.pages;
 		const baseUrl = docset.baseUrl;
-		const cache = (docset.cache = <{ [name: string]: DocSetCache }>{});
 
-		const loads = pageNames.map(name => {
-			return fetch(baseUrl + name).then(response => response.text());
-		});
+		let cache = docset.cache!;
+		let load: PromiseLike<any>;
+
+		if (!cache) {
+			cache = docset.cache = <{ [name: string]: DocSetCache }>{};
+
+			load = Promise.all(pageNames.map(name => {
+				return (
+					cache[name] ||
+					fetch(baseUrl + name)
+					.then(response => response.text())
+					.then(text => {
+						text = filterGhContent(text);
+						const html = render(text, name);
+						const element = document.createElement('div');
+						element.innerHTML = html;
+
+						cache[name] = {
+							name: name,
+							markdown: text,
+							element: element,
+							html: html
+						};
+					})
+				);
+			}));
+		}
+		else {
+			load = Promise.resolve();
+		}
 
 		// Render the other pages in the background
-		return Promise.all(loads)
-			.then(texts => {
-				currentDocs = setId;
-				texts = texts.map(text => filterGhContent(text));
-
-				pageNames.forEach((name, idx) => {
-					const html = render(texts[idx], name);
-					const element = document.createElement('div');
-					element.innerHTML = html;
-
-					cache[name] = {
-						name: name,
-						markdown: texts[idx],
-						element: element,
-						html: html
-					};
-				});
-			})
-			.then(() => {
+		return load.then(() => {
+			if (!originalDocs || originalDocs.project !== setId.project || originalDocs.version !== setId.version) {
 				updateVersionSelector();
-				showPage(pageNames[0]);
+				buildMenu();
+			}
+		});
+
+		function buildMenu() {
+			const menu = document.querySelector('.menu-list')!;
+			menu.innerHTML = '';
+
+			pageNames.forEach(pageName => {
+				const page = cache[pageName];
+				let root: MenuNode;
+				try {
+					root = createNode(page.element.querySelector('h1')!);
+				} catch (error) {
+					console.log('no h1 on ' + pageName);
+					root = {
+						level: 1,
+						element: document.createElement('li'),
+						children: []
+					};
+				}
+				const headings = page.element.querySelectorAll('h2,h3')!;
+				const stack: MenuNode[][] = <MenuNode[][]>[[root]];
+				let children: MenuNode[];
+
+				for (let i = 0; i < headings.length; i++) {
+					let heading = headings[i];
+					let newNode = createNode(heading);
+					let level = newNode.level;
+
+					if (level === stack[0][0].level) {
+						stack[0].unshift(newNode);
+					} else if (level > stack[0][0].level) {
+						stack.unshift([newNode]);
+					} else {
+						while (stack[0][0].level > level) {
+							children = stack.shift()!.reverse();
+							stack[0][0].children = children;
+						}
+						if (level === stack[0][0].level) {
+							stack[0].unshift(newNode);
+						} else {
+							stack.unshift([newNode]);
+						}
+					}
+				}
+
+				while (stack.length > 1) {
+					children = stack.shift()!.reverse();
+					stack[0][0].children = children;
+				}
+
+				// If this document's h1 doesn't have any text (maybe it's just an
+				// image), assume this is a README, and use the docset's project
+				// name as the title.
+				const title = root.element.textContent! || activeDocs!.project;
+
+				const li = createLinkItem(title, pageName);
+				if (root.children.length > 0) {
+					li.appendChild(createSubMenu(root.children, pageName));
+				}
+
+				menu.appendChild(li);
 			});
+
+			function createSubMenu(children: MenuNode[], pageName: string) {
+				const ul = document.createElement('ul');
+
+				children.forEach(child => {
+					const heading = child.element;
+					const li = createLinkItem(
+						heading.textContent!,
+						pageName,
+						heading.id
+					);
+					if (child.children.length > 0) {
+						li.appendChild(createSubMenu(child.children, pageName));
+					}
+					ul.appendChild(li);
+				});
+
+				return ul;
+			}
+
+			function createLinkItem(
+				text: string,
+				pageName: string,
+				section?: string
+			) {
+				const li = document.createElement('li');
+				const link = document.createElement('a');
+				link.href = createHash(pageName, section);
+				link.textContent = text;
+				li.appendChild(link);
+				return li;
+			}
+
+			function createNode(heading: Element) {
+				const level = parseInt(heading.tagName.slice(1), 10);
+				return { level, element: heading, children: <MenuNode[]>[] };
+			}
+		}
 	}
 
 	/**
-	 * Show a new page, optionally re-rendering the menu afterwards
+	 * Show a page in the currently loaded docset
 	 */
 	function showPage(name: string, section?: string) {
-		const docset = docsets[currentDocs!.project][currentDocs!.version];
-		const pages = docset.cache!;
-		const page = pages[name];
+		const docs = activeDocs!;
+		const docset = docsets[docs.project][docs.version];
+		const page = docset.cache![name];
 		const content = document.body.querySelector('.docs-content')!;
 		content.innerHTML = '';
 		content.appendChild(page.element);
 
 		if (section) {
-			document.querySelector('#' + section)!.scrollIntoView();
+			document.querySelector(`#${section}`)!.scrollIntoView();
 		} else {
 			content.scrollTop = 0;
 		}
 
-		buildMenu(name);
-	}
-
-	/**
-	 * Build the menu, highlighting the given selected page
-	 */
-	function buildMenu(selectedPage: string) {
-		const menu = document.querySelector('.menu-list')!;
-		menu.innerHTML = '';
-
-		const docset = docsets[currentDocs!.project][currentDocs!.version];
-		const pageNames = docset.pages;
-		const pages = docset.cache!;
-
-		pageNames.forEach(pageName => {
-			const page = pages[pageName];
-			let root: MenuNode;
-			try {
-				root = createNode(page.element.querySelector('h1')!);
-			} catch (error) {
-				console.log('no h1 on ' + pageName);
-				root = { level: 1, element: document.createElement('li'), children: [] };
-			}
-			const headings = page.element.querySelectorAll('h2,h3')!;
-			const stack: MenuNode[][] = <MenuNode[][]>[[root]];
-			let children: MenuNode[];
-
-			for (let i = 0; i < headings.length; i++) {
-				let heading = headings[i];
-				let newNode = createNode(heading);
-				let level = newNode.level;
-
-				if (level === stack[0][0].level) {
-					stack[0].unshift(newNode);
-				} else if (level > stack[0][0].level) {
-					stack.unshift([newNode]);
-				} else {
-					while (stack[0][0].level > level) {
-						children = stack.shift()!.reverse();
-						stack[0][0].children = children;
-					}
-					if (level === stack[0][0].level) {
-						stack[0].unshift(newNode);
-					} else {
-						stack.unshift([newNode]);
-					}
-				}
-			}
-
-			while (stack.length > 1) {
-				children = stack.shift()!.reverse();
-				stack[0][0].children = children;
-			}
-
-			// If this document's h1 doesn't have any text (maybe it's just an
-			// image), assume this is a README, and use the docset's project
-			// name as the title.
-			const title = root.element.textContent! || currentDocs!.project;
-
-			const li = createLinkItem(title, pageName);
-			const pageLink = li.children[0];
-			if (selectedPage === pageName) {
-				pageLink.className = 'is-active';
-				if (root.children.length > 0) {
-					li.appendChild(createSubMenu(root.children, pageName));
-				}
-			}
-
-			menu.appendChild(li);
-		});
-
-		function createSubMenu(children: MenuNode[], pageName: string) {
-			const ul = document.createElement('ul');
-
-			children.forEach(child => {
-				const heading = child.element;
-				const li = createLinkItem(
-					heading.textContent!,
-					pageName,
-					heading.id
-				);
-				if (child.children.length > 0) {
-					li.appendChild(createSubMenu(child.children, pageName));
-				}
-				ul.appendChild(li);
-			});
-
-			return ul;
+		const menu = document.querySelector('.menu .menu-list')!;
+		const active = menu.querySelectorAll('.is-active');
+		for (let i = 0; i < active.length; i++) {
+			active[i].classList.remove('is-active');
 		}
 
-		function createLinkItem(
-			text: string,
-			pageName: string,
-			section?: string
-		) {
-			const li = document.createElement('li');
-			const link = document.createElement('a');
-			link.href = createHash(pageName, section);
-			link.textContent = text;
-			li.appendChild(link);
-			return li;
-		}
-
-		function createNode(heading: Element) {
-			const level = parseInt(heading.tagName.slice(1), 10);
-			return { level, element: heading, children: <MenuNode[]>[] };
+		const items = document.querySelectorAll('.menu .menu-list > li > a');
+		const matcher = new RegExp(`/${name}$`);
+		for (let i = 0; i < items.length; i++) {
+			const item = <HTMLLinkElement>items[i];
+			const href = item.href;
+			if (matcher.test(href)) {
+				item.classList.add('is-active');
+				item.parentElement!.classList.add('is-active');
+				break;
+			}
 		}
 	}
 
@@ -277,7 +310,8 @@ interface MenuNode {
 	 * docset
 	 */
 	function createHash(page: string, section?: string) {
-		const parts = [currentDocs!.project, currentDocs!.version, page];
+		const docs = activeDocs!;
+		const parts = [docs.project, docs.version, page];
 		if (section) {
 			parts.push(section);
 		}
@@ -315,17 +349,8 @@ interface MenuNode {
 		const version = parts[1];
 		const page = parts[2];
 		const section = parts[3];
-		let load: PromiseLike<void> | undefined;
 
-		if (
-			currentDocs == null ||
-			project !== currentDocs!.project ||
-			(version != null && version !== currentDocs!.version)
-		) {
-			load = loadDocset({ project, version });
-		}
-
-		Promise.resolve(load).then(() => {
+		Promise.resolve(loadDocset({ project, version })).then(() => {
 			showPage(page, section);
 		});
 	}
@@ -413,7 +438,8 @@ interface MenuNode {
 	}
 
 	function updateVersionSelector() {
-		const versions = Object.keys(docsets[currentDocs!.project]);
+		const docs = activeDocs!;
+		const versions = Object.keys(docsets[docs.project]);
 		const layout = document.querySelector('.docs-layout')!;
 
 		// If more than one version is available, show the version selector
@@ -427,7 +453,7 @@ interface MenuNode {
 			versions.forEach(version => {
 				const option = document.createElement('option');
 				option.value = version;
-				if (version === currentDocs!.version) {
+				if (version === docs.version) {
 					option.selected = true;
 				}
 				option.textContent = version;
