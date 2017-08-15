@@ -376,7 +376,12 @@ interface MenuNode {
 		const parts = hash.split('/').map(part => decodeURIComponent(part));
 		const project = parts[0];
 		const version = parts[1];
-		const page = parts[2];
+		const docset = getDocset({ project, version });
+		// TODO: Show an error page if the user provides an invalid hash
+		// if (!docset) {
+		// }
+
+		const page = parts[2] || docset.pages[0];
 		const section = parts[3];
 
 		Promise.resolve(loadDocset({ project, version })).then(() => {
@@ -543,10 +548,16 @@ interface MenuNode {
 	 */
 	function getDocset(setId?: DocSetId) {
 		const docs = setId || activeDocs!;
+		const project = docsets[docs.project];
+		if (!project) {
+			return;
+		}
+
+		const versions = Object.keys(project);
 		if (!docs.version) {
-			const versions = Object.keys(docsets[docs.project]);
 			docs.version = versions[versions.length - 1];
 		}
-		return docsets[docs.project][docs.version];
+
+		return project[docs.version];
 	}
 })();
