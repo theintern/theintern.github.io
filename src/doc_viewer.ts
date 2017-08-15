@@ -12,7 +12,7 @@ interface DocSet {
 	[version: string]: {
 		baseUrl: string;
 		pages: string[];
-		cache?: { [name: string]: DocSetCache; };
+		cache?: { [name: string]: DocSetCache };
 	};
 }
 
@@ -27,7 +27,7 @@ interface MenuNode {
 	children: MenuNode[];
 }
 
-(function() {
+(() => {
 	const docsets: { [name: string]: DocSet } = {
 		Intern: {
 			v3: {
@@ -39,10 +39,14 @@ interface MenuNode {
 				baseUrl:
 					'https://raw.githubusercontent.com/theintern/intern/master/docs/',
 				pages: [
-					'api.md',
 					'getting_started.md',
 					'how_to.md',
-					'concepts.md'
+					'architecture.md',
+					'concepts.md',
+					'configuration.md',
+					'writing_tests.md',
+					'running.md',
+					'api.md'
 				]
 			}
 		},
@@ -216,14 +220,6 @@ interface MenuNode {
 			}
 		});
 
-		function createHash(page: string, section?: string) {
-			const parts = [currentDocs.project, currentDocs.version, page];
-			if (section) {
-				parts.push(section);
-			}
-			return '#' + parts.join('/');
-		}
-
 		function createLinkItem(
 			text: string,
 			pageName: string,
@@ -244,7 +240,20 @@ interface MenuNode {
 	}
 
 	/**
-	 * Remove content that may be in the raw GH pages documents that shouldn't be rendered
+	 * Create a link hash for a given page name and fragment for the current
+	 * docset
+	 */
+	function createHash(page: string, section?: string) {
+		const parts = [currentDocs.project, currentDocs.version, page];
+		if (section) {
+			parts.push(section);
+		}
+		return '#' + parts.join('/');
+	}
+
+	/**
+	 * Remove content that may be in the raw GH pages documents that shouldn't
+	 * be rendered
 	 */
 	function filterGhContent(text: string) {
 		const markers = [
@@ -316,7 +325,44 @@ interface MenuNode {
 				html: true
 			});
 
-			// Generate heading anchors with the same format as GitHub pages (this isn't terribly robust yet)
+			// Add 'table' class to tables
+			markdown.renderer.rules.table_open = (
+				_tokens: any[],
+				_idx: number
+			) => {
+				return '<table class="table">';
+			};
+
+			// Update relative links to markdown files
+			const defaultLinkRender =
+				markdown.renderer.rules.link_open ||
+				((
+					tokens: any[],
+					idx: number,
+					options: any,
+					_env: any,
+					self: any
+				) => {
+					return self.renderToken(tokens, idx, options);
+				});
+			markdown.renderer.rules.link_open = (
+				tokens: any[],
+				idx: number,
+				options: any,
+				env: any,
+				self: any
+			) => {
+				const hrefIdx = tokens[idx].attrIndex('href');
+				const href = tokens[idx].attrs[hrefIdx];
+				if (/\.md/.test(href[1])) {
+					const [page, section] = href[1].split('#');
+					href[1] = createHash(page.replace(/^\.\//, ''), section);
+				}
+				return defaultLinkRender(tokens, idx, options, env, self);
+			};
+
+			// Generate heading anchors with the same format as GitHub pages
+			// (this isn't terribly robust yet)
 			markdown.use(markdownitHeadingAnchor, {
 				slugify: function(str: string) {
 					return str
