@@ -72,7 +72,8 @@ function buildTypescript() {
 			lib: [
 				'lib.dom.d.ts',
 				'lib.es5.d.ts',
-				'lib.es2015.iterable.d.ts'
+				'lib.es2015.iterable.d.ts',
+				'lib.es2015.promise.d.ts'
 			],
 			strict: true,
 			noUnusedLocals: true,
@@ -84,7 +85,6 @@ function buildTypescript() {
 			sourceMap: true,
 			outDir: './public',
 			types: [
-				'jquery',
 				'highlight.js',
 				'markdown-it'
 			]

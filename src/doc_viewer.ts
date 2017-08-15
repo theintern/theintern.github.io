@@ -42,7 +42,7 @@ interface MenuNode {
 					'benchmark-testing.md',
 					'functional-testing.md',
 					'webdriver-server.md',
-					'execution-modes.md',
+					'running.md',
 					'reporters.md',
 					'ci.md',
 					'customisation.md',
@@ -86,11 +86,14 @@ interface MenuNode {
 	let defaultDocs: SetId = { project: 'Intern', version: 'v4' };
 
 	window.addEventListener('hashchange', processHash);
-	document.querySelector('.docs-nav').addEventListener('change', event => {
+	document.querySelector('.docs-nav')!.addEventListener('change', event => {
 		const target: Element = <Element>event.target;
 		if (target.tagName === 'SELECT') {
 			const select = <HTMLSelectElement>target;
-			loadDocset({ project: currentDocs.project, version: select.value });
+			loadDocset({
+				project: currentDocs!.project,
+				version: select.value
+			});
 		}
 	});
 
@@ -115,21 +118,14 @@ interface MenuNode {
 		const cache = (docset.cache = <{ [name: string]: DocSetCache }>{});
 
 		const loads = pageNames.map(name => {
-			return jQuery.get(baseUrl + name);
+			return fetch(baseUrl + name).then(response => response.text());
 		});
 
 		// Render the other pages in the background
-		return jQuery.when
-			.apply(jQuery, loads)
-			.then((...args: any[]) => {
+		return Promise.all(loads)
+			.then(texts => {
 				currentDocs = setId;
-
-				// If only one argument was provided, args will be a single
-				// result rather than an array.
-				if (typeof args[0] === 'string') {
-					args = [args];
-				}
-				const texts = args.map(arg => filterGhContent(arg[0]));
+				texts = texts.map(text => filterGhContent(text));
 
 				pageNames.forEach((name, idx) => {
 					const html = render(texts[idx], name);
@@ -183,12 +179,18 @@ interface MenuNode {
 
 		pageNames.forEach(pageName => {
 			const page = pages[pageName];
-			const headings = page.element.querySelectorAll('h1,h2,h3')!;
-			const root = createNode(headings[0]);
+			let root: MenuNode;
+			try {
+				root = createNode(page.element.querySelector('h1')!);
+			} catch (error) {
+				console.log('no h1 on ' + pageName);
+				root = { level: 1, element: document.createElement('li'), children: [] };
+			}
+			const headings = page.element.querySelectorAll('h2,h3')!;
 			const stack: MenuNode[][] = <MenuNode[][]>[[root]];
 			let children: MenuNode[];
 
-			for (let i = 1; i < headings.length; i++) {
+			for (let i = 0; i < headings.length; i++) {
 				let heading = headings[i];
 				let newNode = createNode(heading);
 				let level = newNode.level;
@@ -222,39 +224,34 @@ interface MenuNode {
 
 			const li = createLinkItem(title, pageName);
 			const pageLink = li.children[0];
-			pageLink.setAttribute('data-type', 'page');
 			if (selectedPage === pageName) {
 				pageLink.className = 'is-active';
 				if (root.children.length > 0) {
-					li.appendChild(createSubMenu(root.children));
+					li.appendChild(createSubMenu(root.children, pageName));
 				}
 			}
 
 			menu.appendChild(li);
-
-			function createSubMenu(children: MenuNode[]) {
-				const ul = document.createElement('ul');
-				let child;
-				let heading;
-				let li;
-
-				for (let i = 0; i < children.length; i++) {
-					child = children[i];
-					heading = child.element;
-					li = createLinkItem(
-						heading.textContent!,
-						pageName,
-						heading.id
-					);
-					if (child.children.length > 0) {
-						li.appendChild(createSubMenu(child.children));
-					}
-					ul.appendChild(li);
-				}
-
-				return ul;
-			}
 		});
+
+		function createSubMenu(children: MenuNode[], pageName: string) {
+			const ul = document.createElement('ul');
+
+			children.forEach(child => {
+				const heading = child.element;
+				const li = createLinkItem(
+					heading.textContent!,
+					pageName,
+					heading.id
+				);
+				if (child.children.length > 0) {
+					li.appendChild(createSubMenu(child.children, pageName));
+				}
+				ul.appendChild(li);
+			});
+
+			return ul;
+		}
 
 		function createLinkItem(
 			text: string,
@@ -318,7 +315,7 @@ interface MenuNode {
 		const version = parts[1];
 		const page = parts[2];
 		const section = parts[3];
-		let load = null;
+		let load: PromiseLike<void> | undefined;
 
 		if (
 			currentDocs == null ||
@@ -328,7 +325,7 @@ interface MenuNode {
 			load = loadDocset({ project, version });
 		}
 
-		jQuery.when(load).then(() => {
+		Promise.resolve(load).then(() => {
 			showPage(page, section);
 		});
 	}
@@ -416,19 +413,21 @@ interface MenuNode {
 	}
 
 	function updateVersionSelector() {
-		const versions = Object.keys(docsets[currentDocs.project]);
-		const layout = document.querySelector('.docs-layout');
+		const versions = Object.keys(docsets[currentDocs!.project]);
+		const layout = document.querySelector('.docs-layout')!;
 
 		// If more than one version is available, show the version selector
 		if (versions.length > 1) {
 			layout.classList.add('multi-version');
 
-			const selector = document.querySelector('.version-selector select');
+			const selector = document.querySelector(
+				'.version-selector select'
+			)!;
 			selector.innerHTML = '';
 			versions.forEach(version => {
 				const option = document.createElement('option');
 				option.value = version;
-				if (version === currentDocs.version) {
+				if (version === currentDocs!.version) {
 					option.selected = true;
 				}
 				option.textContent = version;
