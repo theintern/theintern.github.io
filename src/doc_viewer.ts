@@ -109,7 +109,7 @@ interface MenuNode {
 				const texts = args.map(arg => filterGhContent(arg[0]));
 
 				pageNames.forEach((name, idx) => {
-					const html = render(texts[idx]);
+					const html = render(texts[idx], name);
 					const element = document.createElement('div');
 					element.innerHTML = html;
 
@@ -247,7 +247,7 @@ interface MenuNode {
 
 		function createNode(heading: Element) {
 			const level = parseInt(heading.tagName.slice(1), 10);
-			return { level: level, element: heading, children: <MenuNode[]>[] };
+			return { level, element: heading, children: <MenuNode[]>[] };
 		}
 	}
 
@@ -301,7 +301,7 @@ interface MenuNode {
 			project !== currentDocs!.project ||
 			(version != null && version !== currentDocs!.version)
 		) {
-			load = loadDocset({ project: project, version: version });
+			load = loadDocset({ project, version });
 		}
 
 		jQuery.when(load).then(() => {
@@ -312,7 +312,7 @@ interface MenuNode {
 	/**
 	 * Render markdown into HTML. Lazily initialize the markdown renderer.
 	 */
-	function render(text: string) {
+	function render(text: string, page?: string) {
 		if (!markdown) {
 			markdown = markdownit({
 				// Customize the syntax highlighting process
@@ -367,9 +367,12 @@ interface MenuNode {
 			) => {
 				const hrefIdx = tokens[idx].attrIndex('href');
 				const href = tokens[idx].attrs[hrefIdx];
-				if (/\.md/.test(href[1])) {
-					const [page, section] = href[1].split('#');
-					href[1] = createHash(page.replace(/^\.\//, ''), section);
+				const [base, hash] = href[1].split('#');
+				if (!base) {
+					href[1] = createHash(env.page, hash);
+				}
+				else if (/\.md/.test(base)) {
+					href[1] = createHash(base.replace(/^\.\//, ''), hash);
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
 			};
@@ -386,6 +389,6 @@ interface MenuNode {
 			});
 		}
 
-		return markdown.render(text);
+		return markdown.render(text, { page });
 	}
 })();
