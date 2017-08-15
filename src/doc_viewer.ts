@@ -444,7 +444,7 @@ interface MenuNode {
 				const [base, hash] = href[1].split('#');
 				if (!base) {
 					href[1] = createHash(env.page, hash);
-				} else if (/\.md/.test(base)) {
+				} else if (/\.\/.*\.md/.test(base)) {
 					href[1] = createHash(base.replace(/^\.\//, ''), hash);
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
