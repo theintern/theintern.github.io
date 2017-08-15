@@ -10,15 +10,16 @@ interface DocSetCache {
 
 interface DocSet {
 	[version: string]: {
-		baseUrl: string;
+		url: string;
+		docBase: string;
 		pages: string[];
 		cache?: { [name: string]: DocSetCache };
 	};
 }
 
-interface SetId {
+interface DocSetId {
 	project: string;
-	version: string;
+	version?: string;
 }
 
 interface MenuNode {
@@ -31,7 +32,8 @@ interface MenuNode {
 	const docsets: { [name: string]: DocSet } = {
 		Intern: {
 			v3: {
-				baseUrl:
+				url: 'https://github.com/theintern/intern/tree/3.4',
+				docBase:
 					'https://raw.githubusercontent.com/theintern/intern/3.4/docs/',
 				pages: [
 					'getting-started.md',
@@ -52,7 +54,8 @@ interface MenuNode {
 				]
 			},
 			v4: {
-				baseUrl:
+				url: 'https://github.com/theintern/intern',
+				docBase:
 					'https://raw.githubusercontent.com/theintern/intern/master/docs/',
 				pages: [
 					'getting_started.md',
@@ -69,23 +72,28 @@ interface MenuNode {
 
 		'Intern Tutorial': {
 			v3: {
-				baseUrl:
-					'https://raw.githubusercontent.com/theintern/intern-tutorial/master/',
+				url:
+					'https://github.com/theintern/intern-tutorial/tree/intern-3',
+				docBase:
+					'https://raw.githubusercontent.com/theintern/intern-tutorial/intern-3/',
 				pages: ['README.md']
 			},
 			v4: {
-				baseUrl:
-					'https://raw.githubusercontent.com/theintern/intern-tutorial/intern-3/',
+				url: 'https://github.com/theintern/intern-tutorial',
+				docBase:
+					'https://raw.githubusercontent.com/theintern/intern-tutorial/master/',
 				pages: ['README.md']
 			}
 		}
 	};
 
 	let markdown: any;
-	let activeDocs: SetId | undefined;
+	let activeDocs: DocSetId | undefined;
 	let defaultDocs = { project: 'Intern', version: 'v4' };
 
-	// Super simple router
+	// Super simple router. The location hash fully controls the state of the
+	// doc viewer. Changes to the project and version selectors will update the
+	// hash, which will cause new content to be rendered.
 	window.addEventListener('hashchange', processHash);
 
 	window.addEventListener('load', () => {
@@ -95,20 +103,34 @@ interface MenuNode {
 			'.docs-nav'
 		)!.addEventListener('change', event => {
 			const target: Element = <Element>event.target;
-			const setId = activeDocs!;
 			if (target.tagName === 'SELECT') {
 				const select = <HTMLSelectElement>target;
-				const docset = docsets[setId.project][select!.value];
-				location.hash = `#${setId.project}/${select.value}/${docset
-					.pages[0]}`;
+				const docs = activeDocs!;
+
+				if (target.getAttribute('data-select-property') === 'project') {
+					const versions = Object.keys(docsets[select.value]);
+					const docset = getDocset({ project: select.value });
+					location.hash = `#${select.value}/${versions[
+						versions.length - 1
+					]}/${docset.pages[0]}`;
+				} else {
+					const docset = getDocset({
+						project: docs.project,
+						version: select.value
+					});
+					location.hash = `#${docs.project}/${select.value}/${docset
+						.pages[0]}`;
+				}
 			}
 		});
+
+		updateProjectSelector();
 	});
 
 	// If the base docs page is loaded (without a hash), set a default hash to
 	// get a docset to load.
 	if (!location.hash) {
-		const docset = docsets[defaultDocs.project][defaultDocs.version];
+		const docset = getDocset(defaultDocs);
 		location.hash = `#${defaultDocs.project}/${defaultDocs.version}/${docset
 			.pages[0]}`;
 	} else {
@@ -122,13 +144,13 @@ interface MenuNode {
 	 * finished loading, the given page, or the first page in the set, will be
 	 * shown.
 	 */
-	function loadDocset(setId: SetId) {
+	function loadDocset(setId: DocSetId) {
 		const originalDocs = activeDocs;
-
 		activeDocs = setId;
-		const docset = docsets[activeDocs.project][activeDocs.version];
+
+		const docset = getDocset(setId);
 		const pageNames = docset.pages;
-		const baseUrl = docset.baseUrl;
+		const docBase = docset.docBase;
 
 		let cache = docset.cache!;
 		let load: PromiseLike<any>;
@@ -136,34 +158,39 @@ interface MenuNode {
 		if (!cache) {
 			cache = docset.cache = <{ [name: string]: DocSetCache }>{};
 
-			load = Promise.all(pageNames.map(name => {
-				return (
-					cache[name] ||
-					fetch(baseUrl + name)
-					.then(response => response.text())
-					.then(text => {
-						text = filterGhContent(text);
-						const html = render(text, name);
-						const element = document.createElement('div');
-						element.innerHTML = html;
+			load = Promise.all(
+				pageNames.map(name => {
+					return (
+						cache[name] ||
+						fetch(docBase + name)
+							.then(response => response.text())
+							.then(text => {
+								text = filterGhContent(text);
+								const html = render(text, name);
+								const element = document.createElement('div');
+								element.innerHTML = html;
 
-						cache[name] = {
-							name: name,
-							markdown: text,
-							element: element,
-							html: html
-						};
-					})
-				);
-			}));
-		}
-		else {
+								cache[name] = {
+									name: name,
+									markdown: text,
+									element: element,
+									html: html
+								};
+							})
+					);
+				})
+			);
+		} else {
 			load = Promise.resolve();
 		}
 
 		// Render the other pages in the background
 		return load.then(() => {
-			if (!originalDocs || originalDocs.project !== setId.project || originalDocs.version !== setId.version) {
+			if (
+				!originalDocs ||
+				originalDocs.project !== setId.project ||
+				originalDocs.version !== setId.version
+			) {
 				updateVersionSelector();
 				buildMenu();
 			}
@@ -273,8 +300,7 @@ interface MenuNode {
 	 * Show a page in the currently loaded docset
 	 */
 	function showPage(name: string, section?: string) {
-		const docs = activeDocs!;
-		const docset = docsets[docs.project][docs.version];
+		const docset = getDocset();
 		const page = docset.cache![name];
 		const content = document.body.querySelector('.docs-content')!;
 		content.innerHTML = '';
@@ -344,7 +370,7 @@ interface MenuNode {
 	 */
 	function processHash() {
 		const hash = location.hash.slice(1);
-		const parts = hash.split('/');
+		const parts = hash.split('/').map(part => decodeURIComponent(part));
 		const project = parts[0];
 		const version = parts[1];
 		const page = parts[2];
@@ -352,6 +378,8 @@ interface MenuNode {
 
 		Promise.resolve(loadDocset({ project, version })).then(() => {
 			showPage(page, section);
+			updateProjectSelector();
+			updateVersionSelector();
 		});
 	}
 
@@ -437,6 +465,36 @@ interface MenuNode {
 		return markdown.render(text, { page });
 	}
 
+	/**
+	 * Select the currently active project in the project selector.
+	 */
+	function updateProjectSelector() {
+		const selector = document.querySelector(
+			'select[data-select-property="project"]'
+		)!;
+
+		if (selector.children.length === 0) {
+			Object.keys(docsets).forEach(name => {
+				const option = document.createElement('option');
+				option.value = name;
+				option.textContent = name;
+				selector.appendChild(option);
+			});
+		}
+
+		const option = <HTMLOptionElement>selector.querySelector(
+			`option[value="${activeDocs!.project}"]`
+		);
+		if (option) {
+			option.selected = true;
+		}
+		updateGithubLink();
+	}
+
+	/**
+	 * Update the version selector to show the versions for the currently
+	 * active project.
+	 */
 	function updateVersionSelector() {
 		const docs = activeDocs!;
 		const versions = Object.keys(docsets[docs.project]);
@@ -447,20 +505,45 @@ interface MenuNode {
 			layout.classList.add('multi-version');
 
 			const selector = document.querySelector(
-				'.version-selector select'
+				'select[data-select-property="version"]'
 			)!;
 			selector.innerHTML = '';
 			versions.forEach(version => {
 				const option = document.createElement('option');
 				option.value = version;
-				if (version === docs.version) {
-					option.selected = true;
-				}
+				option.selected = version === docs.version;
 				option.textContent = version;
 				selector.appendChild(option);
 			});
 		} else {
 			layout.classList.remove('multi-version');
 		}
+	}
+
+	/**
+	 * Update the github link on the menubar to link to the currently active
+	 * project.
+	 */
+	function updateGithubLink() {
+		const link = <HTMLAnchorElement>document.querySelector(
+			'.navbar-menu a[data-title="Github"]'
+		);
+		const docset = getDocset();
+		link.href = docset.url;
+	}
+
+	/**
+	 * Get a docset. If a complete setId is provided, the corresponding docset
+	 * is returned. If only a project is specified, the latest version for that
+	 * project will be returned. If no docset ID is provided, the currently
+	 * active docset will be returned.
+	 */
+	function getDocset(setId?: DocSetId) {
+		const docs = setId || activeDocs!;
+		if (!docs.version) {
+			const versions = Object.keys(docsets[docs.project]);
+			docs.version = versions[versions.length - 1];
+		}
+		return docsets[docs.project][docs.version];
 	}
 })();
