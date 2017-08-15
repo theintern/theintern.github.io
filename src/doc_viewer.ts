@@ -307,7 +307,10 @@ interface MenuNode {
 		content.appendChild(page.element);
 
 		if (section) {
-			document.querySelector(`#${section}`)!.scrollIntoView();
+			const header = document.querySelector(`#${section}`);
+			if (header) {
+				header.scrollIntoView();
+			}
 		} else {
 			content.scrollTop = 0;
 		}
