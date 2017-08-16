@@ -470,8 +470,10 @@ interface MenuNode {
 				const href = tokens[idx].attrs[hrefIdx];
 				const [base, hash] = href[1].split('#');
 				if (!base) {
+					// This is an in-page anchor link
 					href[1] = createHash(env.page, hash);
-				} else if (/\.\/.*\.md/.test(base)) {
+				} else if (/\.md/.test(base) && !(/\/\//.test(base))) {
+					// This is a link to a local markdown file
 					href[1] = createHash(base.replace(/^\.\//, ''), hash);
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
