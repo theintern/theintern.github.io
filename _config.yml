@@ -1,7 +1,0 @@
-exclude:
-  - build.js
-  - README.md
-  - LICENSE.txt
-  - package.json
-  - package-lock.json
-  - src
