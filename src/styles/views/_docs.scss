@@ -90,6 +90,30 @@
 	.multi-version .version-select {
 		display: block;
 	}
+
+	blockquote.warning,
+	blockquote.info,
+	blockquote.deprecated {
+		padding-left: 3rem;
+		position: relative;
+
+		.fa {
+			position: absolute;
+			left: 1.5rem;
+			top: 50%;
+			transform: translate(-50%, -50%);
+			font-size: 1.5em;
+		}
+	}
+	blockquote.warning .fa {
+		color: $warning-highlight;
+	}
+	blockquote.info .fa {
+		color: $info-highlight;
+	}
+	blockquote.deprecated .fa {
+		color: $deprecated-highlight;
+	}
 }
 
 .coming-soon {

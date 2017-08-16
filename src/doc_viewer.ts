@@ -109,7 +109,7 @@ interface MenuNode {
 
 				if (target.getAttribute('data-select-property') === 'project') {
 					const versions = Object.keys(docsets[select.value]);
-					const docset = getDocset({ project: select.value });
+					const docset = getDocset({ project: select.value })!;
 					location.hash = `#${select.value}/${versions[
 						versions.length - 1
 					]}/${docset.pages[0]}`;
@@ -117,7 +117,7 @@ interface MenuNode {
 					const docset = getDocset({
 						project: docs.project,
 						version: select.value
-					});
+					})!;
 					location.hash = `#${docs.project}/${select.value}/${docset
 						.pages[0]}`;
 				}
@@ -130,7 +130,7 @@ interface MenuNode {
 	// If the base docs page is loaded (without a hash), set a default hash to
 	// get a docset to load.
 	if (!location.hash) {
-		const docset = getDocset(defaultDocs);
+		const docset = getDocset(defaultDocs)!;
 		location.hash = `#${defaultDocs.project}/${defaultDocs.version}/${docset
 			.pages[0]}`;
 	} else {
@@ -148,7 +148,7 @@ interface MenuNode {
 		const originalDocs = activeDocs;
 		activeDocs = setId;
 
-		const docset = getDocset(setId);
+		const docset = getDocset(setId)!;
 		const pageNames = docset.pages;
 		const docBase = docset.docBase;
 
@@ -300,7 +300,7 @@ interface MenuNode {
 	 * Show a page in the currently loaded docset
 	 */
 	function showPage(name: string, section?: string) {
-		const docset = getDocset();
+		const docset = getDocset()!;
 		const page = docset.cache![name];
 		const content = document.body.querySelector('.docs-content')!;
 		content.innerHTML = '';
@@ -376,7 +376,7 @@ interface MenuNode {
 		const parts = hash.split('/').map(part => decodeURIComponent(part));
 		const project = parts[0];
 		const version = parts[1];
-		const docset = getDocset({ project, version });
+		const docset = getDocset({ project, version })!;
 		// TODO: Show an error page if the user provides an invalid hash
 		// if (!docset) {
 		// }
@@ -426,6 +426,34 @@ interface MenuNode {
 				_idx: number
 			) => {
 				return '<table class="table">';
+			};
+
+			// Style blockquotes that are used for warning or info asides
+			markdown.renderer.rules.blockquote_open = (
+				tokens: any[],
+				idx: number
+			) => {
+				// Get the token representing the first chunk of the block
+				// quote
+				const token = tokens[idx + 2].children[0];
+
+				const warning = /^\u26a0\W*/;
+				const info = /^\u{1F4A1}\W*/u;
+				const deprecated = /^\u{1F44E}\W*/u;
+
+				if (warning.test(token.content)) {
+					token.content = token.content.replace(warning, '');
+					return '<blockquote class="warning"><i class="fa fa-warning" aria-hidden="true"></i>';
+				}
+				else if (info.test(token.content)) {
+					token.content = token.content.replace(info, '');
+					return '<blockquote class="info"><i class="fa fa-lightbulb-o" aria-hidden="true"></i>';
+				} else if (deprecated.test(token.content)) {
+					token.content = token.content.replace(deprecated, '');
+					return '<blockquote class="deprecated"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i>';
+				}
+
+				return '<blockquote>';
 			};
 
 			// Update relative links to markdown files
@@ -536,7 +564,7 @@ interface MenuNode {
 		const link = <HTMLAnchorElement>document.querySelector(
 			'.navbar-menu a[data-title="Github"]'
 		);
-		const docset = getDocset();
+		const docset = getDocset()!;
 		link.href = docset.url;
 	}
 
