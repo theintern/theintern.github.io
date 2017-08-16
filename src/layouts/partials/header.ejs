@@ -2,8 +2,9 @@
 	<div class="container">
 		<nav class="navbar">
 			<div class="navbar-brand">
-				<a href="/" class="navbar-item"><img src="/images/intern-logo.svg" class="site-logo" alt="The Intern"></a>
-				<div class="navbar-burger">
+				<% var suffix = pageType === 'docs' ? '-docs' : '';  %>
+				<a href="/" class="navbar-item"><img src="/images/intern-logo<%- suffix %>.svg" class="site-logo" alt="The Intern"></a>
+				<div class="navbar-burger" data-target="intern-nav">
 					<span></span>
 					<span></span>
 					<span></span>
@@ -13,9 +14,21 @@
 				<div class="navbar-start"></div>
 				<div class="navbar-end">
 					<a class="navbar-item" href="/docs.html#Intern/v3">Docs</a>
+					<a class="navbar-item" href="https://github.com/theintern/intern-tutorial/tree/intern-3">Tutorial</a>
 					<a class="navbar-item" href="https://github.com/theintern/intern" data-title="Github">Github</a>
 				</div>
 			</div>
 		</nav>
 	</div>
+
+	<script>
+	(function () {
+		var navBurger = document.querySelector('.header .navbar-burger');
+		var navMenu = document.querySelector('.header .navbar-menu');
+		navBurger.addEventListener('click', function () {
+			navBurger.classList.toggle('is-active');
+			navMenu.classList.toggle('is-active');
+		});
+	})();
+	</script>
 </header>

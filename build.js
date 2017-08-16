@@ -11,7 +11,9 @@ const metalsmith = new Metalsmith(__dirname)
 		site: {
 			name: 'The Intern',
 			description: 'Software testing for humans'
-		}
+		},
+		pageType: 'default',
+		bodyClass: ''
 	})
 	.source('./src')
 	.destination('./public')

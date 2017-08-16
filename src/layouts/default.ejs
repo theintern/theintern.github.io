@@ -1,17 +1,11 @@
- <% 
- 	if (!typeof bodyClass) {
-		bodyClass = '';
-	}
-%> 
-
 <!DOCTYPE html>
 <html>
 	<head>
-		<%- include('partials/head') %>
+		<% include partials/head %>
 	</head>
 	<body class="<%- bodyClass %>">
-		<%- include('partials/header') %>
+		<% include partials/header %>
 		<%- contents %>
-		<%- include('partials/footer') %>
+		<% include partials/footer %>
 	</body>
 </html>
