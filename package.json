@@ -18,6 +18,7 @@
 	},
 	"scripts": {
 		"start": "node build.js serve",
-		"build": "node build.js"
+		"build": "node build.js",
+		"publish": "node build.js publish"
 	}
 }
