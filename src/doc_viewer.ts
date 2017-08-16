@@ -1,19 +1,16 @@
 declare const markdownitHeadingAnchor: any;
 declare const markdownit: any;
 
-interface DocSetCache {
-	name: string;
-	markdown: string;
-	element: HTMLElement;
-	html: string;
-}
-
 interface DocSet {
 	[version: string]: {
+		// The project URL
 		url: string;
+		// The base URL from which the pages should be loaded
 		docBase: string;
+		// The markdown pages that make up the docset
 		pages: string[];
-		cache?: { [name: string]: DocSetCache };
+		// A cache of rendered documents
+		cache?: { [name: string]: Element };
 	};
 }
 
@@ -156,7 +153,7 @@ interface MenuNode {
 		let load: PromiseLike<any>;
 
 		if (!cache) {
-			cache = docset.cache = <{ [name: string]: DocSetCache }>{};
+			cache = docset.cache = <{ [name: string]: Element }>{};
 
 			load = Promise.all(
 				pageNames.map(name => {
@@ -169,13 +166,7 @@ interface MenuNode {
 								const html = render(text, name);
 								const element = document.createElement('div');
 								element.innerHTML = html;
-
-								cache[name] = {
-									name: name,
-									markdown: text,
-									element: element,
-									html: html
-								};
+								cache[name] = element;
 							})
 					);
 				})
@@ -204,7 +195,7 @@ interface MenuNode {
 				const page = cache[pageName];
 				let root: MenuNode;
 				try {
-					root = createNode(page.element.querySelector('h1')!);
+					root = createNode(page.querySelector('h1')!);
 				} catch (error) {
 					console.log('no h1 on ' + pageName);
 					root = {
@@ -213,7 +204,7 @@ interface MenuNode {
 						children: []
 					};
 				}
-				const headings = page.element.querySelectorAll('h2,h3')!;
+				const headings = page.querySelectorAll('h2,h3')!;
 				const stack: MenuNode[][] = <MenuNode[][]>[[root]];
 				let children: MenuNode[];
 
@@ -304,7 +295,7 @@ interface MenuNode {
 		const page = docset.cache![name];
 		const content = document.body.querySelector('.docs-content')!;
 		content.innerHTML = '';
-		content.appendChild(page.element);
+		content.appendChild(page);
 
 		if (section) {
 			const header = document.querySelector(`#${section}`);
