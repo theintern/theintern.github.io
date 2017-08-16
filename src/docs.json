@@ -1,0 +1,65 @@
+{
+    "Intern": {
+        "url": "https://github.com/theintern/intern",
+        "latest": "v3",
+        "next": "v4",
+        "versions": {
+            "v3": {
+                "url": "https://github.com/theintern/intern/tree/3.4",
+                "docBase": "https://raw.githubusercontent.com/theintern/intern/3.4/docs/",
+                "pages": [
+                    "getting-started.md",
+                    "fundamentals.md",
+                    "configuration.md",
+                    "interfaces.md",
+                    "unit-testing.md",
+                    "benchmark-testing.md",
+                    "functional-testing.md",
+                    "webdriver-server.md",
+                    "running.md",
+                    "reporters.md",
+                    "ci.md",
+                    "customisation.md",
+                    "internals.md",
+                    "community.md",
+                    "faq.md"
+                ]
+            },
+            "v4": {
+                "url": "https://github.com/theintern/intern",
+                "docBase": "https://raw.githubusercontent.com/theintern/intern/master/docs/",
+                "pages": [
+                    "getting_started.md",
+                    "how_to.md",
+                    "concepts.md",
+                    "architecture.md",
+                    "configuration.md",
+                    "writing_tests.md",
+                    "running.md",
+                    "ci.md",
+                    "extending.md",
+                    "api.md",
+                    "developing.md"
+                ]
+            }
+        }
+    },
+
+    "Intern Tutorial": {
+        "url": "https://github.com/theintern/intern-tutorial",
+        "latest": "v3",
+        "next": "v4",
+        "versions": {
+            "v3": {
+                "url": "https://github.com/theintern/intern-tutorial/tree/intern-3",
+                "docBase": "https://raw.githubusercontent.com/theintern/intern-tutorial/intern-3/",
+                "pages": ["README.md"]
+            },
+            "v4": {
+                "url": "https://github.com/theintern/intern-tutorial",
+                "docBase": "https://raw.githubusercontent.com/theintern/intern-tutorial/master/",
+                "pages": ["README.md"]
+            }
+        }
+    }
+}

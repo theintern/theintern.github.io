@@ -1,16 +1,18 @@
-declare const markdownitHeadingAnchor: any;
-declare const markdownit: any;
-
 interface DocSet {
-	[version: string]: {
-		// The project URL
-		url: string;
-		// The base URL from which the pages should be loaded
-		docBase: string;
-		// The markdown pages that make up the docset
-		pages: string[];
-		// A cache of rendered documents
-		cache?: { [name: string]: Element };
+	url: string;
+	latest: string;
+	next: string;
+	versions: {
+		[version: string]: {
+			// The project URL
+			url: string;
+			// The base URL from which the pages should be loaded
+			docBase: string;
+			// The markdown pages that make up the docset
+			pages: string[];
+			// A cache of rendered documents
+			cache?: { [name: string]: Element };
+		};
 	};
 }
 
@@ -25,65 +27,11 @@ interface MenuNode {
 	children: MenuNode[];
 }
 
+declare const markdownitHeadingAnchor: any;
+declare const markdownit: any;
+declare const docsets: { [name: string]: DocSet };
+
 (() => {
-	const docsets: { [name: string]: DocSet } = {
-		Intern: {
-			v3: {
-				url: 'https://github.com/theintern/intern/tree/3.4',
-				docBase:
-					'https://raw.githubusercontent.com/theintern/intern/3.4/docs/',
-				pages: [
-					'getting-started.md',
-					'fundamentals.md',
-					'configuration.md',
-					'interfaces.md',
-					'unit-testing.md',
-					'benchmark-testing.md',
-					'functional-testing.md',
-					'webdriver-server.md',
-					'running.md',
-					'reporters.md',
-					'ci.md',
-					'customisation.md',
-					'internals.md',
-					'community.md',
-					'faq.md'
-				]
-			},
-			v4: {
-				url: 'https://github.com/theintern/intern',
-				docBase:
-					'https://raw.githubusercontent.com/theintern/intern/master/docs/',
-				pages: [
-					'getting_started.md',
-					'how_to.md',
-					'architecture.md',
-					'concepts.md',
-					'configuration.md',
-					'writing_tests.md',
-					'running.md',
-					'api.md'
-				]
-			}
-		},
-
-		'Intern Tutorial': {
-			v3: {
-				url:
-					'https://github.com/theintern/intern-tutorial/tree/intern-3',
-				docBase:
-					'https://raw.githubusercontent.com/theintern/intern-tutorial/intern-3/',
-				pages: ['README.md']
-			},
-			v4: {
-				url: 'https://github.com/theintern/intern-tutorial',
-				docBase:
-					'https://raw.githubusercontent.com/theintern/intern-tutorial/master/',
-				pages: ['README.md']
-			}
-		}
-	};
-
 	let markdown: any;
 	let activeDocs: DocSetId | undefined;
 	let defaultDocs = { project: 'Intern', version: 'v4' };
@@ -105,11 +53,8 @@ interface MenuNode {
 				const docs = activeDocs!;
 
 				if (target.getAttribute('data-select-property') === 'project') {
-					const versions = Object.keys(docsets[select.value]);
 					const docset = getDocset({ project: select.value })!;
-					location.hash = `#${select.value}/${versions[
-						versions.length - 1
-					]}/${docset.pages[0]}`;
+					location.hash = `#${select.value}/${docsets[select.value].latest}/${docset.pages[0]}`;
 				} else {
 					const docset = getDocset({
 						project: docs.project,
@@ -526,7 +471,7 @@ interface MenuNode {
 	 */
 	function updateVersionSelector() {
 		const docs = activeDocs!;
-		const versions = Object.keys(docsets[docs.project]);
+		const versions = Object.keys(docsets[docs.project].versions);
 		const layout = document.querySelector('.docs-layout')!;
 
 		// If more than one version is available, show the version selector
@@ -574,11 +519,10 @@ interface MenuNode {
 			return;
 		}
 
-		const versions = Object.keys(project);
 		if (!docs.version) {
-			docs.version = versions[versions.length - 1];
+			docs.version = project.latest;
 		}
 
-		return project[docs.version];
+		return project.versions[docs.version];
 	}
 })();

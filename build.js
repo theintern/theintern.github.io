@@ -1,3 +1,5 @@
+const { readFileSync } = require('fs');
+
 const Metalsmith = require('metalsmith');
 const layouts = require('metalsmith-layouts');
 const sass = require('metalsmith-sass');
@@ -17,9 +19,7 @@ const metalsmith = new Metalsmith(__dirname)
 	})
 	.source('./src')
 	.destination('./public')
-	.ignore('**/*.ejs')
-	.ignore('**/*.ts')
-	.ignore('assets/*')
+	.use(docsets())
 	.use(buildTypescript())
 	.use(
 		layouts({
@@ -120,5 +120,14 @@ function buildTypescript() {
 		} else {
 			done();
 		}
+	};
+}
+
+function docsets() {
+	return (files, metalsmith, done) => {
+		const data = files['docs.json'].contents.toString('utf8');
+		metalsmith.metadata().docsets = JSON.parse(data);
+		delete files['docs.json'];
+		done();
 	};
 }

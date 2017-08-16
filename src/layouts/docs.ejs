@@ -8,9 +8,12 @@
 		<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/typescript.min.js"></script>
 		<script src="//unpkg.com/markdown-it@8.3.2/dist/markdown-it.min.js"></script>
 		<script src="//unpkg.com/markdown-it-headinganchor@1.3.0/dist/markdown-it-headinganchor.min.js"></script>
+		<script>
+			var docsets = <%- JSON.stringify(docsets) %>;
+		</script>
 		<script src="doc_viewer.js" async></script>
 	</head>
-	<body class="page-docs page-secondary">
+	<body class="page-docs page-secondary no-script">
 		<% include partials/header %>
 
 		<div class="columns docs-layout">
@@ -38,9 +41,24 @@
 			</div>
 			<div class="column is-9 docs-column docs-content">
 				<%- contents %>
+				<noscript>
+					<h2>Oops, it looks like you’ve disabled JavaScript.</h2>
+
+					<p>This document viewer uses JavaScript to load and render pages from the various Intern project repositories. Please enable JavaScript if you’d like to use it, or visit our project repositories on GitHub:
+					</p>
+					<ul>
+						<% Object.keys(docsets).forEach(name => { %>
+						<li><a href="<%- docsets[name].url %>"><%- name %></a></li>
+						<% }) %>
+					</ul>
+				</noscript>
 			</div>
 		</div>
 
 		<% include partials/footer %>
+
+		<script>
+			document.body.classList.remove('no-script');
+		</script>
 	</body>
 </html>

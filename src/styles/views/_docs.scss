@@ -116,6 +116,18 @@
 	}
 }
 
+.no-script {
+	.docs-nav {
+		display: none;
+	}
+
+	.docs-content {
+		margin-left: auto;
+		margin-right: auto;
+		max-width: 50rem;
+	}
+}
+
 .coming-soon {
 	max-width: 300px;
 }
