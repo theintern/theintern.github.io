@@ -114,6 +114,19 @@
 	blockquote.deprecated .fa {
 		color: $deprecated-highlight;
 	}
+
+	table {
+		th {
+			background: $table-border;
+		}
+		th, td {
+			border-right: solid 1px $table-border;
+			border-bottom: solid 1px $table-border;
+		}
+
+		border-left: solid 1px $table-border;
+		border-bottom: solid 1px $table-border;
+	}
 }
 
 .no-script {
