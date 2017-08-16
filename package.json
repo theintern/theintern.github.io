@@ -13,7 +13,8 @@
 		"metalsmith-inline-source": "~1.0.6",
 		"metalsmith-layouts": "~1.8.1",
 		"metalsmith-sass": "~1.4.0",
-		"typescript": "~2.4.2"
+		"typescript": "~2.4.2",
+		"uglify-js": "~3.0.27"
 	},
 	"scripts": {
 		"start": "node build.js serve",

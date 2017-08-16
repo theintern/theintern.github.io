@@ -1,5 +1,3 @@
-const { readFileSync } = require('fs');
-
 const Metalsmith = require('metalsmith');
 const layouts = require('metalsmith-layouts');
 const sass = require('metalsmith-sass');
@@ -7,6 +5,22 @@ const assets = require('metalsmith-assets');
 const browserSync = require('metalsmith-browser-sync');
 const inlineSource = require('metalsmith-inline-source');
 const ts = require('typescript');
+const uglifyJs = require('uglify-js');
+
+let serve = false;
+let production = false;
+
+process.argv.slice(2).forEach(arg => {
+	switch (arg) {
+	case 'serve':
+		serve = true;
+		break;
+	case 'production':
+		console.log('Building for production');
+		production = true;
+		break;
+	}
+});
 
 const metalsmith = new Metalsmith(__dirname)
 	.metadata({
@@ -15,7 +29,8 @@ const metalsmith = new Metalsmith(__dirname)
 			description: 'Software testing for humans'
 		},
 		pageType: 'default',
-		bodyClass: ''
+		bodyClass: '',
+		production
 	})
 	.source('./src')
 	.destination('./public')
@@ -31,8 +46,8 @@ const metalsmith = new Metalsmith(__dirname)
 	)
 	.use(
 		sass({
-			outputStyle: 'compressed',
-			sourceMap: true,
+			outputStyle: production ? 'compressed' : 'expanded',
+			sourceMap: !production,
 			sourceMapContents: true,
 			outputDir: 'css'
 		})
@@ -48,12 +63,17 @@ const metalsmith = new Metalsmith(__dirname)
 		})
 	);
 
-if (process.argv[2] === 'serve') {
+if (production) {
+	metalsmith.use(uglify())
+}
+
+if (serve) {
 	metalsmith.use(
 		browserSync({
 			server: './public',
 			files: ['./src/**/*', './resources/**/*'],
-			open: false
+			open: false,
+			notify: false
 		})
 	);
 }
@@ -67,8 +87,8 @@ metalsmith.build(function(error) {
 });
 
 function buildTypescript() {
-	return (_files, _metalsmith, done) => {
-		const options = {
+	return (files, metalsmith, done) => {
+		const compilerOptions = {
 			target: 1, // es5
 			module: 0, // none
 			lib: [
@@ -82,9 +102,8 @@ function buildTypescript() {
 			noUnusedParameters: true,
 			noImplicitReturns: true,
 			noFallthroughCasesInSwitch: true,
-			inlineSourceMap: false,
-			inlineSources: false,
-			sourceMap: true,
+			inlineSourceMap: true,
+			inlineSources: true,
 			outDir: './public',
 			types: [
 				'highlight.js',
@@ -92,34 +111,15 @@ function buildTypescript() {
 			]
 		};
 
-		let program = ts.createProgram(['./src/doc_viewer.ts'], options);
-		let emitResult = program.emit();
-
-		let allDiagnostics = ts
-			.getPreEmitDiagnostics(program)
-			.concat(emitResult.diagnostics);
-
-		allDiagnostics.forEach(diagnostic => {
-			let {
-				line,
-				character
-			} = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-			let message = ts.flattenDiagnosticMessageText(
-				diagnostic.messageText,
-				'\n'
-			);
-			console.log(
-				`${diagnostic.file.fileName} (${line + 1},${character +
-					1}): ${message}`
-			);
-		});
-
-		let exitCode = emitResult.emitSkipped ? 1 : 0;
-		if (exitCode !== 0) {
-			done(new Error('Typescript build failed'));
-		} else {
-			done();
+		if (metalsmith.metadata().production) {
+			compilerOptions.inlineSourceMap = false;
 		}
+
+		const source = files['doc_viewer.ts'].contents.toString('utf8');
+		let result = ts.transpileModule(source, { compilerOptions, fileName: 'doc_viewer.ts' });
+		delete files['doc_viewer.ts'];
+		files['doc_viewer.js'] = { contents: Buffer.from(result.outputText) };
+		done();
 	};
 }
 
@@ -128,6 +128,18 @@ function docsets() {
 		const data = files['docs.json'].contents.toString('utf8');
 		metalsmith.metadata().docsets = JSON.parse(data);
 		delete files['docs.json'];
+		done();
+	};
+}
+
+function uglify() {
+	return (files, metalsmith, done) => {
+		const jsFiles = Object.keys(files).filter(name => /\.js$/.test(name));
+		jsFiles.forEach(name => {
+			const data = files[name].contents.toString('utf8');
+			const newData = uglifyJs.minify(data);
+			files[name].contents = Buffer.from(newData.code);
+		});
 		done();
 	};
 }
