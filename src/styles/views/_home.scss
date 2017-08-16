@@ -58,4 +58,59 @@
 			margin-top: 2rem;
 		}
 	}
+
+	table.compare {
+		width: 100%;
+		border: solid 1px $table-border;
+
+		thead th {
+			background: $dark-gray;
+			text-align: center;
+			border-bottom: none;
+			font-size: 80%;
+			a {
+				color: $light;
+			}
+		}
+		th, td {
+			width: 10%;
+		}
+		th:first-child {
+			 width: 50%;
+		}
+		td {
+			border-right: solid 1px $table-border;
+		}
+		td {
+			vertical-align: middle;
+			text-align: center;
+			color: $secondary;
+		}
+		td.no {
+			color: transparent;
+		}
+		td.yes {
+			&::after {
+				content: "\f00c"; 
+				font-family: FontAwesome;
+				font-style: normal;
+				font-weight: normal;
+				text-decoration: inherit;
+				font-size: 20px;
+				top: 50%;
+				left: 50%;
+				z-index: 1;
+			}
+		}
+		tbody tr:nth-child(2n+1) {
+			background: $gray;
+		}
+		.intern {
+			background: $primary;
+			border-color: $primary;
+			&.yes::after {
+				color: $light;
+			}
+		}
+	}
 }
