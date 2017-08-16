@@ -12,6 +12,8 @@ interface DocSet {
 			pages: string[];
 			// A cache of rendered documents
 			cache?: { [name: string]: Element };
+			// The rendered menu element
+			menu?: Element;
 		};
 	};
 }
@@ -33,7 +35,6 @@ declare const docsets: { [name: string]: DocSet };
 
 (() => {
 	let markdown: any;
-	let activeDocs: DocSetId | undefined;
 	let defaultDocs = { project: 'Intern', version: 'v4' };
 
 	// Super simple router. The location hash fully controls the state of the
@@ -50,16 +51,17 @@ declare const docsets: { [name: string]: DocSet };
 			const target: Element = <Element>event.target;
 			if (target.tagName === 'SELECT') {
 				const select = <HTMLSelectElement>target;
-				const docs = activeDocs!;
+				const docs = getCurrentDocs();
 
 				if (target.getAttribute('data-select-property') === 'project') {
-					const docset = getDocset({ project: select.value })!;
-					location.hash = `#${select.value}/${docsets[select.value].latest}/${docset.pages[0]}`;
+					const docset = getDocset({ project: select.value })!.data;
+					location.hash = `#${select.value}/${docsets[select.value]
+						.latest}/${docset.pages[0]}`;
 				} else {
 					const docset = getDocset({
 						project: docs.project,
 						version: select.value
-					})!;
+					})!.data;
 					location.hash = `#${docs.project}/${select.value}/${docset
 						.pages[0]}`;
 				}
@@ -73,7 +75,7 @@ declare const docsets: { [name: string]: DocSet };
 	// get a docset to load.
 	if (!location.hash) {
 		const docset = getDocset(defaultDocs)!;
-		location.hash = `#${defaultDocs.project}/${defaultDocs.version}/${docset
+		location.hash = `#${docset.project}/${docset.version}/${docset.data
 			.pages[0]}`;
 	} else {
 		processHash();
@@ -87,18 +89,26 @@ declare const docsets: { [name: string]: DocSet };
 	 * shown.
 	 */
 	function loadDocset(setId: DocSetId) {
-		const originalDocs = activeDocs;
-		activeDocs = setId;
-
 		const docset = getDocset(setId)!;
-		const pageNames = docset.pages;
-		const docBase = docset.docBase;
+		const container = document.querySelector('.docs-content')!;
 
-		let cache = docset.cache!;
+		if (
+			container.getAttribute('data-doc-project') === docset.project &&
+			container.getAttribute('data-doc-version') === docset.version
+		) {
+			// The docset is already visible, so don't do anything
+			return;
+		}
+
+		const pageNames = docset.data.pages;
+		const docBase = docset.data.docBase;
+
+		let cache = docset.data.cache!;
 		let load: PromiseLike<any>;
 
 		if (!cache) {
-			cache = docset.cache = <{ [name: string]: Element }>{};
+			// The docset hasn't been loaded yet
+			cache = docset.data.cache = <{ [name: string]: Element }>{};
 
 			load = Promise.all(
 				pageNames.map(name => {
@@ -115,26 +125,26 @@ declare const docsets: { [name: string]: DocSet };
 							})
 					);
 				})
-			);
+			).then(() => {
+				buildMenu();
+			});
 		} else {
+			// The docset is already loaded
 			load = Promise.resolve();
 		}
 
-		// Render the other pages in the background
 		return load.then(() => {
-			if (
-				!originalDocs ||
-				originalDocs.project !== setId.project ||
-				originalDocs.version !== setId.version
-			) {
-				updateVersionSelector();
-				buildMenu();
-			}
+			container.setAttribute('data-doc-project', docset.project);
+			container.setAttribute('data-doc-version', docset.version);
+
+			updateVersionSelector();
+			showMenu();
 		});
 
 		function buildMenu() {
-			const menu = document.querySelector('.menu-list')!;
-			menu.innerHTML = '';
+			const menu = document.createElement('ul');
+			menu.className = 'menu-list';
+			docset.data.menu = menu;
 
 			pageNames.forEach(pageName => {
 				const page = cache[pageName];
@@ -183,7 +193,8 @@ declare const docsets: { [name: string]: DocSet };
 				// If this document's h1 doesn't have any text (maybe it's just an
 				// image), assume this is a README, and use the docset's project
 				// name as the title.
-				const title = root.element.textContent! || activeDocs!.project;
+				const title =
+					root.element.textContent! || getCurrentDocs().project;
 
 				const li = createLinkItem(title, pageName);
 				if (root.children.length > 0) {
@@ -230,13 +241,22 @@ declare const docsets: { [name: string]: DocSet };
 				return { level, element: heading, children: <MenuNode[]>[] };
 			}
 		}
+
+		function showMenu() {
+			const menu = document.querySelector('.docs-nav .menu')!;
+			const menuList = menu.querySelector('.menu-list');
+			if (menuList) {
+				menu.removeChild(menuList);
+			}
+			menu.appendChild(docset.data.menu!);
+		}
 	}
 
 	/**
 	 * Show a page in the currently loaded docset
 	 */
 	function showPage(name: string, section?: string) {
-		const docset = getDocset()!;
+		const docset = getDocset()!.data;
 		const page = docset.cache![name];
 		const content = document.body.querySelector('.docs-content')!;
 		content.innerHTML = '';
@@ -258,7 +278,10 @@ declare const docsets: { [name: string]: DocSet };
 		}
 
 		const items = document.querySelectorAll('.menu .menu-list > li > a');
-		const fullName = [activeDocs!.project, activeDocs!.version, name].join('/');
+		const currentDocs = getCurrentDocs();
+		const fullName = [currentDocs.project, currentDocs.version, name].join(
+			'/'
+		);
 		for (let i = 0; i < items.length; i++) {
 			const item = <HTMLLinkElement>items[i];
 			const hash = decodeURIComponent(item.href.split('#')[1]);
@@ -275,7 +298,7 @@ declare const docsets: { [name: string]: DocSet };
 	 * docset
 	 */
 	function createHash(page: string, section?: string) {
-		const docs = activeDocs!;
+		const docs = getCurrentDocs();
 		const parts = [docs.project, docs.version, page];
 		if (section) {
 			parts.push(section);
@@ -313,12 +336,20 @@ declare const docsets: { [name: string]: DocSet };
 		const project = parts[0];
 		const version = parts[1];
 		const docset = getDocset({ project, version })!;
-		// TODO: Show an error page if the user provides an invalid hash
-		// if (!docset) {
-		// }
-
-		const page = parts[2] || docset.pages[0];
+		const page = parts[2] || docset.data.pages[0];
 		const section = parts[3];
+
+		// The hash encodes our state -- ensure it points to a valid docset
+		if (!version) {
+			const parts = [docset.project, docset.version];
+			if (page) {
+				parts.push(page);
+			}
+			if (section) {
+				parts.push(section);
+			}
+			location.hash = '#' + parts.map(encodeURIComponent).join('/');
+		}
 
 		Promise.resolve(loadDocset({ project, version })).then(() => {
 			showPage(page, section);
@@ -380,8 +411,7 @@ declare const docsets: { [name: string]: DocSet };
 				if (warning.test(token.content)) {
 					token.content = token.content.replace(warning, '');
 					return '<blockquote class="warning"><i class="fa fa-warning" aria-hidden="true"></i>';
-				}
-				else if (info.test(token.content)) {
+				} else if (info.test(token.content)) {
 					token.content = token.content.replace(info, '');
 					return '<blockquote class="info"><i class="fa fa-lightbulb-o" aria-hidden="true"></i>';
 				} else if (deprecated.test(token.content)) {
@@ -413,13 +443,22 @@ declare const docsets: { [name: string]: DocSet };
 			) => {
 				const hrefIdx = tokens[idx].attrIndex('href');
 				const href = tokens[idx].attrs[hrefIdx];
-				const [base, hash] = href[1].split('#');
-				if (!base) {
+				const [file, hash] = href[1].split('#');
+				if (!file) {
 					// This is an in-page anchor link
 					href[1] = createHash(env.page, hash);
-				} else if (/\.md/.test(base) && !(/\/\//.test(base))) {
-					// This is a link to a local markdown file
-					href[1] = createHash(base.replace(/^\.\//, ''), hash);
+				} else if (/\.md/.test(file) && !/\/\//.test(file)) {
+					// This is a link to a local markdown file. Make a hash
+					// link that's relative to the current page.
+					const cleanFile = file.replace(/^\.\//, '');
+					let pageBase = '';
+					if (env.page.indexOf('/') !== -1) {
+						pageBase = env.page.slice(
+							0,
+							env.page.lastIndexOf('/') + 1
+						);
+					}
+					href[1] = createHash(pageBase + cleanFile, hash);
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
 			};
@@ -457,7 +496,7 @@ declare const docsets: { [name: string]: DocSet };
 		}
 
 		const option = <HTMLOptionElement>selector.querySelector(
-			`option[value="${activeDocs!.project}"]`
+			`option[value="${getCurrentDocs().project}"]`
 		);
 		if (option) {
 			option.selected = true;
@@ -470,7 +509,7 @@ declare const docsets: { [name: string]: DocSet };
 	 * active project.
 	 */
 	function updateVersionSelector() {
-		const docs = activeDocs!;
+		const docs = getCurrentDocs();
 		const versions = Object.keys(docsets[docs.project].versions);
 		const layout = document.querySelector('.docs-layout')!;
 
@@ -502,8 +541,17 @@ declare const docsets: { [name: string]: DocSet };
 		const link = <HTMLAnchorElement>document.querySelector(
 			'.navbar-menu a[data-title="Github"]'
 		);
-		const docset = getDocset()!;
+		const docset = getDocset()!.data;
 		link.href = docset.url;
+	}
+
+	/**
+	 * Get the current docset from the location hash
+	 */
+	function getCurrentDocs() {
+		const hash = location.hash.slice(1);
+		const parts = hash.split('/').map(part => decodeURIComponent(part));
+		return { project: parts[0], version: parts[1] };
 	}
 
 	/**
@@ -513,7 +561,7 @@ declare const docsets: { [name: string]: DocSet };
 	 * active docset will be returned.
 	 */
 	function getDocset(setId?: DocSetId) {
-		const docs = setId || activeDocs!;
+		const docs = setId || getCurrentDocs();
 		const project = docsets[docs.project];
 		if (!project) {
 			return;
@@ -523,6 +571,10 @@ declare const docsets: { [name: string]: DocSet };
 			docs.version = project.latest;
 		}
 
-		return project.versions[docs.version];
+		return {
+			project: docs.project,
+			version: docs.version!,
+			data: project.versions[docs.version]
+		};
 	}
 })();
