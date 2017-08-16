@@ -258,11 +258,11 @@ declare const docsets: { [name: string]: DocSet };
 		}
 
 		const items = document.querySelectorAll('.menu .menu-list > li > a');
-		const matcher = new RegExp(`/${name}$`);
+		const fullName = [activeDocs!.project, activeDocs!.version, name].join('/');
 		for (let i = 0; i < items.length; i++) {
 			const item = <HTMLLinkElement>items[i];
-			const href = item.href;
-			if (matcher.test(href)) {
+			const hash = decodeURIComponent(item.href.split('#')[1]);
+			if (hash.indexOf(fullName) === 0) {
 				item.classList.add('is-active');
 				item.parentElement!.classList.add('is-active');
 				break;
@@ -280,7 +280,7 @@ declare const docsets: { [name: string]: DocSet };
 		if (section) {
 			parts.push(section);
 		}
-		return '#' + parts.join('/');
+		return '#' + parts.map(encodeURIComponent).join('/');
 	}
 
 	/**
