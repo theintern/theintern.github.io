@@ -61,5 +61,41 @@
                 "pages": ["README.md"]
             }
         }
+    },
+
+    "Leadfoot": {
+        "url": "https://github.com/theintern/leadfoot",
+        "latest": "v1",
+        "next": "v2",
+        "versions": {
+            "v1": {
+                "url": "https://github.com/theintern/leadfoot/tree/1.7",
+                "docBase": "https://raw.githubusercontent.com/theintern/leadfoot/1.7/",
+                "pages": ["README.md"]
+            },
+            "v2": {
+                "url": "https://github.com/theintern/leadfoot",
+                "docBase": "https://raw.githubusercontent.com/theintern/leadfoot/master/",
+                "pages": ["README.md"]
+            }
+        }
+    },
+
+    "Dig Dug": {
+        "url": "https://github.com/theintern/digdug",
+        "latest": "v1",
+        "next": "v2",
+        "versions": {
+            "v1": {
+                "url": "https://github.com/theintern/digdug/tree/1.6",
+                "docBase": "https://raw.githubusercontent.com/theintern/digdug/1.6/",
+                "pages": ["README.md"]
+            },
+            "v2": {
+                "url": "https://github.com/theintern/digdug",
+                "docBase": "https://raw.githubusercontent.com/theintern/digdug/master/",
+                "pages": ["README.md"]
+            }
+        }
     }
 }
