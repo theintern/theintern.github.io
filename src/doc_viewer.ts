@@ -345,6 +345,7 @@ function polyfilled() {
 			}
 		} else {
 			content.scrollTop = 0;
+			content.scrollIntoView();
 		}
 
 		updateMenuHighlight();
