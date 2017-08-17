@@ -38,12 +38,22 @@ declare const docsets: { [name: string]: DocSet };
  */
 function polyfilled() {
 	let markdown: any;
-	let defaultDocs = { project: 'Intern', version: 'v4' };
+	let defaultDocs = { project: 'Intern' };
 
 	// Super simple router. The location hash fully controls the state of the
 	// doc viewer. Changes to the project and version selectors will update the
 	// hash, which will cause new content to be rendered.
 	window.addEventListener('hashchange', processHash);
+
+	// If the base docs page is loaded (without a hash), set a default hash to
+	// get a docset to load.
+	if (!location.hash) {
+		const docset = getDocset(defaultDocs)!;
+		location.hash = `#${docset.project}/${docset.version}/${docset.data
+				.pages[0]}`;
+	} else {
+		processHash();
+	}
 
 	const ready = new Promise(resolve => {
 		window.addEventListener('load', resolve);
@@ -77,16 +87,6 @@ function polyfilled() {
 
 		updateProjectSelector();
 	});
-
-	// If the base docs page is loaded (without a hash), set a default hash to
-	// get a docset to load.
-	if (!location.hash) {
-		const docset = getDocset(defaultDocs)!;
-		location.hash = `#${docset.project}/${docset.version}/${docset.data
-			.pages[0]}`;
-	} else {
-		processHash();
-	}
 
 	/**
 	 * Load a docset.
