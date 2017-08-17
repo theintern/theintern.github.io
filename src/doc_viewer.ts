@@ -23,6 +23,13 @@ interface DocSetId {
 	version?: string;
 }
 
+interface DocInfo {
+	project: string;
+	version: string;
+	page: string;
+	section: string;
+}
+
 interface MenuNode {
 	level: number;
 	element: Element;
@@ -38,6 +45,7 @@ declare const docsets: { [name: string]: DocSet };
  */
 function polyfilled() {
 	let markdown: any;
+	let skipPageLoad = false;
 	let defaultDocs = { project: 'Intern' };
 
 	// Super simple router. The location hash fully controls the state of the
@@ -49,8 +57,12 @@ function polyfilled() {
 	// get a docset to load.
 	if (!location.hash) {
 		const docset = getDocset(defaultDocs)!;
-		location.hash = `#${docset.project}/${docset.version}/${docset.data
-				.pages[0]}`;
+		const hash = createHash({
+			project: docset.project,
+			version: docset.version,
+			page: docset.data.pages[0]
+		});
+		updateHash(hash);
 	} else {
 		processHash();
 	}
@@ -72,21 +84,77 @@ function polyfilled() {
 
 				if (target.getAttribute('data-select-property') === 'project') {
 					const docset = getDocset({ project: select.value })!.data;
-					location.hash = `#${select.value}/${docsets[select.value]
-						.latest}/${docset.pages[0]}`;
+					updateHash(
+						createHash({
+							project: select.value,
+							version: docsets[select.value].latest,
+							page: docset.pages[0]
+						})
+					);
 				} else {
 					const docset = getDocset({
 						project: docs.project,
 						version: select.value
 					})!.data;
-					location.hash = `#${docs.project}/${select.value}/${docset
-						.pages[0]}`;
+					updateHash(
+						createHash({
+							project: docs.project,
+							version: select.value,
+							page: docset.pages[0]
+						})
+					);
 				}
 			}
 		});
 
+		// Update the highlighted menu item as the user scrolls through the doc content
+		let timer: number | undefined;
+		const content = document.querySelector('.docs-content')!;
+		content.addEventListener('scroll', () => {
+			if (timer) {
+				clearTimeout(timer);
+			}
+			timer = setTimeout(updateMenu, 20);
+		});
+
+		function updateMenu() {
+			timer = undefined;
+			const headings = content.querySelectorAll('h1,h2,h3')!;
+			const viewportTop = content.scrollTop;
+			for (let i = 0; i < headings.length; i++) {
+				const heading = <HTMLElement>headings[i];
+				const headingTop = heading.offsetTop;
+				if (headingTop > viewportTop) {
+					let currentSection = heading;
+					if (headingTop - viewportTop > 100) {
+						currentSection = <HTMLElement>headings[
+							Math.max(i - 1, 0)
+						];
+					}
+					const docs = getCurrentDocs();
+					updateHash(
+						createHash({
+							project: docs.project,
+							version: docs.version,
+							page: docs.page,
+							section: currentSection.id
+						}),
+						true
+					);
+					break;
+				}
+			}
+		}
+
 		updateProjectSelector();
 	});
+
+	function updateHash(newHash: string, ignoreUpdate = false) {
+		if (ignoreUpdate && location.hash !== newHash) {
+			skipPageLoad = true;
+		}
+		location.hash = newHash;
+	}
 
 	/**
 	 * Load a docset.
@@ -238,7 +306,7 @@ function polyfilled() {
 			) {
 				const li = document.createElement('li');
 				const link = document.createElement('a');
-				link.href = createHash(pageName, section);
+				link.href = createHash({ page: pageName, section });
 				link.textContent = text;
 				li.appendChild(link);
 				return li;
@@ -279,24 +347,46 @@ function polyfilled() {
 			content.scrollTop = 0;
 		}
 
+		updateMenuHighlight();
+	}
+
+	/**
+	 * Update the active element in the menu
+	 */
+	function updateMenuHighlight() {
 		const menu = document.querySelector('.menu .menu-list')!;
 		const active = menu.querySelectorAll('.is-active');
 		for (let i = 0; i < active.length; i++) {
 			active[i].classList.remove('is-active');
 		}
 
-		const items = document.querySelectorAll('.menu .menu-list > li > a');
 		const currentDocs = getCurrentDocs();
-		const fullName = [currentDocs.project, currentDocs.version, name].join(
-			'/'
-		);
+		const currentPage = createHash({
+			project: currentDocs.project,
+			version: currentDocs.version,
+			page: currentDocs.page
+		}).slice(1);
+
+		const items = document.querySelectorAll('.menu .menu-list > li > a')!;
 		for (let i = 0; i < items.length; i++) {
 			const item = <HTMLLinkElement>items[i];
-			const hash = decodeURIComponent(item.href.split('#')[1]);
-			if (hash.indexOf(fullName) === 0) {
+			const hash = item.href.slice(item.href.indexOf('#') + 1);
+			if (hash === currentPage) {
 				item.classList.add('is-active');
 				item.parentElement!.classList.add('is-active');
-				break;
+			}
+		}
+
+		const currentSection = location.hash.slice(1);
+		const childItems = document.querySelectorAll(
+			'.menu .menu-list ul > li > a'
+		)!;
+		for (let i = 0; i < childItems.length; i++) {
+			const item = <HTMLLinkElement>childItems[i];
+			const hash = item.href.slice(item.href.indexOf('#') + 1);
+			if (hash === currentSection) {
+				item.classList.add('is-active');
+				item.parentElement!.classList.add('is-active');
 			}
 		}
 	}
@@ -305,13 +395,22 @@ function polyfilled() {
 	 * Create a link hash for a given page name and fragment for the current
 	 * docset
 	 */
-	function createHash(page: string, section?: string) {
-		const docs = getCurrentDocs();
-		const parts = [docs.project, docs.version, page];
-		if (section) {
-			parts.push(section);
+	function createHash(info: Partial<DocInfo>) {
+		const currentDocs = getCurrentDocs();
+		const docs = { ...info };
+		if (!docs.project) {
+			docs.project = currentDocs.project;
 		}
-		return '#' + parts.map(encodeURIComponent).join('/');
+		if (!docs.version) {
+			docs.version = currentDocs.version;
+		}
+		const parts = [docs.project, docs.version, docs.page];
+		if (docs.section) {
+			parts.push(docs.section);
+		}
+		return (
+			'#' + encodeURIComponent(parts.map(encodeURIComponent).join('/'))
+		);
 	}
 
 	/**
@@ -354,7 +453,18 @@ function polyfilled() {
 	 *     <project>/<version>/<page>/<section>
 	 */
 	function processHash() {
-		const hash = location.hash.slice(1);
+		const ignoring = skipPageLoad;
+		skipPageLoad = false;
+
+		// Always try to update the menu highlight, even if we're skipping the
+		// rest of the page load
+		updateMenuHighlight();
+
+		if (ignoring) {
+			return;
+		}
+
+		const hash = decodeHash();
 		const parts = hash.split('/').map(part => decodeURIComponent(part));
 		const project = parts[0];
 		const version = parts[1];
@@ -364,14 +474,17 @@ function polyfilled() {
 
 		// The hash encodes our state -- ensure it points to a valid docset
 		if (!version) {
-			const parts = [docset.project, docset.version];
+			const parts: Partial<DocInfo> = {
+				project: docset.project,
+				version: docset.version
+			};
 			if (page) {
-				parts.push(page);
+				parts.page = page;
 			}
 			if (section) {
-				parts.push(section);
+				parts.section = section;
 			}
-			location.hash = '#' + parts.map(encodeURIComponent).join('/');
+			updateHash(createHash(parts));
 		}
 
 		Promise.resolve(loadDocset({ project, version })).then(() => {
@@ -424,12 +537,19 @@ function polyfilled() {
 				let empty = true;
 				while (token && token.type !== 'tr_close') {
 					let token2 = tokens[i + 2];
-					if (token.type !== 'th_open' || !token2 || token2.type !== 'th_close') {
+					if (
+						token.type !== 'th_open' ||
+						!token2 ||
+						token2.type !== 'th_close'
+					) {
 						empty = false;
 						break;
 					}
 					let token1 = tokens[i + 1];
-					if (token1.type !== 'inline' || token1.children.length > 0) {
+					if (
+						token1.type !== 'inline' ||
+						token1.children.length > 0
+					) {
 						empty = false;
 						break;
 					}
@@ -496,7 +616,7 @@ function polyfilled() {
 				const [file, hash] = href[1].split('#');
 				if (!file) {
 					// This is an in-page anchor link
-					href[1] = createHash(env.page, hash);
+					href[1] = createHash({ page: env.page, section: hash });
 				} else if (/\.md/.test(file) && !/\/\//.test(file)) {
 					// This is a link to a local markdown file. Make a hash
 					// link that's relative to the current page.
@@ -508,7 +628,10 @@ function polyfilled() {
 							env.page.lastIndexOf('/') + 1
 						);
 					}
-					href[1] = createHash(pageBase + cleanFile, hash);
+					href[1] = createHash({
+						page: pageBase + cleanFile,
+						section: hash
+					});
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
 			};
@@ -598,10 +721,22 @@ function polyfilled() {
 	/**
 	 * Get the current docset from the location hash
 	 */
-	function getCurrentDocs() {
-		const hash = location.hash.slice(1);
+	function getCurrentDocs(): DocInfo {
+		const hash = decodeHash();
 		const parts = hash.split('/').map(part => decodeURIComponent(part));
-		return { project: parts[0], version: parts[1] };
+		return {
+			project: parts[0],
+			version: parts[1],
+			page: parts[2],
+			section: parts[3]
+		};
+	}
+
+	/**
+	 * Return a decoded version of the hash
+	 */
+	function decodeHash() {
+		return decodeURIComponent(location.hash.slice(1));
 	}
 
 	/**
