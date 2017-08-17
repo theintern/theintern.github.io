@@ -59,39 +59,52 @@
 		}
 	}
 
-	table.compare {
-		width: 100%;
-		border: solid 1px $table-border;
+	.compare {
+		table {
+			width: 100%;
+			table-layout: fixed;
 
-		thead th {
-			background: $dark-gray;
-			text-align: center;
-			border-bottom: none;
-			font-size: 80%;
-			a {
-				color: $light;
+			th {
+				font-family: $title-font
 			}
-		}
-		th, td {
-			width: 10%;
-		}
-		th:first-child {
-			 width: 50%;
-		}
-		td {
-			border-right: solid 1px $table-border;
-		}
-		td {
-			vertical-align: middle;
-			text-align: center;
-			color: $secondary;
-		}
-		td.no {
-			color: transparent;
-		}
-		td.yes {
-			&::after {
-				content: "\f00c"; 
+
+			th, td {
+				text-overflow: ellipsis;
+				overflow: hidden;
+			}
+
+			thead {
+				th {
+					background: $dark-gray;
+					border-color: $dark-gray;
+					text-align: center;
+					font-size: 80%;
+					a {
+						color: $light;
+					}
+					width: 8%;
+				}
+				th:first-child {
+					width: 28%;
+				}
+			}
+			tbody {
+				th, td {
+					height: 4rem;
+					vertical-align: middle;
+				}
+				td {
+					font-size: 80%;
+				}
+			}
+			td {
+				text-align: center;
+				color: $secondary;
+			}
+			td.yes::after,
+			td.extension::after,
+			td.partial::after,
+			td.third-party::after {
 				font-family: FontAwesome;
 				font-style: normal;
 				font-weight: normal;
@@ -101,15 +114,43 @@
 				left: 50%;
 				z-index: 1;
 			}
+			td.yes::after {
+				content: "\f00c"; 
+			}
+			td.extension::after {
+				content: "\f1e6"; 
+			}
+			td.third-party::after {
+				content: "\f08e"; 
+			}
+			td.partial::after {
+				content: "\f089"; 
+			}
+			.intern {
+				background: $primary;
+				border-color: $primary;
+				&.yes::after {
+					color: $light;
+				}
+			}
 		}
-		tbody tr:nth-child(2n+1) {
-			background: $gray;
-		}
-		.intern {
-			background: $primary;
-			border-color: $primary;
-			&.yes::after {
-				color: $light;
+
+		dl {
+			margin-bottom: 0;
+
+			dd {
+				display: inline;
+				margin-left: 1rem;
+
+				&:not(last-child)::after {
+					content: '';
+					display: block;
+				}
+			}
+
+			dt {
+				display: inline-block;
+				margin-bottom: 0.5rem;
 			}
 		}
 	}

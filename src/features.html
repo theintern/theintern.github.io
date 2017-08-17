@@ -5,19 +5,19 @@ bodyClass: page-home
 <section class="section compare">
 	<div class="container">
 		<h1 class="title is-3">How does it compare?</h1>
-		<table class="table compare">
+		<table class="table is-bordered is-striped compare">
 			<thead>
 				<tr>
 					<th></th>
-					<th class="intern"><a href="https://github.com/theintern/intern">Intern</a></th>
-					<th><a href="https://github.com/avajs/ava">AVA</a></th>
-					<th><a href="http://busterjs.org">BusterJS</a></th>
-					<th><a href="https://jasmine.github.io/">Jasmine</a></th>
-					<th><a href="https://facebook.github.io/jest/">Jest</a></th>
-					<th><a href="https://mochajs.org/">Mocha</a></th>
-					<th><a href="http://nightwatchjs.org/">Nightwatch</a></th>
-					<th><a href="http://qunitjs.com">QUnit</a></th>
-					<th><a href="http://webdriver.io/">Webdriver.io</a></th>
+					<th class="intern"><a href="https://github.com/theintern/intern" title="Intern">Intern</a></th>
+					<th><a href="https://github.com/avajs/ava" title="AVA">AVA</a></th>
+					<th><a href="http://busterjs.org" title="BusterJS">BusterJS</a></th>
+					<th><a href="https://jasmine.github.io/" title="Jasmine">Jasmine</a></th>
+					<th><a href="https://facebook.github.io/jest/" title="Jest">Jest</a></th>
+					<th><a href="https://mochajs.org/" title="Mocha">Mocha</a></th>
+					<th><a href="http://nightwatchjs.org/" title="Nightwatch">Nightwatch</a></th>
+					<th><a href="http://qunitjs.com" title="QUnit">QUnit</a></th>
+					<th><a href="http://webdriver.io/" title="Webdriver.io">Wdio</a></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -60,8 +60,8 @@ bodyClass: page-home
 				<tr>
 					<th>Includes code coverage analysis</th>
 					<!--intern-->     <td class="intern yes"></td>
-					<!--ava-->        <td class="maybe">3rd party</td>  
-					<!--busterjs-->   <td class="maybe">Extension</td>
+					<!--ava-->        <td class="third-party"></td>  
+					<!--busterjs-->   <td class="extension"></td>
 					<!--jasmine-->    <td class="no"></td>
 					<!--jest-->       <td class="yes"></td>  
 					<!--mocha-->      <td class="yes"></td>
@@ -75,7 +75,7 @@ bodyClass: page-home
 					<!--ava-->        <td class="yes"></td>  
 					<!--busterjs-->   <td class="no"></td>
 					<!--jasmine-->    <td class="no"></td>
-					<!--jest-->       <td class="yes"></td>  
+					<!--jest-->       <td class="yes"></td>
 					<!--mocha-->      <td class="no"></td>
 					<!--nightwatch--> <td class="yes"></td>
 					<!--qunit-->      <td class="no"></td>
@@ -97,7 +97,7 @@ bodyClass: page-home
 					<th>Supports AMD natively</th>
 					<!--intern-->     <td class="intern yes"></td>
 					<!--ava-->        <td class="no"></td>  
-					<!--busterjs-->   <td class="maybe">Extension</td>
+					<!--busterjs-->   <td class="extension"></td>
 					<!--jasmine-->    <td class="no"></td>
 					<!--jest-->       <td class="no"></td>  
 					<!--mocha-->      <td class="no"></td>
@@ -132,7 +132,7 @@ bodyClass: page-home
 				<tr>
 					<th>Supports multi-level source maps</th>
 					<!--intern-->     <td class="intern yes"></td>
-					<!--ava-->        <td class="maybe">3rd party</td>  
+					<!--ava-->        <td class="third-party"></td>  
 					<!--busterjs-->   <td class="no"></td>
 					<!--jasmine-->    <td class="no"></td>
 					<!--jest-->       <td class="no"></td>  
@@ -163,7 +163,7 @@ bodyClass: page-home
 					<!--mocha-->      <td class="yes"></td>
 					<!--nightwatch--> <td class="no"></td>
 					<!--qunit-->      <td class="no"></td>
-					<!--webdriver-->  <td class="maybe">Extension</td>    
+					<!--webdriver-->  <td class="extension"></td>    
 				</tr>
 				<tr>
 					<th>Lets you write your own custom test interfaces</th>
@@ -194,15 +194,15 @@ bodyClass: page-home
 					<!--intern-->     <td class="intern yes"></td>
 					<!--ava-->        <td class="yes"></td>  
 					<!--busterjs-->   <td class="yes"></td>
-					<!--jasmine-->    <td class="no">Callback</td>
+					<!--jasmine-->    <td class="no"></td>
 					<!--jest-->       <td class="yes"></td>  
 					<!--mocha-->      <td class="yes"></td>
-					<!--nightwatch--> <td class="no">Callbacks</td>
-					<!--qunit-->      <td class="no">Globals</td>
+					<!--nightwatch--> <td class="no"></td>
+					<!--qunit-->      <td class="no"></td>
 					<!--webdriver-->  <td class="yes"></td>    
 				</tr>
 				<tr>
-					<th>Uses standard W3C browser testing APIs (WebDriver)</th>
+					<th>Uses standard WebDriver APIs</th>
 					<!--intern-->     <td class="intern yes"></td>
 					<!--ava-->        <td class="no"></td>  
 					<!--busterjs-->   <td class="no"></td>
@@ -214,7 +214,7 @@ bodyClass: page-home
 					<!--webdriver-->  <td class="yes"></td>    
 				</tr>
 				<tr>
-					<th>Automatically fixes bugs in Selenium servers</th>
+					<th>Automatically handles Selenium server bugs</th>
 					<!--intern-->     <td class="intern yes"></td>
 					<!--ava-->        <td class="no"></td>  
 					<!--busterjs-->   <td class="no"></td>
@@ -245,9 +245,9 @@ bodyClass: page-home
 					<!--jasmine-->    <td class="no"></td>
 					<!--jest-->       <td class="no"></td>  
 					<!--mocha-->      <td class="no"></td>
-					<!--nightwatch--> <td class="maybe">Partial</td>
+					<!--nightwatch--> <td class="yes"></td>
 					<!--qunit-->      <td class="no"></td>
-					<!--webdriver-->  <td class="maybe">Partial</td>    
+					<!--webdriver-->  <td class="yes"></td>    
 				</tr>
 				<tr>
 					<th>Built-in support for multiple cloud testing services</th>
@@ -259,12 +259,12 @@ bodyClass: page-home
 					<!--mocha-->      <td class="no"></td>
 					<!--nightwatch--> <td class="yes"></td>
 					<!--qunit-->      <td class="no"></td>
-					<!--webdriver-->  <td class="maybe">Extension</td>    
+					<!--webdriver-->  <td class="extension"></td>    
 				</tr>
 				<tr>
 					<th>Comes with Grunt tasks</th>
 					<!--intern-->     <td class="intern yes"></td>
-					<!--ava-->        <td class="maybe">Extension</td>  
+					<!--ava-->        <td class="extension"></td>  
 					<!--busterjs-->   <td class="no"></td>
 					<!--jasmine-->    <td class="no"></td>
 					<!--jest-->       <td class="no"></td>  
@@ -287,6 +287,12 @@ bodyClass: page-home
 				</tr>
 			</tbody>
 		</table>
+
+		<dl>
+			<dt><i class="fa fa-check"></i></dt><dd>Supported out-of-the-box</dd>
+			<dt><i class="fa fa-plug"></i></dt><dd>Supported via plugin/extension</dd>
+			<dt><i class="fa fa-external-link"></i></dt><dd>Supported via third party library</dd>
+		</dl>
 
 		<p><a id="ref1">1</a>: True events are not generated by JavaScript within the sandbox, so are able to accurately emulate how a user actually interacts with the application. Synthetic events generated by other test frameworks are limited by browser security restrictions.</p>
 
