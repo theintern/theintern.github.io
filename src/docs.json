@@ -99,5 +99,29 @@
 				"pages": ["README.md"]
 			}
 		}
-	}
+	},
+
+    "intern-a11y": {
+		"url": "https://github.com/theintern/intern-a11y",
+		"latest": "v1",
+		"versions": {
+			"v1": {
+				"url": "https://github.com/theintern/intern-a11y",
+				"docBase": "https://raw.githubusercontent.com/theintern/intern-a11y/master/",
+				"pages": ["README.md"]
+			}
+		}
+    },
+
+    "intern-visual": {
+		"url": "https://github.com/theintern/intern-visual",
+		"latest": "v1",
+		"versions": {
+			"v1": {
+				"url": "https://github.com/theintern/intern-visual",
+				"docBase": "https://raw.githubusercontent.com/theintern/intern-visual/master/",
+				"pages": ["README.md"]
+			}
+		}
+    }
 }
