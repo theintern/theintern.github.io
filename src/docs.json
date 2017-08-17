@@ -9,8 +9,8 @@
 				"docBase": "https://raw.githubusercontent.com/theintern/intern/3.4/",
 				"pages": [
 					"README.md",
-					"docs/getting-started.md",
 					"docs/fundamentals.md",
+					"docs/getting-started.md",
 					"docs/configuration.md",
 					"docs/interfaces.md",
 					"docs/unit-testing.md",

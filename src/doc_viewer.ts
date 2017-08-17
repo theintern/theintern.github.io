@@ -411,11 +411,32 @@ function polyfilled() {
 			});
 
 			// Add 'table' class to tables
-			markdown.renderer.rules.table_open = (
-				_tokens: any[],
-				_idx: number
+			markdown.renderer.rules.table_open = () => {
+				return '<table class="table is-bordered">';
+			};
+
+			markdown.renderer.rules.thead_open = (
+				tokens: any[],
+				idx: number
 			) => {
-				return '<table class="table">';
+				let i = idx + 2;
+				let token = tokens[i];
+				let empty = true;
+				while (token && token.type !== 'tr_close') {
+					let token2 = tokens[i + 2];
+					if (token.type !== 'th_open' || !token2 || token2.type !== 'th_close') {
+						empty = false;
+						break;
+					}
+					let token1 = tokens[i + 1];
+					if (token1.type !== 'inline' || token1.children.length > 0) {
+						empty = false;
+						break;
+					}
+					i += 3;
+					token = tokens[i];
+				}
+				return `<thead${empty ? ' class="is-hidden"' : ''}>`;
 			};
 
 			// Style blockquotes that are used for warning or info asides
