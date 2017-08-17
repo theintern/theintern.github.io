@@ -94,15 +94,25 @@
 	blockquote.warning,
 	blockquote.info,
 	blockquote.deprecated {
-		padding-left: 3rem;
 		position: relative;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding-left: 0;
 
-		.fa {
-			position: absolute;
-			left: 1.5rem;
-			top: 50%;
-			transform: translate(-50%, -50%);
-			font-size: 1.5em;
+		div {
+			flex-grow: 0;
+			flex-shrink: 0;
+			width: 60px;
+			text-align: center;
+
+			.fa {
+				font-size: 1.5em;
+			}
+		}
+
+		p {
+			flex: 0 1 auto;
 		}
 	}
 	blockquote.warning .fa {

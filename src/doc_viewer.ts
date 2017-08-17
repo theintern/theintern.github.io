@@ -33,7 +33,10 @@ declare const markdownitHeadingAnchor: any;
 declare const markdownit: any;
 declare const docsets: { [name: string]: DocSet };
 
-(() => {
+/**
+ * Called when all necessary polyfills have been loaded
+ */
+function polyfilled() {
 	let markdown: any;
 	let defaultDocs = { project: 'Intern', version: 'v4' };
 
@@ -42,7 +45,11 @@ declare const docsets: { [name: string]: DocSet };
 	// hash, which will cause new content to be rendered.
 	window.addEventListener('hashchange', processHash);
 
-	window.addEventListener('load', () => {
+	const ready = new Promise(resolve => {
+		window.addEventListener('load', resolve);
+	});
+
+	ready.then(() => {
 		// If the version selector is showing and the user changes it, update
 		// the location hash and the docset will be loaded.
 		document.querySelector(
@@ -93,6 +100,7 @@ declare const docsets: { [name: string]: DocSet };
 		const container = document.querySelector('.docs-content')!;
 
 		if (
+			container &&
 			container.getAttribute('data-doc-project') === docset.project &&
 			container.getAttribute('data-doc-version') === docset.version
 		) {
@@ -133,7 +141,8 @@ declare const docsets: { [name: string]: DocSet };
 			load = Promise.resolve();
 		}
 
-		return load.then(() => {
+		return Promise.all([ready, load]).then(() => {
+			const container = document.querySelector('.docs-content')!;
 			container.setAttribute('data-doc-project', docset.project);
 			container.setAttribute('data-doc-version', docset.version);
 
@@ -152,7 +161,6 @@ declare const docsets: { [name: string]: DocSet };
 				try {
 					root = createNode(page.querySelector('h1')!);
 				} catch (error) {
-					console.log('no h1 on ' + pageName);
 					root = {
 						level: 1,
 						element: document.createElement('li'),
@@ -259,7 +267,7 @@ declare const docsets: { [name: string]: DocSet };
 		const docset = getDocset()!.data;
 		const page = docset.cache![name];
 		const content = document.body.querySelector('.docs-content')!;
-		content.innerHTML = '';
+		content.removeChild(content.children[0]);
 		content.appendChild(page);
 
 		if (section) {
@@ -308,19 +316,34 @@ declare const docsets: { [name: string]: DocSet };
 
 	/**
 	 * Remove content that may be in the raw GH pages documents that shouldn't
-	 * be rendered
+	 * be rendered.
 	 */
 	function filterGhContent(text: string) {
+		// This would be simpler with regular expressions, but that makes IE10
+		// sad.
 		const markers = [
-			/<\!-- vim-markdown-toc[^]*?<!-- vim-markdown-toc -->/,
-			/<\!-- start-github-only[^]*?<!-- end-github-only -->/g
+			['<!-- vim-markdown-toc GFM -->', '<!-- vim-markdown-toc -->'],
+			['<!-- start-github-only -->', '<!-- end-github-only -->']
 		];
-		markers.forEach(marker => {
-			if (marker.test(text)) {
-				text = text.replace(marker, '');
+		return markers.reduce((text, marker) => {
+			const chunks = [];
+			let start = 0;
+			let left = text.indexOf(marker[0]);
+			let right = 0;
+			while (left !== -1) {
+				chunks.push(text.slice(start, left));
+				right = text.indexOf(marker[1], left);
+				if (right === -1) {
+					break;
+				}
+				start = right + marker[1].length + 1;
+				left = text.indexOf(marker[0], start);
 			}
-		});
-		return text;
+			if (right !== -1) {
+				chunks.push(text.slice(start));
+			}
+			return chunks.join('');
+		}, text);
 	}
 
 	/**
@@ -404,19 +427,25 @@ declare const docsets: { [name: string]: DocSet };
 				// quote
 				const token = tokens[idx + 2].children[0];
 
-				const warning = /^\u26a0\W*/;
-				const info = /^\u{1F4A1}\W*/u;
-				const deprecated = /^\u{1F44E}\W*/u;
+				const warning = '⚠️';
+				const info = '💡';
+				const deprecated = '👎';
 
-				if (warning.test(token.content)) {
-					token.content = token.content.replace(warning, '');
-					return '<blockquote class="warning"><i class="fa fa-warning" aria-hidden="true"></i>';
-				} else if (info.test(token.content)) {
-					token.content = token.content.replace(info, '');
-					return '<blockquote class="info"><i class="fa fa-lightbulb-o" aria-hidden="true"></i>';
-				} else if (deprecated.test(token.content)) {
-					token.content = token.content.replace(deprecated, '');
-					return '<blockquote class="deprecated"><i class="fa fa-thumbs-o-down" aria-hidden="true"></i>';
+				if (token.content.indexOf(warning) === 0) {
+					token.content = token.content
+						.replace(warning, '')
+						.replace(/^\s*/, '');
+					return '<blockquote class="warning"><div><i class="fa fa-warning" aria-hidden="true"></i></div>';
+				} else if (token.content.indexOf(info) === 0) {
+					token.content = token.content
+						.replace(info, '')
+						.replace(/^\s*/, '');
+					return '<blockquote class="info"><div><i class="fa fa-lightbulb-o" aria-hidden="true"></i></div>';
+				} else if (token.content.indexOf(deprecated) === 0) {
+					token.content = token.content
+						.replace(deprecated, '')
+						.replace(/^\s*/, '');
+					return '<blockquote class="deprecated"><div><i class="fa fa-thumbs-o-down" aria-hidden="true"></i></div>';
 				}
 
 				return '<blockquote>';
@@ -577,4 +606,4 @@ declare const docsets: { [name: string]: DocSet };
 			data: project.versions[docs.version]
 		};
 	}
-})();
+}

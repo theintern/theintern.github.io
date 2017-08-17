@@ -1,6 +1,7 @@
 const Metalsmith = require('metalsmith');
 const layouts = require('metalsmith-layouts');
 const sass = require('metalsmith-sass');
+const autoprefixer = require('metalsmith-autoprefixer');
 const assets = require('metalsmith-assets');
 const browserSync = require('metalsmith-browser-sync');
 const inlineSource = require('metalsmith-inline-source');
@@ -73,6 +74,7 @@ const metalsmith = new Metalsmith(__dirname)
 			outputDir: 'css'
 		})
 	)
+	.use(autoprefixer())
 	.use(
 		inlineSource({
 			rootpath: './src/assets'

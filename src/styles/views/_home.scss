@@ -135,22 +135,33 @@
 			}
 		}
 
-		dl {
-			margin-bottom: 0;
+		.legend {
+			margin-bottom: 1rem;
+			display: flex;
+			flex-direction: column;
 
-			dd {
-				display: inline;
-				margin-left: 1rem;
+			> div {
+				display: flex;
+				flex-direction: row;
 
-				&:not(last-child)::after {
-					content: '';
-					display: block;
+				&:not(:last-child) {
+					margin-bottom: 0.25rem;
 				}
-			}
 
-			dt {
-				display: inline-block;
-				margin-bottom: 0.5rem;
+				> div {
+					display: inline-block;
+
+					&:first-child {
+						width: 2rem;
+						position: relative;
+
+						.fa {
+							position: absolute;
+							top: 50%;
+							transform: translateY(-50%);
+						}
+					}
+				}
 			}
 		}
 	}
