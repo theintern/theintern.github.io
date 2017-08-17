@@ -101,6 +101,18 @@
 		}
 	},
 
+    "intern-cli": {
+		"url": "https://github.com/theintern/intern-cli",
+		"latest": "v1",
+		"versions": {
+			"v1": {
+				"url": "https://github.com/theintern/intern-cli",
+				"docBase": "https://raw.githubusercontent.com/theintern/intern-cli/master/",
+				"pages": ["README.md"]
+			}
+		}
+    },
+
     "intern-a11y": {
 		"url": "https://github.com/theintern/intern-a11y",
 		"latest": "v1",
