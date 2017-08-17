@@ -59,12 +59,43 @@
 			list-style: none;
 		}
 
-		.menu-list > li > ul {
-			display: none;
-		}
+		.menu-list {
+			> li > ul {
+				display: none;
+			}
 
-		.menu-list > li.is-active > ul {
-			display: block;
+			> li.is-active > ul {
+				display: block;
+			}
+
+			li {
+				padding-top: 0.1rem;
+				padding-bottom: 0.1rem;
+			}
+
+			// For desktop views, 
+			@media screen and (min-width: 768px) {
+				ul  {
+					font-size: 90%;
+				}
+			}
+
+			ul  {
+				margin-bottom: 0;
+			}
+
+			> li > ul {
+				margin-top: 0.5rem;
+
+				ul {
+					margin-top: 0.25rem;
+				}
+			}
+
+			a {
+				padding-top: 0.25em;
+				padding-bottom: 0.25em;
+			}
 		}
 
 		.field {
@@ -77,11 +108,6 @@
 					width: 100%;
 				}
 			}
-		}
-
-		.menu-list a {
-			padding-top: 0.25em;
-			padding-bottom: 0.25em;
 		}
 	}
 	.version-select {
