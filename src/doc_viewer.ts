@@ -46,6 +46,7 @@ declare const docsets: { [name: string]: DocSet };
 function polyfilled() {
 	let markdown: any;
 	let skipPageLoad = false;
+	let ignoreScroll = false;
 	let defaultDocs = { project: 'Intern' };
 
 	// Super simple router. The location hash fully controls the state of the
@@ -111,6 +112,11 @@ function polyfilled() {
 		let timer: number | undefined;
 		const content = document.querySelector('.docs-content')!;
 		content.addEventListener('scroll', () => {
+			const ignoring = ignoreScroll;
+			ignoreScroll = false;
+			if (ignoring) {
+				return;
+			}
 			if (timer) {
 				clearTimeout(timer);
 			}
@@ -337,6 +343,7 @@ function polyfilled() {
 		const content = document.body.querySelector('.docs-content')!;
 		content.removeChild(content.children[0]);
 		content.appendChild(page);
+		ignoreScroll = true;
 
 		if (section) {
 			const header = document.querySelector(`#${section}`);
@@ -348,17 +355,18 @@ function polyfilled() {
 			content.scrollIntoView();
 		}
 
+		updatePageMenu();
 		updateMenuHighlight();
 	}
 
 	/**
 	 * Update the active element in the menu
 	 */
-	function updateMenuHighlight() {
+	function updatePageMenu() {
 		const menu = document.querySelector('.menu .menu-list')!;
-		const active = menu.querySelectorAll('.is-active');
+		const active = menu.querySelectorAll('.is-active-page');
 		for (let i = 0; i < active.length; i++) {
-			active[i].classList.remove('is-active');
+			active[i].classList.remove('is-active-page');
 		}
 
 		const currentDocs = getCurrentDocs();
@@ -373,22 +381,39 @@ function polyfilled() {
 			const item = <HTMLLinkElement>items[i];
 			const hash = item.href.slice(item.href.indexOf('#') + 1);
 			if (hash === currentPage) {
-				item.classList.add('is-active');
-				item.parentElement!.classList.add('is-active');
+				item.parentElement!.classList.add('is-active-page');
 			}
+		}
+	}
+
+	/**
+	 * Update the active element in the menu
+	 */
+	function updateMenuHighlight() {
+		const menu = document.querySelector('.menu .menu-list')!;
+		const active = menu.querySelectorAll('.is-active');
+		for (let i = 0; i < active.length; i++) {
+			active[i].classList.remove('is-active');
 		}
 
 		const currentSection = location.hash.slice(1);
-		const childItems = document.querySelectorAll(
-			'.menu .menu-list ul > li > a'
+		const items = document.querySelectorAll(
+			'.menu .menu-list li.is-active-page a'
 		)!;
-		for (let i = 0; i < childItems.length; i++) {
-			const item = <HTMLLinkElement>childItems[i];
+
+		let highlighted = false;
+		for (let i = 0; i < items.length; i++) {
+			const item = <HTMLLinkElement>items[i];
 			const hash = item.href.slice(item.href.indexOf('#') + 1);
 			if (hash === currentSection) {
 				item.classList.add('is-active');
-				item.parentElement!.classList.add('is-active');
+				highlighted = true;
+				break;
 			}
+		}
+
+		if (!highlighted && items.length > 0) {
+			items[0].classList.add('is-active');
 		}
 	}
 
