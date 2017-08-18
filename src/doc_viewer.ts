@@ -418,28 +418,6 @@ function polyfilled() {
 	}
 
 	/**
-	 * Create a link hash for a given page name and fragment for the current
-	 * docset
-	 */
-	function createHash(info: Partial<DocInfo>) {
-		const currentDocs = getCurrentDocs();
-		const docs = { ...info };
-		if (!docs.project) {
-			docs.project = currentDocs.project;
-		}
-		if (!docs.version) {
-			docs.version = currentDocs.version;
-		}
-		const parts = [docs.project, docs.version, docs.page];
-		if (docs.section) {
-			parts.push(docs.section);
-		}
-		return (
-			'#' + encodeURIComponent(parts.map(encodeURIComponent).join('/'))
-		);
-	}
-
-	/**
 	 * Remove content that may be in the raw GH pages documents that shouldn't
 	 * be rendered.
 	 */
@@ -759,10 +737,36 @@ function polyfilled() {
 	}
 
 	/**
-	 * Return a decoded version of the hash
+	 * Create a link hash for a given page name and fragment for the current
+	 * docset.
+	 *
+	 * If this is changed, update decodeHash to match.
+	 */
+	function createHash(info: Partial<DocInfo>) {
+		const currentDocs = getCurrentDocs();
+		const docs = { ...info };
+		if (!docs.project) {
+			docs.project = currentDocs.project;
+		}
+		if (!docs.version) {
+			docs.version = currentDocs.version;
+		}
+		const parts = [docs.project, docs.version, docs.page];
+		if (docs.section) {
+			parts.push(docs.section);
+		}
+		return (
+			'#' + parts.map(encodeURIComponent).join('/')
+		);
+	}
+
+	/**
+	 * Return a decoded version of the hash.
+	 *
+	 * If this is changed, update createHash to match.
 	 */
 	function decodeHash() {
-		return decodeURIComponent(location.hash.slice(1));
+		return location.hash.slice(1);
 	}
 
 	/**
