@@ -13,8 +13,9 @@
 			<div class="navbar-menu">
 				<div class="navbar-start"></div>
 				<div class="navbar-end">
-					<a class="navbar-item" href="/docs.html#Intern/v3">Docs</a>
-					<a class="navbar-item" href="https://github.com/theintern/intern-examples/#intern-examples">Examples</a>
+					<% if (pageType !== 'docs') { %>
+					<a class="navbar-item" href="/docs.html">Docs</a>
+					<% } %>
 					<a class="navbar-item" href="https://github.com/theintern/intern" data-title="Github">Github</a>
 					<div class="dropdown is-right search-dropdown is-hidden-touch">
 						<a class="navbar-item dropdown-trigger" data-title="Search" aria-haspopup="true" aria-controls="search-box">Search</a>
