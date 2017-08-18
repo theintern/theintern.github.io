@@ -32,3 +32,7 @@ git push origin master
 ```
 
 The `publish` script will clone this repo into the `public/` subdirectory and check out the `master` branch, build the site into it, commit the changes, and pull those changes back into this instance of the repo. The push command just pushes the updated `master` branch to GitHub, making the changes live.
+
+## Credits
+
+The Intern version badghes were generated at https://shields.io with https://img.shields.io/badge/intern-v4-green.svg?colorB=2EC186.
