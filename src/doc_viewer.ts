@@ -723,16 +723,27 @@ function polyfilled() {
 	}
 
 	/**
-	 * Get the current docset from the location hash
+	 * Get the current docset from the location hash. If the hash does not identify a page, use default values.
 	 */
 	function getCurrentDocs(): DocInfo {
 		const hash = decodeHash();
-		const parts = hash.split('/').map(part => decodeURIComponent(part));
+		let [project, version, page, section] = hash
+			.split('/')
+			.map(part => decodeURIComponent(part));
+		if (!project) {
+			project = defaultDocs.project;
+		}
+		if (!version) {
+			version = docsets[project].latest;
+		}
+		if (!page) {
+			page = docsets[project].versions[version].pages[0];
+		}
 		return {
-			project: parts[0],
-			version: parts[1],
-			page: parts[2],
-			section: parts[3]
+			project,
+			version,
+			page,
+			section
 		};
 	}
 
@@ -751,13 +762,14 @@ function polyfilled() {
 		if (!docs.version) {
 			docs.version = currentDocs.version;
 		}
+		// if (!docs.page) {
+		// 	docs.page = docsets[docs.project].versions[docs.version].pages[0];
+		// }
 		const parts = [docs.project, docs.version, docs.page];
 		if (docs.section) {
 			parts.push(docs.section);
 		}
-		return (
-			'#' + parts.map(encodeURIComponent).join('/')
-		);
+		return '#' + parts.map(encodeURIComponent).join('/');
 	}
 
 	/**
