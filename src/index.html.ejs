@@ -41,9 +41,22 @@ bodyClass: page-home
 			</div>
 			<div class="column is-4">
 				<h2 class="title is-4">How does it compare?</h2>
-				<a class="button is-small is-primary is-outlined" href="features.html">See all features</a>
+				<a class="button is-small is-primary is-outlined" href="features.html" title="See all features">See all features</a>
 			</div>
 		</div>
+		<div class="compare">
+			<% include layouts/partials/features %>
+		</div>
+		<script>
+		var link = document.querySelector('a[title="See all features"]');
+		var compareSection = document.querySelector('.compare');
+		compareSection.classList.remove('is-active');
+		link.addEventListener('click', function (event) {
+
+			event.preventDefault();
+			compareSection.classList.toggle('is-active');
+		});
+		</script>
 	</div>
 </section>
 

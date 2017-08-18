@@ -60,7 +60,16 @@
 	}
 
 	.compare {
+		max-height: 0;
+		transition: max-height 0.5s ease;
+		overflow: hidden;
+
+		&.is-active {
+			max-height: 120rem;
+		}
+
 		table {
+			margin-top: 2rem;
 			width: 100%;
 			table-layout: fixed;
 

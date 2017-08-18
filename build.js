@@ -4,6 +4,7 @@ const sass = require('metalsmith-sass');
 const autoprefixer = require('metalsmith-autoprefixer');
 const assets = require('metalsmith-assets');
 const browserSync = require('metalsmith-browser-sync');
+const inPlace = require('metalsmith-in-place');
 const inlineSource = require('metalsmith-inline-source');
 const ts = require('typescript');
 const uglifyJs = require('uglify-js');
@@ -58,6 +59,7 @@ const metalsmith = new Metalsmith(__dirname)
 	.destination('./public')
 	.use(docsets())
 	.use(buildTypescript())
+	.use(inPlace())
 	.use(
 		layouts({
 			engine: 'ejs',
