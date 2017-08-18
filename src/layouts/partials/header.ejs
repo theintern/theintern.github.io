@@ -16,6 +16,28 @@
 					<a class="navbar-item" href="/docs.html#Intern/v3">Docs</a>
 					<a class="navbar-item" href="https://github.com/theintern/intern-examples/#intern-examples">Examples</a>
 					<a class="navbar-item" href="https://github.com/theintern/intern" data-title="Github">Github</a>
+					<div class="dropdown is-right search-dropdown is-hidden-touch">
+						<a class="navbar-item dropdown-trigger" data-title="Search" aria-haspopup="true" aria-controls="search-box">Search</a>
+						<div class="dropdown-menu" id="search-box" role="menu">
+							<div class="dropdown-content">
+								<nav class="panel">
+								  <div class="panel-block">
+									<p class="control has-icons-left">
+									  <input class="input is-small" type="text" placeholder="search">
+									  <span class="icon is-small is-left">
+										<i class="fa fa-search"></i>
+									  </span>
+									</p>
+								  </div>
+								  <div class="search-results">
+								  </div>
+								  <div class="panel-block">
+									<button class="button is-primary is-outlined is-fullwidth">reset</button>
+								  </div>
+								</nav>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</nav>
@@ -28,6 +50,19 @@
 		navBurger.addEventListener('click', function () {
 			navBurger.classList.toggle('is-active');
 			navMenu.classList.toggle('is-active');
+		});
+
+		var searchDropdown = document.querySelector('.header .search-dropdown');
+		var searchLink = searchDropdown.querySelector('.navbar-item');
+		var searchInput = searchDropdown.querySelector('input');
+		searchDropdown.addEventListener('click', function (event) {
+			var tag = event.target.tagName;
+			if (tag === 'A' || tag === 'BUTTON') {
+				searchDropdown.classList.toggle('is-active');
+				if (searchDropdown.classList.contains('is-active')) {
+					searchInput.focus();
+				}
+			}
 		});
 	})();
 	</script>

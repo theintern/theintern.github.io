@@ -11,11 +11,16 @@ interface DocSet {
 			// The markdown pages that make up the docset
 			pages: string[];
 			// A cache of rendered documents
-			cache?: { [name: string]: Element };
+			cache?: { [name: string]: DocPage };
 			// The rendered menu element
 			menu?: Element;
 		};
 	};
+}
+
+interface DocPage {
+	element: Element;
+	title: string;
 }
 
 interface DocSetId {
@@ -36,18 +41,29 @@ interface MenuNode {
 	children: MenuNode[];
 }
 
+interface SearchResult {
+	element: Element;
+	section?: string;
+	snippet: string;
+}
+
 declare const markdownitHeadingAnchor: any;
 declare const markdownit: any;
 declare const docsets: { [name: string]: DocSet };
+declare const Mark: any;
 
 /**
  * Called when all necessary polyfills have been loaded
  */
 function polyfilled() {
 	let markdown: any;
+	let defaultDocs = { project: 'Intern' };
 	let skipPageLoad = false;
 	let ignoreScroll = false;
-	let defaultDocs = { project: 'Intern' };
+	let highlightTerm: string | undefined;
+
+	const searchDelay = 300;
+	const menuHighlightDelay = 20;
 
 	// Super simple router. The location hash fully controls the state of the
 	// doc viewer. Changes to the project and version selectors will update the
@@ -72,6 +88,7 @@ function polyfilled() {
 		window.addEventListener('load', resolve);
 	});
 
+	// Run when the page has been rendered
 	ready.then(() => {
 		// If the version selector is showing and the user changes it, update
 		// the location hash and the docset will be loaded.
@@ -108,8 +125,32 @@ function polyfilled() {
 			}
 		});
 
+		// Live search as the user types into the search dropdown input
+		let searchTimer: number | undefined;
+		document.querySelector(
+			'.header .search-dropdown'
+		)!.addEventListener('input', event => {
+			const value = (<HTMLInputElement>event.target).value;
+			if (searchTimer) {
+				clearTimeout(searchTimer);
+			}
+			searchTimer = setTimeout(() => {
+				search(value);
+			}, searchDelay);
+		});
+
+		document.querySelector(
+			'.header .search-dropdown button'
+		)!.addEventListener('click', () => {
+			const input = <HTMLInputElement>document.querySelector(
+				'.header .search-dropdown input'
+			);
+			input.value = '';
+			search('');
+		});
+
 		// Update the highlighted menu item as the user scrolls through the doc content
-		let timer: number | undefined;
+		let menuTimer: number | undefined;
 		const content = document.querySelector('.docs-content')!;
 		content.addEventListener('scroll', () => {
 			const ignoring = ignoreScroll;
@@ -117,14 +158,14 @@ function polyfilled() {
 			if (ignoring) {
 				return;
 			}
-			if (timer) {
-				clearTimeout(timer);
+			if (menuTimer) {
+				clearTimeout(menuTimer);
 			}
-			timer = setTimeout(updateMenu, 20);
+			menuTimer = setTimeout(updateMenu, menuHighlightDelay);
 		});
 
 		function updateMenu() {
-			timer = undefined;
+			menuTimer = undefined;
 			const headings = content.querySelectorAll('h1,h2,h3')!;
 			const viewportTop = content.scrollTop;
 			for (let i = 0; i < headings.length; i++) {
@@ -190,7 +231,7 @@ function polyfilled() {
 
 		if (!cache) {
 			// The docset hasn't been loaded yet
-			cache = docset.data.cache = <{ [name: string]: Element }>{};
+			cache = docset.data.cache = <{ [name: string]: DocPage }>{};
 
 			load = Promise.all(
 				pageNames.map(name => {
@@ -199,11 +240,19 @@ function polyfilled() {
 						fetch(docBase + name)
 							.then(response => response.text())
 							.then(text => {
-								text = filterGhContent(text);
-								const html = render(text, name);
-								const element = document.createElement('div');
-								element.innerHTML = html;
-								cache[name] = element;
+								return ready.then(() => {
+									text = filterGhContent(text);
+									const html = render(text, name);
+									const element = document.createElement(
+										'div'
+									);
+									element.innerHTML = html;
+									const h1 = element.querySelector('h1')!;
+									const title =
+										(h1 && h1.textContent) ||
+										docset.project;
+									cache[name] = { element, title };
+								});
 							})
 					);
 				})
@@ -264,7 +313,7 @@ function polyfilled() {
 				const page = cache[pageName];
 				let root: MenuNode;
 				try {
-					root = createNode(page.querySelector('h1')!);
+					root = createNode(page.element.querySelector('h1')!);
 				} catch (error) {
 					root = {
 						level: 1,
@@ -272,7 +321,7 @@ function polyfilled() {
 						children: []
 					};
 				}
-				const headings = page.querySelectorAll('h2,h3')!;
+				const headings = page.element.querySelectorAll('h2,h3')!;
 				const stack: MenuNode[][] = <MenuNode[][]>[[root]];
 				let children: MenuNode[];
 
@@ -303,13 +352,7 @@ function polyfilled() {
 					stack[0][0].children = children;
 				}
 
-				// If this document's h1 doesn't have any text (maybe it's just an
-				// image), assume this is a README, and use the docset's project
-				// name as the title.
-				const title =
-					root.element.textContent! || getCurrentDocs().project;
-
-				const li = createLinkItem(title, pageName);
+				const li = createLinkItem(page.title, pageName);
 				if (root.children.length > 0) {
 					li.appendChild(createSubMenu(root.children, pageName));
 				}
@@ -374,7 +417,7 @@ function polyfilled() {
 		const page = docset.cache![name];
 		const content = document.body.querySelector('.docs-content')!;
 		content.removeChild(content.children[0]);
-		content.appendChild(page);
+		content.appendChild(page.element);
 		ignoreScroll = true;
 
 		if (section) {
@@ -423,6 +466,10 @@ function polyfilled() {
 	 */
 	function updateMenuHighlight() {
 		const menu = document.querySelector('.menu .menu-list')!;
+		if (!menu) {
+			return;
+		}
+
 		const active = menu.querySelectorAll('.is-active');
 		for (let i = 0; i < active.length; i++) {
 			active[i].classList.remove('is-active');
@@ -803,5 +850,114 @@ function polyfilled() {
 			version: docs.version!,
 			data: project.versions[docs.version]
 		};
+	}
+
+	/**
+	 * Search the loaded docset for a given string. Update the search results
+	 * box with the results.
+	 */
+	function search(term: string) {
+		const searchResults = document.querySelector(
+			'.header .search-dropdown .search-results'
+		)!;
+		searchResults.innerHTML = '';
+
+		highlightTerm = term.trim();
+		const searchTerm = highlightTerm.toLowerCase();
+
+		const docset = getDocset()!;
+		for (let name in docset.data.cache!) {
+			const page = docset.data.cache![name];
+			findAllMatches(page.element).then(matches => {
+				if (matches.length > 0) {
+					const iconSpan = document.createElement('span');
+					iconSpan.className = 'panel-icon';
+
+					const icon = document.createElement('i');
+					icon.className = 'fa fa-book';
+					iconSpan.appendChild(icon);
+
+					const link = document.createElement('a');
+					link.appendChild(iconSpan);
+
+					const text = document.createTextNode(page.title);
+					link.appendChild(text);
+
+					link.className = 'panel-block';
+					searchResults.appendChild(link);
+
+					matches.forEach(match => {
+						const link = document.createElement('a');
+						link.className = 'panel-block page-item';
+						link.textContent = match.snippet;
+						link.href = createHash({
+							project: docset.project,
+							version: docset.version,
+							page: name,
+							section: match.section
+						});
+						searchResults.appendChild(link);
+					});
+				}
+			});
+		}
+
+		// Find all the matches for the user's text
+		function findAllMatches(
+			page: Element
+		): Promise<SearchResult[]> {
+			return new Promise(resolve => {
+				const highlighter = new Mark(page);
+				highlighter.unmark();
+
+				const matches: SearchResult[] = [];
+				highlighter.mark(searchTerm, {
+					acrossElements: true,
+					caseSensitive: false,
+					ignorePunctuation: [
+						'“', '”', '‘', '’'
+					],
+					separateWordSearch: false,
+					each: (element: Element) => {
+						element.id = `search-result-${matches.length}`;
+						matches.push({
+							element,
+							section: element.id,
+							snippet: getSnippet(element)
+						});
+					},
+					done: () => {
+						resolve(matches);
+					}
+				});
+			});
+		}
+
+		// Get some text surrounding a search match
+		function getSnippet(searchMatch: Element) {
+			const text = searchMatch.textContent!;
+
+			let previous = searchMatch.previousSibling!;
+			let previousText = '';
+			while (previous && previousText.length <= 10) {
+				previousText = previous.textContent + previousText;
+				previous = previous.previousSibling!;
+			}
+			if (previousText.length > 10) {
+				previousText = `...${previousText.slice(previousText.length - 10)}`;
+			}
+
+			let next = searchMatch.nextSibling!;
+			let nextText = '';
+			while (next && nextText.length + text.length < 50) {
+				nextText += next.textContent;
+				next = next.nextSibling!;
+				if (!next) {
+					next = searchMatch.parentElement!.nextSibling!;
+				}
+			}
+
+			return [previousText, text, nextText].join('');
+		}
 	}
 }

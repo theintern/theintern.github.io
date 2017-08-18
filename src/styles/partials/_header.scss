@@ -18,6 +18,9 @@
 			}
 		}
 	}
+	.search-dropdown {
+		display: none;
+	}
 }
 
 
@@ -27,6 +30,9 @@
 	.navbar-item[data-title='Docs'] {
 		background: $primary;
 		color: $light;
+	}
+	.search-dropdown {
+		display: flex;
 	}
 }
 

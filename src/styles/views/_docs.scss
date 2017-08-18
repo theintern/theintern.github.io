@@ -158,6 +158,33 @@
 			border-color: $light;
 		}
 	}
+
+	.search-dropdown .dropdown-menu {
+		width: 18rem;
+		margin-right: 4px;
+		.panel-block {
+			border: none;
+		}
+
+		.search-results {
+			max-height: 20rem;
+			overflow-y: auto;
+
+			a {
+				white-space: nowrap;
+				display: block;
+				text-overflow: ellipsis;
+				overflow: hidden;
+			}
+
+			.page-item {
+				font-size: 90%;
+				padding-top: 0.25em;
+				padding-bottom: 0.25em;
+				padding-left: 2em;
+			}
+		}
+	}
 }
 
 .no-script {

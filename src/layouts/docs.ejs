@@ -7,11 +7,12 @@
 		<script>var docsets = <%- JSON.stringify(docsets) %>;</script>
 		<script src="doc_viewer.js"></script>
 
-		<script src="//cdn.polyfill.io/v2/polyfill.min.js?features=fetch&callback=polyfilled" asyn defer></script>
+		<script src="//cdn.polyfill.io/v2/polyfill.min.js?features=fetch&callback=polyfilled" async defer></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/typescript.min.js"></script>
 		<script src="//unpkg.com/markdown-it@8.3.2/dist/markdown-it.min.js"></script>
 		<script src="//unpkg.com/markdown-it-headinganchor@1.3.0/dist/markdown-it-headinganchor.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.0/mark.min.js"></script>
 	</head>
 	<body class="page-docs page-secondary no-script">
 		<% include partials/header %>
