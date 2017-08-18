@@ -224,6 +224,37 @@ function polyfilled() {
 			showMenu();
 		});
 
+		// Remove content that may be in the raw GH pages documents that
+		// shouldn't
+		function filterGhContent(text: string) {
+			// This would be simpler with regular expressions, but that makes IE10
+			// sad.
+			const markers = [
+				['<!-- vim-markdown-toc GFM -->', '<!-- vim-markdown-toc -->'],
+				['<!-- start-github-only -->', '<!-- end-github-only -->']
+			];
+			return markers.reduce((text, marker) => {
+				const chunks = [];
+				let start = 0;
+				let left = text.indexOf(marker[0]);
+				let right = 0;
+				while (left !== -1) {
+					chunks.push(text.slice(start, left));
+					right = text.indexOf(marker[1], left);
+					if (right === -1) {
+						break;
+					}
+					start = right + marker[1].length + 1;
+					left = text.indexOf(marker[0], start);
+				}
+				if (right !== -1) {
+					chunks.push(text.slice(start));
+				}
+				return chunks.join('');
+			}, text);
+		}
+
+		// Build the sidebar menu for a page
 		function buildMenu() {
 			const menu = document.createElement('ul');
 			menu.className = 'menu-list';
@@ -324,6 +355,7 @@ function polyfilled() {
 			}
 		}
 
+		// Install the current docset's menu in the menu container
 		function showMenu() {
 			const menu = document.querySelector('.docs-nav .menu')!;
 			const menuList = menu.querySelector('.menu-list');
@@ -415,38 +447,6 @@ function polyfilled() {
 		if (!highlighted && items.length > 0) {
 			items[0].classList.add('is-active');
 		}
-	}
-
-	/**
-	 * Remove content that may be in the raw GH pages documents that shouldn't
-	 * be rendered.
-	 */
-	function filterGhContent(text: string) {
-		// This would be simpler with regular expressions, but that makes IE10
-		// sad.
-		const markers = [
-			['<!-- vim-markdown-toc GFM -->', '<!-- vim-markdown-toc -->'],
-			['<!-- start-github-only -->', '<!-- end-github-only -->']
-		];
-		return markers.reduce((text, marker) => {
-			const chunks = [];
-			let start = 0;
-			let left = text.indexOf(marker[0]);
-			let right = 0;
-			while (left !== -1) {
-				chunks.push(text.slice(start, left));
-				right = text.indexOf(marker[1], left);
-				if (right === -1) {
-					break;
-				}
-				start = right + marker[1].length + 1;
-				left = text.indexOf(marker[0], start);
-			}
-			if (right !== -1) {
-				chunks.push(text.slice(start));
-			}
-			return chunks.join('');
-		}, text);
 	}
 
 	/**
