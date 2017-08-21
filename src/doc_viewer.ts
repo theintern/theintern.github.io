@@ -869,9 +869,10 @@ function polyfilled() {
 		}
 
 		const docset = getDocset()!;
+		const finders: PromiseLike<any>[] = [];
 		for (let name in docset.data.cache!) {
 			const page = docset.data.cache![name];
-			findAllMatches(page.element).then(matches => {
+			finders.push(findAllMatches(page.element).then(matches => {
 				if (matches.length > 0) {
 					const link = createLinkItem(page.title, name);
 					searchResults.appendChild(link);
@@ -888,12 +889,14 @@ function polyfilled() {
 						submenu.appendChild(link);
 					});
 				}
-			});
+			}));
 		}
 
-		if (searchResults.childNodes.length === 0) {
-			searchResults.innerHTML = '<div class="no-results">No results found</div>';
-		}
+		Promise.all(finders).then(() => {
+			if (searchResults.childNodes.length === 0) {
+				searchResults.innerHTML = '<div class="no-results">No results found</div>';
+			}
+		});
 
 		// Find all the matches for the user's text
 		function findAllMatches(page: Element): Promise<SearchResult[]> {
