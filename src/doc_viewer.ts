@@ -916,7 +916,7 @@ function polyfilled() {
 
 		const docset = getDocset()!;
 		const finders: PromiseLike<any>[] = [];
-		for (let name in docset.data.cache!) {
+		for (let name of docset.data.pages) {
 			const page = docset.data.cache![name];
 			finders.push(
 				findAllMatches(page.element).then(matches => {
