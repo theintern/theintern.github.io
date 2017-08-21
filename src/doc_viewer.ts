@@ -62,6 +62,7 @@ function polyfilled() {
 	let ignoreScroll = false;
 	let highlightTerm: string | undefined;
 
+	const maxSnippetLength = 60;
 	const searchDelay = 300;
 	const menuHighlightDelay = 20;
 
@@ -90,8 +91,17 @@ function polyfilled() {
 
 	// Run when the page has been rendered
 	ready.then(() => {
-		// If the version selector is showing and the user changes it, update
-		// the location hash and the docset will be loaded.
+		// Toggle the doc selector when the header is clicked
+		const docsetSelect = document.querySelector('.menu .docset-selector')!;
+		const docsetSelectHeader = docsetSelect.querySelector('.card-header')!;
+		docsetSelectHeader.addEventListener('click', function() {
+			docsetSelect.classList.toggle('is-active');
+		});
+		docsetSelect.addEventListener('change', function() {
+			docsetSelect.classList.remove('is-active');
+		});
+
+		// Handle updates to the project + version selects.
 		document.querySelector(
 			'.docs-nav'
 		)!.addEventListener('change', event => {
@@ -128,7 +138,7 @@ function polyfilled() {
 		// Live search as the user types into the search dropdown input
 		let searchTimer: number | undefined;
 		document.querySelector(
-			'.header .search-dropdown'
+			'.menu .search-field'
 		)!.addEventListener('input', event => {
 			const value = (<HTMLInputElement>event.target).value;
 			if (searchTimer) {
@@ -140,18 +150,18 @@ function polyfilled() {
 		});
 
 		document.querySelector(
-			'.header .search-dropdown button'
+			'.menu .search-field .button'
 		)!.addEventListener('click', () => {
 			const input = <HTMLInputElement>document.querySelector(
-				'.header .search-dropdown input'
+				'.menu .search-field input'
 			);
 			input.value = '';
 			search('');
 		});
 
-		// Update the highlighted menu item as the user scrolls through the doc content
+		// Update the url hash as the user scrolls
 		let menuTimer: number | undefined;
-		const content = document.querySelector('.docs-content')!;
+		const content = <HTMLElement>document.querySelector('.docs-content')!;
 		content.addEventListener('scroll', () => {
 			const ignoring = ignoreScroll;
 			ignoreScroll = false;
@@ -161,39 +171,13 @@ function polyfilled() {
 			if (menuTimer) {
 				clearTimeout(menuTimer);
 			}
-			menuTimer = setTimeout(updateMenu, menuHighlightDelay);
+			menuTimer = setTimeout(() => {
+				menuTimer = undefined;
+				updateHashFromContent();
+			}, menuHighlightDelay);
 		});
 
-		function updateMenu() {
-			menuTimer = undefined;
-			const headings = content.querySelectorAll('h1,h2,h3')!;
-			const viewportTop = content.scrollTop;
-			for (let i = 0; i < headings.length; i++) {
-				const heading = <HTMLElement>headings[i];
-				const headingTop = heading.offsetTop;
-				if (headingTop > viewportTop) {
-					let currentSection = heading;
-					if (headingTop - viewportTop > 100) {
-						currentSection = <HTMLElement>headings[
-							Math.max(i - 1, 0)
-						];
-					}
-					const docs = getCurrentDocs();
-					updateHash(
-						createHash({
-							project: docs.project,
-							version: docs.version,
-							page: docs.page,
-							section: currentSection.id
-						}),
-						true
-					);
-					break;
-				}
-			}
-		}
-
-		updateProjectSelector();
+		updateDocsetSelector();
 	});
 
 	function updateHash(newHash: string, ignoreUpdate = false) {
@@ -257,7 +241,7 @@ function polyfilled() {
 					);
 				})
 			).then(() => {
-				buildMenu();
+				createMenu();
 			});
 		} else {
 			// The docset is already loaded
@@ -269,7 +253,8 @@ function polyfilled() {
 			container.setAttribute('data-doc-project', docset.project);
 			container.setAttribute('data-doc-version', docset.version);
 
-			updateVersionSelector();
+			updateDocsetSelector();
+			updateDocsetName();
 			showMenu();
 		});
 
@@ -303,8 +288,8 @@ function polyfilled() {
 			}, text);
 		}
 
-		// Build the sidebar menu for a page
-		function buildMenu() {
+		// Create the sidebar menu for a page
+		function createMenu() {
 			const menu = document.createElement('ul');
 			menu.className = 'menu-list';
 			docset.data.menu = menu;
@@ -379,19 +364,6 @@ function polyfilled() {
 				return ul;
 			}
 
-			function createLinkItem(
-				text: string,
-				pageName: string,
-				section?: string
-			) {
-				const li = document.createElement('li');
-				const link = document.createElement('a');
-				link.href = createHash({ page: pageName, section });
-				link.textContent = text;
-				li.appendChild(link);
-				return li;
-			}
-
 			function createNode(heading: Element) {
 				const level = parseInt(heading.tagName.slice(1), 10);
 				return { level, element: heading, children: <MenuNode[]>[] };
@@ -400,7 +372,9 @@ function polyfilled() {
 
 		// Install the current docset's menu in the menu container
 		function showMenu() {
-			const menu = document.querySelector('.docs-nav .menu')!;
+			const menu = document.querySelector(
+				'.docs-nav .menu .docset-contents'
+			)!;
 			const menuList = menu.querySelector('.menu-list');
 			if (menuList) {
 				menu.removeChild(menuList);
@@ -410,18 +384,31 @@ function polyfilled() {
 	}
 
 	/**
+	 * Create a link item for a menu
+	 */
+	function createLinkItem(text: string, pageName: string, section?: string) {
+		const li = document.createElement('li');
+		const link = document.createElement('a');
+		link.href = createHash({ page: pageName, section });
+		link.textContent = text;
+		link.title = text;
+		li.appendChild(link);
+		return li;
+	}
+
+	/**
 	 * Show a page in the currently loaded docset
 	 */
 	function showPage(name: string, section?: string) {
 		const docset = getDocset()!.data;
 		const page = docset.cache![name];
-		const content = document.body.querySelector('.docs-content')!;
+		const content = <HTMLElement>document.body.querySelector('.docs-content')!;
 		content.removeChild(content.children[0]);
 		content.appendChild(page.element);
 		ignoreScroll = true;
 
 		if (section) {
-			const header = document.querySelector(`#${section}`);
+			const header = <HTMLElement>document.querySelector(`#${section}`);
 			if (header) {
 				header.scrollIntoView();
 			}
@@ -431,17 +418,19 @@ function polyfilled() {
 		}
 
 		updatePageMenu();
-		updateMenuHighlight();
+		updateSidebarHighlight();
 	}
 
 	/**
 	 * Update the active element in the menu
 	 */
 	function updatePageMenu() {
-		const menu = document.querySelector('.menu .menu-list')!;
-		const active = menu.querySelectorAll('.is-active-page');
-		for (let i = 0; i < active.length; i++) {
-			active[i].classList.remove('is-active-page');
+		const menu = document.querySelector(
+			'.menu .docset-contents .menu-list'
+		)!;
+		const active = menu.querySelector('.is-active-page');
+		if (active) {
+			active.classList.remove('is-active-page');
 		}
 
 		const currentDocs = getCurrentDocs();
@@ -449,50 +438,47 @@ function polyfilled() {
 			project: currentDocs.project,
 			version: currentDocs.version,
 			page: currentDocs.page
-		}).slice(1);
+		});
 
-		const items = document.querySelectorAll('.menu .menu-list > li > a')!;
-		for (let i = 0; i < items.length; i++) {
-			const item = <HTMLLinkElement>items[i];
-			const hash = item.href.slice(item.href.indexOf('#') + 1);
-			if (hash === currentPage) {
-				item.parentElement!.classList.add('is-active-page');
-			}
-		}
+		const pageLink = menu.querySelector(`li > a[href="${currentPage}"]`)!;
+		pageLink.parentElement!.classList.add('is-active-page');
 	}
 
 	/**
 	 * Update the active element in the menu
 	 */
-	function updateMenuHighlight() {
-		const menu = document.querySelector('.menu .menu-list')!;
-		if (!menu) {
+	function updateSidebarHighlight() {
+		const menus = document.querySelectorAll('.menu .menu-list')!;
+		if (menus.length === 0) {
 			return;
 		}
 
-		const active = menu.querySelectorAll('.is-active');
-		for (let i = 0; i < active.length; i++) {
-			active[i].classList.remove('is-active');
-		}
-
-		const currentSection = location.hash.slice(1);
-		const items = document.querySelectorAll(
-			'.menu .menu-list li.is-active-page a'
-		)!;
-
-		let highlighted = false;
-		for (let i = 0; i < items.length; i++) {
-			const item = <HTMLLinkElement>items[i];
-			const hash = item.href.slice(item.href.indexOf('#') + 1);
-			if (hash === currentSection) {
-				item.classList.add('is-active');
-				highlighted = true;
-				break;
+		for (let i = 0; i < menus.length; i++) {
+			const menu = menus[i];
+			const active = menu.querySelector('.is-active');
+			if (active) {
+				active.classList.remove('is-active');
 			}
-		}
 
-		if (!highlighted && items.length > 0) {
-			items[0].classList.add('is-active');
+			const currentSection = location.hash;
+			let link = <HTMLElement>menu.querySelector(`li > a[href="${currentSection}"]`)!;
+			if (!link) {
+				const currentDocs = getCurrentDocs();
+				const currentPage = createHash({
+					project: currentDocs.project,
+					version: currentDocs.version,
+					page: currentDocs.page
+				});
+				link = <HTMLElement>menu.querySelector(`li > a[href="${currentPage}"]`)!;
+			}
+
+			if (link) {
+				link.classList.add('is-active');
+				scrollIntoViewIfNessary(
+					link,
+					<HTMLElement>document.querySelector('.docs-nav')!
+				);
+			}
 		}
 	}
 
@@ -509,7 +495,7 @@ function polyfilled() {
 
 		// Always try to update the menu highlight, even if we're skipping the
 		// rest of the page load
-		updateMenuHighlight();
+		updateSidebarHighlight();
 
 		if (ignoring) {
 			return;
@@ -540,8 +526,7 @@ function polyfilled() {
 
 		Promise.resolve(loadDocset({ project, version })).then(() => {
 			showPage(page, section);
-			updateProjectSelector();
-			updateVersionSelector();
+			updateDocsetSelector();
 		});
 	}
 
@@ -705,7 +690,8 @@ function polyfilled() {
 	/**
 	 * Select the currently active project in the project selector.
 	 */
-	function updateProjectSelector() {
+	function updateDocsetSelector() {
+		const docs = getCurrentDocs();
 		const selector = document.querySelector(
 			'select[data-select-property="project"]'
 		)!;
@@ -725,21 +711,11 @@ function polyfilled() {
 		if (option) {
 			option.selected = true;
 		}
-		updateGithubLink();
-	}
 
-	/**
-	 * Update the version selector to show the versions for the currently
-	 * active project.
-	 */
-	function updateVersionSelector() {
-		const docs = getCurrentDocs();
 		const versions = Object.keys(docsets[docs.project].versions);
-		const layout = document.querySelector('.docs-layout')!;
-
 		// If more than one version is available, show the version selector
 		if (versions.length > 1) {
-			layout.classList.add('multi-version');
+			addViewClass('multi-version');
 
 			const selector = document.querySelector(
 				'select[data-select-property="version"]'
@@ -753,8 +729,28 @@ function polyfilled() {
 				selector.appendChild(option);
 			});
 		} else {
-			layout.classList.remove('multi-version');
+			removeViewClass('multi-version');
 		}
+
+		updateDocsetName();
+		updateGithubLink();
+	}
+
+	/**
+	 * Update the docset name in the sidebar to reflect the project and version
+	 * selectors
+	 */
+	function updateDocsetName() {
+		const docs = getCurrentDocs();
+		const docsetSelector = document.querySelector(
+			'.menu .docset-selector'
+		)!;
+
+		const project = docsetSelector.querySelector('.project')!;
+		project.textContent = docs.project;
+
+		const version = docsetSelector.querySelector('.version')!;
+		version.textContent = docs.version;
 	}
 
 	/**
@@ -858,54 +854,49 @@ function polyfilled() {
 	 */
 	function search(term: string) {
 		const searchResults = document.querySelector(
-			'.header .search-dropdown .search-results'
+			'.menu .search-results .menu-list'
 		)!;
 		searchResults.innerHTML = '';
 
 		highlightTerm = term.trim();
 		const searchTerm = highlightTerm.toLowerCase();
 
+		if (highlightTerm) {
+			addViewClass('search-is-active');
+		} else {
+			removeViewClass('search-is-active');
+			updateHashFromContent();
+		}
+
 		const docset = getDocset()!;
 		for (let name in docset.data.cache!) {
 			const page = docset.data.cache![name];
 			findAllMatches(page.element).then(matches => {
 				if (matches.length > 0) {
-					const iconSpan = document.createElement('span');
-					iconSpan.className = 'panel-icon';
-
-					const icon = document.createElement('i');
-					icon.className = 'fa fa-book';
-					iconSpan.appendChild(icon);
-
-					const link = document.createElement('a');
-					link.appendChild(iconSpan);
-
-					const text = document.createTextNode(page.title);
-					link.appendChild(text);
-
-					link.className = 'panel-block';
+					const link = createLinkItem(page.title, name);
 					searchResults.appendChild(link);
 
+					const submenu = document.createElement('ul');
+					link.appendChild(submenu);
+
 					matches.forEach(match => {
-						const link = document.createElement('a');
-						link.className = 'panel-block page-item';
-						link.textContent = match.snippet;
-						link.href = createHash({
-							project: docset.project,
-							version: docset.version,
-							page: name,
-							section: match.section
-						});
-						searchResults.appendChild(link);
+						const link = createLinkItem(
+							match.snippet,
+							name,
+							match.section
+						);
+						submenu.appendChild(link);
 					});
 				}
 			});
 		}
 
+		if (searchResults.childNodes.length === 0) {
+			searchResults.innerHTML = '<div class="no-results">No results found</div>';
+		}
+
 		// Find all the matches for the user's text
-		function findAllMatches(
-			page: Element
-		): Promise<SearchResult[]> {
+		function findAllMatches(page: Element): Promise<SearchResult[]> {
 			return new Promise(resolve => {
 				const highlighter = new Mark(page);
 				highlighter.unmark();
@@ -914,16 +905,14 @@ function polyfilled() {
 				highlighter.mark(searchTerm, {
 					acrossElements: true,
 					caseSensitive: false,
-					ignorePunctuation: [
-						'“', '”', '‘', '’'
-					],
+					ignorePunctuation: ['“', '”', '‘', '’'],
 					separateWordSearch: false,
 					each: (element: Element) => {
 						element.id = `search-result-${matches.length}`;
 						matches.push({
 							element,
 							section: element.id,
-							snippet: getSnippet(element)
+							snippet: createSnippet(element)
 						});
 					},
 					done: () => {
@@ -934,30 +923,197 @@ function polyfilled() {
 		}
 
 		// Get some text surrounding a search match
-		function getSnippet(searchMatch: Element) {
-			const text = searchMatch.textContent!;
+		function createSnippet(searchMatch: Element) {
+			const searchText = searchMatch.textContent!;
+			const container = getContainer(searchMatch);
 
-			let previous = searchMatch.previousSibling!;
 			let previousText = '';
+			let previous = getNextTextNode(
+				searchMatch,
+				previousSibling,
+				getRightLeaf
+			);
 			while (previous && previousText.length <= 10) {
-				previousText = previous.textContent + previousText;
-				previous = previous.previousSibling!;
-			}
-			if (previousText.length > 10) {
-				previousText = `...${previousText.slice(previousText.length - 10)}`;
+				previousText = previous.textContent! + previousText;
+				previous = getNextTextNode(
+					previous,
+					previousSibling,
+					getRightLeaf
+				)!;
 			}
 
-			let next = searchMatch.nextSibling!;
+			let nextTextLength =
+				maxSnippetLength -
+				Math.min(previousText.length, 10) -
+				searchText.length;
 			let nextText = '';
-			while (next && nextText.length + text.length < 50) {
-				nextText += next.textContent;
-				next = next.nextSibling!;
+			let next = getNextTextNode(searchMatch, nextSibling, getLeftLeaf);
+			while (next && nextText.length < nextTextLength) {
+				nextText += next.textContent!;
+				next = getNextTextNode(next, nextSibling, getLeftLeaf);
+			}
+
+			if (previousText.length > 10) {
+				previousText = `...${previousText.slice(
+					previousText.length - 10
+				)}`;
+			}
+			if (nextText.length > nextTextLength) {
+				nextText = `${nextText.slice(0, nextTextLength)}...`;
+			}
+
+			return [previousText, searchText, nextText].join('');
+
+			function getNextTextNode(
+				node: Node | null,
+				getNext: (node: Node) => Node | null,
+				getLeaf: (node: Node) => Node | null
+			): Node | null {
+				if (!node || node === container) {
+					return null;
+				}
+
+				let next = getNext(node);
 				if (!next) {
-					next = searchMatch.parentElement!.nextSibling!;
+					return getNextTextNode(
+						node.parentElement,
+						getNext,
+						getLeaf
+					);
+				}
+
+				if (next.childNodes.length > 0) {
+					next = getLeaf(next);
+				}
+
+				if (next && next.nodeType !== Node.TEXT_NODE) {
+					return getNextTextNode(next, getNext, getLeaf);
+				}
+
+				return next;
+			}
+
+			function nextSibling(node: Node) {
+				return node.nextSibling;
+			}
+
+			function previousSibling(node: Node) {
+				return node.previousSibling;
+			}
+
+			function getLeftLeaf(node: Node): Node {
+				while (node.childNodes.length > 0) {
+					return getLeftLeaf(node.childNodes[0]);
+				}
+				return node;
+			}
+
+			function getRightLeaf(node: Node): Node {
+				while (node.childNodes.length > 0) {
+					return getRightLeaf(
+						node.childNodes[node.childNodes.length - 1]
+					);
+				}
+				return node;
+			}
+
+			function getContainer(node: Element): Element {
+				switch (node.tagName) {
+					case 'H1':
+					case 'H2':
+					case 'H3':
+					case 'H4':
+					case 'P':
+					case 'BLOCKQUOTE':
+					case 'PRE':
+					case 'LI':
+					case 'TR':
+					case 'TABLE':
+						return node;
+					default:
+						return getContainer(node.parentElement!);
 				}
 			}
+		}
+	}
 
-			return [previousText, text, nextText].join('');
+	function addViewClass(className: string) {
+		const layout = document.querySelector('.docs-layout')!;
+		layout.classList.add(className);
+	}
+
+	function removeViewClass(className: string) {
+		const layout = document.querySelector('.docs-layout')!;
+		layout.classList.remove(className);
+	}
+
+	function hasViewClass(className: string) {
+		const layout = document.querySelector('.docs-layout')!;
+		return layout.classList.contains(className);
+	}
+
+	function scrollIntoViewIfNessary(
+		element: HTMLElement,
+		container: HTMLElement
+	) {
+		const viewportTop = container.offsetTop + container.scrollTop;
+		const viewportBottom = viewportTop + container.clientHeight;
+		const elementTop = element.offsetTop;
+		const elementBottom = elementTop + element.offsetHeight;
+		if (elementTop < viewportTop) {
+			element.scrollIntoView(true);
+		} else if (elementBottom > viewportBottom) {
+			element.scrollIntoView(false);
+		}
+	}
+
+	function updateHashFromContent() {
+		const content = <HTMLElement>document.querySelector('.docs-content')!;
+		let elements: NodeListOf<Element>;
+		if (hasViewClass('search-is-active')) {
+			elements = content.querySelectorAll('mark')!;
+		} else {
+			elements = content.querySelectorAll('h1,h2,h3')!;
+		}
+
+		const viewportTop = content.offsetTop + content.scrollTop;
+
+		let above: Element | undefined;
+		let below: Element | undefined;
+		for (let i = 1; i < elements.length; i++) {
+			const element = <HTMLElement>elements[i];
+			const elementTop = getOffsetTop(element);
+			if (elementTop > viewportTop) {
+				below = elements[i];
+				above = elements[i - 1];
+				break;
+			}
+		}
+
+		if (!above) {
+			above = elements[elements.length - 1];
+		}
+
+		const docs = getCurrentDocs();
+		updateHash(
+			createHash({
+				project: docs.project,
+				version: docs.version,
+				page: docs.page,
+				section: above.id
+			}),
+			true
+		);
+
+		function getOffsetTop(element: HTMLElement) {
+			let top = element.offsetTop;
+			while (
+				(element = <HTMLElement>element.offsetParent) &&
+				element !== content
+			) {
+				top += element.offsetTop;
+			}
+			return top;
 		}
 	}
 }

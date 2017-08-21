@@ -96,11 +96,25 @@
 			a {
 				padding-top: 0.25em;
 				padding-bottom: 0.25em;
+				text-overflow: ellipsis;
+				overflow: hidden;
+			}
+		}
+
+		.search-results {
+			.menu-list {
+				> li > ul {
+					display: block;
+				}
+			}
+
+			.no-results {
+				color: $secondary;
 			}
 		}
 
 		.field {
-			margin: 0.5em 1.5em;
+			margin: 0.75rem 1rem;
 
 			.select {
 				width: 100%;
@@ -110,12 +124,51 @@
 				}
 			}
 		}
+
+		@media screen and (max-width: 768px) {
+			.field {
+				margin-left: 1.5rem;
+				margin-right: 1.5rem;
+			}
+		}
+
+		.version-selector,
+		.search-results {
+			display: none;
+		}
+
+		.search-field {
+			input {
+				box-shadow: none;
+				border-right: none;
+				border-color: $secondary;
+			}
+			.control .button {
+				border-left: none;
+				border-color: $secondary;
+				color: $secondary;
+				// width matches padding in select dropdown
+				width: 2.5em;
+			}
+		}
 	}
-	.version-selector {
-		display: none;
-	}
-	.multi-version .version-selector {
-		display: block;
+
+	.search-is-active .menu {
+		.docset-contents {
+			display: none;
+		}
+		.search-results {
+			display: block;
+		}
+		.search-field {
+			input {
+				border-color: $primary;
+			}
+			.control .button {
+				border-color: $primary;
+				color: $primary;
+			}
+		}
 	}
 
 	blockquote.warning,
@@ -159,30 +212,59 @@
 		}
 	}
 
-	.search-dropdown .dropdown-menu {
-		width: 18rem;
-		margin-right: 4px;
-		.panel-block {
-			border: none;
+	.docset-selector {
+		margin-bottom: 0.5rem;
+		box-shadow: none;
+		border-color: $border-color;
+
+		.card-header {
+			cursor: pointer;
+			box-shadow: none;
+
+			padding-left: 0.25rem;
+			padding-right: 0.25rem;
 		}
 
-		.search-results {
-			max-height: 20rem;
-			overflow-y: auto;
-
-			a {
-				white-space: nowrap;
-				display: block;
-				text-overflow: ellipsis;
-				overflow: hidden;
+		@media screen and (max-width: 768px) {
+			.card-header {
+				// These offset the negative padding from .columns
+				padding-left: 0.75rem;
+				padding-right: 0.75rem;
 			}
+		}
 
-			.page-item {
-				font-size: 90%;
-				padding-top: 0.25em;
-				padding-bottom: 0.25em;
-				padding-left: 2em;
+		.card-header-title {
+			font-weight: normal;
+
+			.version {
+				display: none;
+
+				&::before {
+					content: 'v';
+					margin-left: 0.4em;
+				}
 			}
+		}
+
+		.card-content {
+			max-height: 0;
+			border-bottom: solid 1px $border-color;
+			transition: max-height 0.25s ease;
+			transition: padding 0.25s ease;
+			padding: 0;
+			overflow: auto;
+		}
+
+		&.is-active .card-content {
+			max-height: 7rem;
+			padding: 0 0 0.5em 0;
+		}
+	}
+
+	.multi-version .menu {
+		.version-selector,
+		.version {
+			display: block;
 		}
 	}
 }

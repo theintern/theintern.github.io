@@ -1,10 +1,10 @@
 {
 	"Intern": {
 		"url": "https://github.com/theintern/intern",
-		"latest": "v3",
-		"next": "v4",
+		"latest": "3",
+		"next": "4",
 		"versions": {
-			"v3": {
+			"3": {
 				"url": "https://github.com/theintern/intern/tree/3.4",
 				"docBase": "https://raw.githubusercontent.com/theintern/intern/3.4/",
 				"pages": [
@@ -26,7 +26,7 @@
 					"docs/faq.md"
 				]
 			},
-			"v4": {
+			"4": {
 				"url": "https://github.com/theintern/intern",
 				"docBase": "https://raw.githubusercontent.com/theintern/intern/master/",
 				"pages": [
@@ -49,15 +49,15 @@
 
 	"Intern tutorial": {
 		"url": "https://github.com/theintern/intern-tutorial",
-		"latest": "v3",
-		"next": "v4",
+		"latest": "3",
+		"next": "4",
 		"versions": {
-			"v3": {
+			"3": {
 				"url": "https://github.com/theintern/intern-tutorial/tree/intern-3",
 				"docBase": "https://raw.githubusercontent.com/theintern/intern-tutorial/intern-3/",
 				"pages": ["README.md"]
 			},
-			"v4": {
+			"4": {
 				"url": "https://github.com/theintern/intern-tutorial",
 				"docBase": "https://raw.githubusercontent.com/theintern/intern-tutorial/master/",
 				"pages": ["README.md"]
@@ -67,15 +67,15 @@
 
 	"Leadfoot": {
 		"url": "https://github.com/theintern/leadfoot",
-		"latest": "v1",
-		"next": "v2",
+		"latest": "1",
+		"next": "2",
 		"versions": {
-			"v1": {
+			"1": {
 				"url": "https://github.com/theintern/leadfoot/tree/1.7",
 				"docBase": "https://raw.githubusercontent.com/theintern/leadfoot/1.7/",
 				"pages": ["README.md"]
 			},
-			"v2": {
+			"2": {
 				"url": "https://github.com/theintern/leadfoot",
 				"docBase": "https://raw.githubusercontent.com/theintern/leadfoot/master/",
 				"pages": ["README.md"]
@@ -85,15 +85,15 @@
 
 	"Dig Dug": {
 		"url": "https://github.com/theintern/digdug",
-		"latest": "v1",
-		"next": "v2",
+		"latest": "1",
+		"next": "2",
 		"versions": {
-			"v1": {
+			"1": {
 				"url": "https://github.com/theintern/digdug/tree/1.6",
 				"docBase": "https://raw.githubusercontent.com/theintern/digdug/1.6/",
 				"pages": ["README.md"]
 			},
-			"v2": {
+			"2": {
 				"url": "https://github.com/theintern/digdug",
 				"docBase": "https://raw.githubusercontent.com/theintern/digdug/master/",
 				"pages": ["README.md"]
@@ -103,9 +103,9 @@
 
     "intern-cli": {
 		"url": "https://github.com/theintern/intern-cli",
-		"latest": "v1",
+		"latest": "1",
 		"versions": {
-			"v1": {
+			"1": {
 				"url": "https://github.com/theintern/intern-cli",
 				"docBase": "https://raw.githubusercontent.com/theintern/intern-cli/master/",
 				"pages": ["README.md"]
@@ -115,9 +115,9 @@
 
     "intern-a11y": {
 		"url": "https://github.com/theintern/intern-a11y",
-		"latest": "v1",
+		"latest": "1",
 		"versions": {
-			"v1": {
+			"1": {
 				"url": "https://github.com/theintern/intern-a11y",
 				"docBase": "https://raw.githubusercontent.com/theintern/intern-a11y/master/",
 				"pages": ["README.md"]
@@ -127,9 +127,9 @@
 
     "intern-visual": {
 		"url": "https://github.com/theintern/intern-visual",
-		"latest": "v1",
+		"latest": "1",
 		"versions": {
-			"v1": {
+			"1": {
 				"url": "https://github.com/theintern/intern-visual",
 				"docBase": "https://raw.githubusercontent.com/theintern/intern-visual/master/",
 				"pages": ["README.md"]

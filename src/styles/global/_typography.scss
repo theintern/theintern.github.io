@@ -62,7 +62,15 @@ li ol {
 
 ul,
 ol {
-	margin: 0 1.5em 1.5em 1.5em;
+	margin: 0 1rem 1rem 1rem;
+}
+
+@media screen and (max-width: 768px) {
+	ul,
+	ol {
+		margin-left: 1.5rem;
+		margin-right: 1.5rem;
+	}
 }
 
 ul {
