@@ -127,9 +127,6 @@ function polyfilled() {
 		docsetSelectHeader.addEventListener('click', function() {
 			docsetSelect.classList.toggle('is-active');
 		});
-		docsetSelect.addEventListener('change', function() {
-			docsetSelect.classList.remove('is-active');
-		});
 
 		// Handle updates to the project + version selects.
 		document.querySelector(
