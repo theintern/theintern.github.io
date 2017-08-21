@@ -266,9 +266,14 @@ function polyfilled() {
 
 								const h1 = element.querySelector('h1')!;
 								heading.appendChild(h1);
-								element.insertBefore(heading, element.firstChild);
+								element.insertBefore(
+									heading,
+									element.firstChild
+								);
 
-								heading.appendChild(createGitHubLink(docset, name));
+								heading.appendChild(
+									createGitHubLink(docset, name)
+								);
 								const title =
 									(h1 && h1.textContent) || docset.project;
 								cache[name] = { element, title };
@@ -1156,7 +1161,13 @@ function polyfilled() {
 		}
 	}
 
-	function createGitHubLink(info: { project: string, version: string }, page: string) {
+	/**
+	 * Create a link to a page's source on GitHub
+	 */
+	function createGitHubLink(
+		info: { project: string; version: string },
+		page: string
+	) {
 		const link = document.createElement('a');
 		link.title = 'View page source';
 
@@ -1174,7 +1185,13 @@ function polyfilled() {
 		return link;
 	}
 
-	function getDocVersionUrl(info: { project: string, version: string }) {
+	/**
+	 * Get the project base URL for a given project version. If the docset
+	 * version structure contains a `url` field, it will be used. Otherwise, a
+	 * URL will be constructed using the docset version branch and standard
+	 * GitHub URL formats.
+	 */
+	function getDocVersionUrl(info: { project: string; version: string }) {
 		const docset = docsets[info.project];
 		const dv = docset.versions[info.version];
 		if (dv.url) {
@@ -1183,13 +1200,22 @@ function polyfilled() {
 		return `${docset.url}/tree/${dv.branch}`;
 	}
 
-	function getDocBaseUrl(info: { project: string, version: string }) {
+	/**
+	 * Get the doc base URL for a given project version. If the docset version
+	 * structure contains a `docBase` field, it will be used. Otherwise, a URL
+	 * will be constructed using the docset version branch and standard GitHub
+	 * URL formats.
+	 */
+	function getDocBaseUrl(info: { project: string; version: string }) {
 		const docset = docsets[info.project];
 		const dv = docset.versions[info.version];
 		if (dv.docBase) {
 			return dv.docBase;
 		}
-		const url = docset.url.replace(/\/\/github\./, 'raw.githubusercontent.');
+		const url = docset.url.replace(
+			/\/\/github\./,
+			'raw.githubusercontent.'
+		);
 
 		return `${url}/${dv.branch}/`;
 	}
