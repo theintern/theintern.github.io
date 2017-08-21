@@ -9,6 +9,7 @@ const inlineSource = require('metalsmith-inline-source');
 const ts = require('typescript');
 const uglifyJs = require('uglify-js');
 const { execSync } = require('child_process');
+const { existsSync } = require('fs');
 
 let publish = false;
 let serve = false;
@@ -104,6 +105,10 @@ if (serve) {
 }
 
 if (publish) {
+	if (existsSync('public')) {
+		console.log('Removing existing public dir');
+		execSync('rm -r public');
+	}
 	console.log('Creating a clone of the master branch');
 	execSync('git clone -q . public');
 	execSync('git checkout -q master', { cwd: 'public' });
