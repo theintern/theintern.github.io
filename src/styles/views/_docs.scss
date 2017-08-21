@@ -42,6 +42,7 @@
 		}
 	}
 	.docs-content {
+		position: relative;
 		padding-left: 5vw;
 		padding-right: 5vw;
 		>h1 {
@@ -265,6 +266,20 @@
 		.version-selector,
 		.version {
 			display: block;
+		}
+	}
+
+	.page-heading {
+		display: flex;
+		margin-bottom: 1rem;
+
+		h1 {
+			flex-grow: 1;
+			margin-bottom: 0;
+		}
+
+		.icon {
+			margin-top: 0.3*(0.9*$size-1);
 		}
 	}
 }

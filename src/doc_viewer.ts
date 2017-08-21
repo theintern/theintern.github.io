@@ -17,20 +17,27 @@ interface DocSet {
 	url: string;
 	latest: string;
 	next: string;
-	versions: {
-		[version: string]: {
-			// The project URL
-			url: string;
-			// The base URL from which the pages should be loaded
-			docBase: string;
-			// The markdown pages that make up the docset
-			pages: string[];
-			// A cache of rendered documents
-			cache?: { [name: string]: DocPage };
-			// The rendered menu element
-			menu?: Element;
-		};
-	};
+	versions: { [version: string]: DocSetVersion };
+}
+
+/**
+ * Details for a specific version of a docset. If a branch is specified but url
+ * or docBase are not, they will be constructed using the standard GitHub URL
+ * format.
+ */
+interface DocSetVersion {
+	// The base URL for the docset
+	url?: string;
+	// The base URL from which the pages should be loaded
+	docBase?: string;
+	// The branch or tag in the repo where docs will be loaded from.
+	branch?: string;
+	// The markdown pages that make up the docset
+	pages: string[];
+	// A cache of rendered documents
+	cache?: { [name: string]: DocPage };
+	// The rendered menu element
+	menu?: Element;
 }
 
 interface DocPage {
@@ -41,6 +48,12 @@ interface DocPage {
 interface DocSetId {
 	project: string;
 	version?: string;
+}
+
+interface DocSetInfo {
+	project: string;
+	version: string;
+	data: DocSetVersion;
 }
 
 interface DocInfo {
@@ -228,7 +241,7 @@ function polyfilled() {
 		}
 
 		const pageNames = docset.data.pages;
-		const docBase = docset.data.docBase;
+		const docBase = getDocBaseUrl(docset);
 
 		let cache = docset.data.cache!;
 		let load: PromiseLike<any>;
@@ -247,7 +260,15 @@ function polyfilled() {
 								const html = render(text, name);
 								const element = document.createElement('div');
 								element.innerHTML = html;
+
+								const heading = document.createElement('div');
+								heading.className = 'page-heading';
+
 								const h1 = element.querySelector('h1')!;
+								heading.appendChild(h1);
+								element.insertBefore(heading, element.firstChild);
+
+								heading.appendChild(createGitHubLink(docset, name));
 								const title =
 									(h1 && h1.textContent) || docset.project;
 								cache[name] = { element, title };
@@ -761,7 +782,7 @@ function polyfilled() {
 		const link = <HTMLAnchorElement>document.querySelector(
 			'.navbar-menu a[data-title="Github"]'
 		);
-		link.href = getDocset()!.data.url;
+		link.href = getDocVersionUrl(docs);
 
 		updateDocsetName();
 	}
@@ -850,7 +871,7 @@ function polyfilled() {
 	 * project will be returned. If no docset ID is provided, the currently
 	 * active docset will be returned.
 	 */
-	function getDocset(setId?: DocSetId) {
+	function getDocset(setId?: DocSetId): DocSetInfo | undefined {
 		const docs = setId || getCurrentDocset();
 		const project = docsets[docs.project];
 		if (!project) {
@@ -1133,5 +1154,43 @@ function polyfilled() {
 			}
 			return top;
 		}
+	}
+
+	function createGitHubLink(info: { project: string, version: string }, page: string) {
+		const link = document.createElement('a');
+		link.title = 'View this page on GitHub';
+
+		const span = document.createElement('span');
+		span.className = 'icon';
+		const icon = document.createElement('i');
+		icon.className = 'fa fa-file-text-o';
+		span.appendChild(icon);
+		link.appendChild(span);
+
+		const docset = docsets[info.project];
+		const dv = docset.versions[info.version];
+		link.href = `${docset.url}/blob/${dv.branch}/${page}`;
+
+		return link;
+	}
+
+	function getDocVersionUrl(info: { project: string, version: string }) {
+		const docset = docsets[info.project];
+		const dv = docset.versions[info.version];
+		if (dv.url) {
+			return dv.url;
+		}
+		return `${docset.url}/tree/${dv.branch}`;
+	}
+
+	function getDocBaseUrl(info: { project: string, version: string }) {
+		const docset = docsets[info.project];
+		const dv = docset.versions[info.version];
+		if (dv.docBase) {
+			return dv.docBase;
+		}
+		const url = docset.url.replace(/\/\/github\./, 'raw.githubusercontent.');
+
+		return `${url}/${dv.branch}/`;
 	}
 }

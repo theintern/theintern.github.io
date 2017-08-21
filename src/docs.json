@@ -5,8 +5,7 @@
 		"next": "4",
 		"versions": {
 			"3": {
-				"url": "https://github.com/theintern/intern/tree/3.4",
-				"docBase": "https://raw.githubusercontent.com/theintern/intern/3.4/",
+                "branch": "3.4",
 				"pages": [
 					"README.md",
 					"docs/fundamentals.md",
@@ -27,8 +26,7 @@
 				]
 			},
 			"4": {
-				"url": "https://github.com/theintern/intern",
-				"docBase": "https://raw.githubusercontent.com/theintern/intern/master/",
+                "branch": "master",
 				"pages": [
 					"README.md",
 					"docs/getting_started.md",
@@ -53,13 +51,11 @@
 		"next": "4",
 		"versions": {
 			"3": {
-				"url": "https://github.com/theintern/intern-tutorial/tree/intern-3",
-				"docBase": "https://raw.githubusercontent.com/theintern/intern-tutorial/intern-3/",
+                "branch": "intern-3",
 				"pages": ["README.md"]
 			},
 			"4": {
-				"url": "https://github.com/theintern/intern-tutorial",
-				"docBase": "https://raw.githubusercontent.com/theintern/intern-tutorial/master/",
+                "branch": "master",
 				"pages": ["README.md"]
 			}
 		}
@@ -71,13 +67,11 @@
 		"next": "2",
 		"versions": {
 			"1": {
-				"url": "https://github.com/theintern/leadfoot/tree/1.7",
-				"docBase": "https://raw.githubusercontent.com/theintern/leadfoot/1.7/",
+                "branch": "1.7",
 				"pages": ["README.md"]
 			},
 			"2": {
-				"url": "https://github.com/theintern/leadfoot",
-				"docBase": "https://raw.githubusercontent.com/theintern/leadfoot/master/",
+                "branch": "master",
 				"pages": ["README.md"]
 			}
 		}
@@ -89,13 +83,11 @@
 		"next": "2",
 		"versions": {
 			"1": {
-				"url": "https://github.com/theintern/digdug/tree/1.6",
-				"docBase": "https://raw.githubusercontent.com/theintern/digdug/1.6/",
+                "branch": "1.6",
 				"pages": ["README.md"]
 			},
 			"2": {
-				"url": "https://github.com/theintern/digdug",
-				"docBase": "https://raw.githubusercontent.com/theintern/digdug/master/",
+                "branch": "master",
 				"pages": ["README.md"]
 			}
 		}
@@ -106,8 +98,7 @@
 		"latest": "1",
 		"versions": {
 			"1": {
-				"url": "https://github.com/theintern/intern-cli",
-				"docBase": "https://raw.githubusercontent.com/theintern/intern-cli/master/",
+                "branch": "master",
 				"pages": ["README.md"]
 			}
 		}
@@ -118,8 +109,7 @@
 		"latest": "1",
 		"versions": {
 			"1": {
-				"url": "https://github.com/theintern/intern-a11y",
-				"docBase": "https://raw.githubusercontent.com/theintern/intern-a11y/master/",
+                "branch": "master",
 				"pages": ["README.md"]
 			}
 		}
@@ -130,8 +120,7 @@
 		"latest": "1",
 		"versions": {
 			"1": {
-				"url": "https://github.com/theintern/intern-visual",
-				"docBase": "https://raw.githubusercontent.com/theintern/intern-visual/master/",
+                "branch": "master",
 				"pages": ["README.md"]
 			}
 		}
