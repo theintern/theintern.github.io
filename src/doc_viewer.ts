@@ -1158,7 +1158,7 @@ function polyfilled() {
 
 	function createGitHubLink(info: { project: string, version: string }, page: string) {
 		const link = document.createElement('a');
-		link.title = 'View this page on GitHub';
+		link.title = 'View page source';
 
 		const span = document.createElement('span');
 		span.className = 'icon';
