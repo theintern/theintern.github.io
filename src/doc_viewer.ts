@@ -978,6 +978,7 @@ function polyfilled() {
 		function createSnippet(searchMatch: Element) {
 			const searchText = searchMatch.textContent!;
 			const container = getContainer(searchMatch);
+			const extraLength = maxSnippetLength - searchText.length;
 
 			const previousSibling = (node: HTMLElement) => node.previousSibling;
 			let previousText = '';
@@ -986,7 +987,7 @@ function polyfilled() {
 				previousSibling,
 				getRightLeaf
 			);
-			while (previous && previousText.length <= 10) {
+			while (previous && previousText.length < extraLength) {
 				previousText = previous.textContent! + previousText;
 				previous = getNextTextNode(
 					previous,
@@ -996,24 +997,35 @@ function polyfilled() {
 			}
 
 			const nextSibling = (node: HTMLElement) => node.nextSibling;
-			const nextTextLength =
-				maxSnippetLength -
-				Math.min(previousText.length, 10) -
-				searchText.length;
 			let nextText = '';
 			let next = getNextTextNode(searchMatch, nextSibling, getLeftLeaf);
-			while (next && nextText.length < nextTextLength) {
+			while (next && nextText.length < extraLength) {
 				nextText += next.textContent!;
 				next = getNextTextNode(next, nextSibling, getLeftLeaf);
 			}
 
-			if (previousText.length > 10) {
+			const halfExtra = extraLength / 2;
+			let nextTarget = halfExtra;
+			let prevTarget = halfExtra;
+			if (
+				nextText.length > halfExtra &&
+				previousText.length > halfExtra
+			) {
+				nextTarget = halfExtra;
+				prevTarget = halfExtra;
+			} else if (nextText.length > halfExtra) {
+				nextTarget = halfExtra + (halfExtra - previousText.length);
+			} else if (previousText.length > halfExtra) {
+				prevTarget = halfExtra + (halfExtra - nextText.length);
+			}
+
+			if (previousText.length > prevTarget) {
 				previousText = `...${previousText.slice(
-					previousText.length - 10
+					previousText.length - prevTarget
 				)}`;
 			}
-			if (nextText.length > nextTextLength) {
-				nextText = `${nextText.slice(0, nextTextLength)}...`;
+			if (nextText.length > nextTarget) {
+				nextText = `${nextText.slice(0, nextTarget)}...`;
 			}
 
 			return [previousText, searchText, nextText].join('');
