@@ -1,3 +1,18 @@
+/**
+ * Intern doc viewer
+ *
+ * Load process:
+ *
+ *   1. Polyfill.io loads, then calls the global `polyfilled` callback
+ *      (implemnted below).
+ *   2. The callback ensures the location hash is valid, adds a hashchange
+ *      listener, and starts loading the current docset (via the processHash
+ *      method). Pages are rendered and cached as they're loaded.
+ *   3. When all pages have been loaded, the sidebar menu is created.
+ *   4. When the document is ready and the docset has loaded and rendered, the
+ *      current page and docset menu are displayed.
+ */
+
 interface DocSet {
 	url: string;
 	latest: string;
@@ -57,11 +72,11 @@ declare const Mark: any;
  */
 function polyfilled() {
 	let markdown: any;
-	let defaultDocs = { project: 'Intern' };
+	let viewer: HTMLElement;
 	let skipPageLoad = false;
 	let ignoreScroll = false;
-	let highlightTerm: string | undefined;
 
+	const defaultDocs = { project: 'Intern' };
 	const maxSnippetLength = 60;
 	const searchDelay = 300;
 	const menuHighlightDelay = 20;
@@ -71,26 +86,28 @@ function polyfilled() {
 	// hash, which will cause new content to be rendered.
 	window.addEventListener('hashchange', processHash);
 
-	// If the base docs page is loaded (without a hash), set a default hash to
+	// If the base docs page is loaded without a hash, set a default hash to
 	// get a docset to load.
 	if (!location.hash) {
 		const docset = getDocset(defaultDocs)!;
-		const hash = createHash({
+		setHash({
 			project: docset.project,
 			version: docset.version,
 			page: docset.data.pages[0]
 		});
-		updateHash(hash);
 	} else {
 		processHash();
 	}
 
+	// Create a promise that resolves when the doc is ready (just for
+	// convenience)
 	const ready = new Promise(resolve => {
 		window.addEventListener('load', resolve);
 	});
 
-	// Run when the page has been rendered
 	ready.then(() => {
+		viewer = <HTMLElement>document.querySelector('.docs-layout')!;
+
 		// Toggle the doc selector when the header is clicked
 		const docsetSelect = document.querySelector('.menu .docset-selector')!;
 		const docsetSelectHeader = docsetSelect.querySelector('.card-header')!;
@@ -108,30 +125,27 @@ function polyfilled() {
 			const target: Element = <Element>event.target;
 			if (target.tagName === 'SELECT') {
 				const select = <HTMLSelectElement>target;
-				const docs = getCurrentDocs();
+				const docs = getCurrentDocset();
 
 				if (target.getAttribute('data-select-property') === 'project') {
-					const docset = getDocset({ project: select.value })!.data;
-					updateHash(
-						createHash({
-							project: select.value,
-							version: docsets[select.value].latest,
-							page: docset.pages[0]
-						})
-					);
+					docs.page = getDocset({
+						project: select.value
+					})!.data.pages[0];
+					docs.project = select.value;
+					docs.version = docsets[select.value].latest;
 				} else {
-					const docset = getDocset({
+					docs.page = getDocset({
 						project: docs.project,
 						version: select.value
-					})!.data;
-					updateHash(
-						createHash({
-							project: docs.project,
-							version: select.value,
-							page: docset.pages[0]
-						})
-					);
+					})!.data.pages[0];
+					docs.version = select.value;
 				}
+
+				setHash({
+					project: docs.project,
+					version: docs.version,
+					page: docs.page
+				});
 			}
 		});
 
@@ -140,12 +154,11 @@ function polyfilled() {
 		document.querySelector(
 			'.menu .search-field'
 		)!.addEventListener('input', event => {
-			const value = (<HTMLInputElement>event.target).value;
 			if (searchTimer) {
 				clearTimeout(searchTimer);
 			}
 			searchTimer = setTimeout(() => {
-				search(value);
+				search((<HTMLInputElement>event.target).value);
 			}, searchDelay);
 		});
 
@@ -177,14 +190,21 @@ function polyfilled() {
 			}, menuHighlightDelay);
 		});
 
+		// After the page is loaded, ensure the docset selector reflects what's
+		// being displayed.
 		updateDocsetSelector();
 	});
 
-	function updateHash(newHash: string, ignoreUpdate = false) {
-		if (ignoreUpdate && location.hash !== newHash) {
+	/**
+	 * Set the location hash, optionally telling the router to ignore the hash
+	 * update.
+	 */
+	function setHash(newHash: string | Partial<DocInfo>, ignoreUpdate = false) {
+		let hash = typeof newHash === 'string' ? newHash : createHash(newHash);
+		if (ignoreUpdate && location.hash !== hash) {
 			skipPageLoad = true;
 		}
-		location.hash = newHash;
+		location.hash = hash;
 	}
 
 	/**
@@ -219,28 +239,23 @@ function polyfilled() {
 
 			load = Promise.all(
 				pageNames.map(name => {
-					return (
-						cache[name] ||
-						fetch(docBase + name)
-							.then(response => response.text())
-							.then(text => {
-								return ready.then(() => {
-									text = filterGhContent(text);
-									const html = render(text, name);
-									const element = document.createElement(
-										'div'
-									);
-									element.innerHTML = html;
-									const h1 = element.querySelector('h1')!;
-									const title =
-										(h1 && h1.textContent) ||
-										docset.project;
-									cache[name] = { element, title };
-								});
-							})
-					);
+					return fetch(docBase + name)
+						.then(response => response.text())
+						.then(text => {
+							return ready.then(() => {
+								text = filterGhContent(text);
+								const html = render(text, name);
+								const element = document.createElement('div');
+								element.innerHTML = html;
+								const h1 = element.querySelector('h1')!;
+								const title =
+									(h1 && h1.textContent) || docset.project;
+								cache[name] = { element, title };
+							});
+						});
 				})
 			).then(() => {
+				// All pages need to have been loaded to create the docset menu
 				createMenu();
 			});
 		} else {
@@ -248,6 +263,7 @@ function polyfilled() {
 			load = Promise.resolve();
 		}
 
+		// When both the docset and the page are ready, update the UI
 		return Promise.all([ready, load]).then(() => {
 			const container = document.querySelector('.docs-content')!;
 			container.setAttribute('data-doc-project', docset.project);
@@ -402,9 +418,14 @@ function polyfilled() {
 	function showPage(name: string, section?: string) {
 		const docset = getDocset()!.data;
 		const page = docset.cache![name];
-		const content = <HTMLElement>document.body.querySelector('.docs-content')!;
+		const content = <HTMLElement>document.body.querySelector(
+			'.docs-content'
+		)!;
 		content.removeChild(content.children[0]);
 		content.appendChild(page.element);
+
+		// Showing the page will probably scroll the content area, but we don't
+		// want to invoke the normal scroll handling code in this case.
 		ignoreScroll = true;
 
 		if (section) {
@@ -417,14 +438,14 @@ function polyfilled() {
 			content.scrollIntoView();
 		}
 
-		updatePageMenu();
-		updateSidebarHighlight();
+		highlightActivePage();
+		highlightActiveSection();
 	}
 
 	/**
-	 * Update the active element in the menu
+	 * Highlight the active page in the sidebar menu
 	 */
-	function updatePageMenu() {
+	function highlightActivePage() {
 		const menu = document.querySelector(
 			'.menu .docset-contents .menu-list'
 		)!;
@@ -433,7 +454,7 @@ function polyfilled() {
 			active.classList.remove('is-active-page');
 		}
 
-		const currentDocs = getCurrentDocs();
+		const currentDocs = getCurrentDocset();
 		const currentPage = createHash({
 			project: currentDocs.project,
 			version: currentDocs.version,
@@ -445,9 +466,9 @@ function polyfilled() {
 	}
 
 	/**
-	 * Update the active element in the menu
+	 * Highlight the active element in the sidebar menu
 	 */
-	function updateSidebarHighlight() {
+	function highlightActiveSection() {
 		const menus = document.querySelectorAll('.menu .menu-list')!;
 		if (menus.length === 0) {
 			return;
@@ -461,15 +482,19 @@ function polyfilled() {
 			}
 
 			const currentSection = location.hash;
-			let link = <HTMLElement>menu.querySelector(`li > a[href="${currentSection}"]`)!;
+			let link = <HTMLElement>menu.querySelector(
+				`li > a[href="${currentSection}"]`
+			)!;
 			if (!link) {
-				const currentDocs = getCurrentDocs();
+				const currentDocs = getCurrentDocset();
 				const currentPage = createHash({
 					project: currentDocs.project,
 					version: currentDocs.version,
 					page: currentDocs.page
 				});
-				link = <HTMLElement>menu.querySelector(`li > a[href="${currentPage}"]`)!;
+				link = <HTMLElement>menu.querySelector(
+					`li > a[href="${currentPage}"]`
+				)!;
 			}
 
 			if (link) {
@@ -495,7 +520,7 @@ function polyfilled() {
 
 		// Always try to update the menu highlight, even if we're skipping the
 		// rest of the page load
-		updateSidebarHighlight();
+		highlightActiveSection();
 
 		if (ignoring) {
 			return;
@@ -521,7 +546,7 @@ function polyfilled() {
 			if (section) {
 				parts.section = section;
 			}
-			updateHash(createHash(parts));
+			setHash(parts);
 		}
 
 		Promise.resolve(loadDocset({ project, version })).then(() => {
@@ -691,7 +716,7 @@ function polyfilled() {
 	 * Select the currently active project in the project selector.
 	 */
 	function updateDocsetSelector() {
-		const docs = getCurrentDocs();
+		const docs = getCurrentDocset();
 		const selector = document.querySelector(
 			'select[data-select-property="project"]'
 		)!;
@@ -706,7 +731,7 @@ function polyfilled() {
 		}
 
 		const option = <HTMLOptionElement>selector.querySelector(
-			`option[value="${getCurrentDocs().project}"]`
+			`option[value="${getCurrentDocset().project}"]`
 		);
 		if (option) {
 			option.selected = true;
@@ -715,7 +740,7 @@ function polyfilled() {
 		const versions = Object.keys(docsets[docs.project].versions);
 		// If more than one version is available, show the version selector
 		if (versions.length > 1) {
-			addViewClass('multi-version');
+			viewer.classList.add('multi-version');
 
 			const selector = document.querySelector(
 				'select[data-select-property="version"]'
@@ -725,23 +750,28 @@ function polyfilled() {
 				const option = document.createElement('option');
 				option.value = version;
 				option.selected = version === docs.version;
-				option.textContent = version;
+				option.textContent = `v${version}`;
 				selector.appendChild(option);
 			});
 		} else {
-			removeViewClass('multi-version');
+			viewer.classList.remove('multi-version');
 		}
 
+		// Update the gibhub link
+		const link = <HTMLAnchorElement>document.querySelector(
+			'.navbar-menu a[data-title="Github"]'
+		);
+		link.href = getDocset()!.data.url;
+
 		updateDocsetName();
-		updateGithubLink();
 	}
 
 	/**
-	 * Update the docset name in the sidebar to reflect the project and version
-	 * selectors
+	 * Update the docset name in the sidebar to show the current project and
+	 * version.
 	 */
 	function updateDocsetName() {
-		const docs = getCurrentDocs();
+		const docs = getCurrentDocset();
 		const docsetSelector = document.querySelector(
 			'.menu .docset-selector'
 		)!;
@@ -754,21 +784,10 @@ function polyfilled() {
 	}
 
 	/**
-	 * Update the github link on the menubar to link to the currently active
-	 * project.
+	 * Get the current docset from the location hash. If the hash does not
+	 * identify a page, use default values.
 	 */
-	function updateGithubLink() {
-		const link = <HTMLAnchorElement>document.querySelector(
-			'.navbar-menu a[data-title="Github"]'
-		);
-		const docset = getDocset()!.data;
-		link.href = docset.url;
-	}
-
-	/**
-	 * Get the current docset from the location hash. If the hash does not identify a page, use default values.
-	 */
-	function getCurrentDocs(): DocInfo {
+	function getCurrentDocset(): DocInfo {
 		const hash = decodeHash();
 		let [project, version, page, section] = hash
 			.split('/')
@@ -791,13 +810,12 @@ function polyfilled() {
 	}
 
 	/**
-	 * Create a link hash for a given page name and fragment for the current
-	 * docset.
+	 * Create a link hash for a given docset.
 	 *
 	 * If this is changed, update decodeHash to match.
 	 */
 	function createHash(info: Partial<DocInfo>) {
-		const currentDocs = getCurrentDocs();
+		const currentDocs = getCurrentDocset();
 		const docs = { ...info };
 		if (!docs.project) {
 			docs.project = currentDocs.project;
@@ -818,7 +836,9 @@ function polyfilled() {
 	/**
 	 * Return a decoded version of the hash.
 	 *
-	 * If this is changed, update createHash to match.
+	 * This method is the counterpart to createHash. Currently it just returns
+	 * the hash, but createHash may eventually do something more interesting,
+	 * like encoding the entire created hash.
 	 */
 	function decodeHash() {
 		return location.hash.slice(1);
@@ -831,7 +851,7 @@ function polyfilled() {
 	 * active docset will be returned.
 	 */
 	function getDocset(setId?: DocSetId) {
-		const docs = setId || getCurrentDocs();
+		const docs = setId || getCurrentDocset();
 		const project = docsets[docs.project];
 		if (!project) {
 			return;
@@ -858,13 +878,13 @@ function polyfilled() {
 		)!;
 		searchResults.innerHTML = '';
 
-		highlightTerm = term.trim();
+		const highlightTerm = term.trim();
 		const searchTerm = highlightTerm.toLowerCase();
 
 		if (highlightTerm) {
-			addViewClass('search-is-active');
+			viewer.classList.add('search-is-active');
 		} else {
-			removeViewClass('search-is-active');
+			viewer.classList.remove('search-is-active');
 			updateHashFromContent();
 		}
 
@@ -872,29 +892,32 @@ function polyfilled() {
 		const finders: PromiseLike<any>[] = [];
 		for (let name in docset.data.cache!) {
 			const page = docset.data.cache![name];
-			finders.push(findAllMatches(page.element).then(matches => {
-				if (matches.length > 0) {
-					const link = createLinkItem(page.title, name);
-					searchResults.appendChild(link);
+			finders.push(
+				findAllMatches(page.element).then(matches => {
+					if (matches.length > 0) {
+						const link = createLinkItem(page.title, name);
+						searchResults.appendChild(link);
 
-					const submenu = document.createElement('ul');
-					link.appendChild(submenu);
+						const submenu = document.createElement('ul');
+						link.appendChild(submenu);
 
-					matches.forEach(match => {
-						const link = createLinkItem(
-							match.snippet,
-							name,
-							match.section
-						);
-						submenu.appendChild(link);
-					});
-				}
-			}));
+						matches.forEach(match => {
+							const link = createLinkItem(
+								match.snippet,
+								name,
+								match.section
+							);
+							submenu.appendChild(link);
+						});
+					}
+				})
+			);
 		}
 
 		Promise.all(finders).then(() => {
 			if (searchResults.childNodes.length === 0) {
-				searchResults.innerHTML = '<div class="no-results">No results found</div>';
+				searchResults.innerHTML =
+					'<div class="no-results">No results found</div>';
 			}
 		});
 
@@ -930,6 +953,7 @@ function polyfilled() {
 			const searchText = searchMatch.textContent!;
 			const container = getContainer(searchMatch);
 
+			const previousSibling = (node: HTMLElement) => node.previousSibling;
 			let previousText = '';
 			let previous = getNextTextNode(
 				searchMatch,
@@ -945,7 +969,8 @@ function polyfilled() {
 				)!;
 			}
 
-			let nextTextLength =
+			const nextSibling = (node: HTMLElement) => node.nextSibling;
+			const nextTextLength =
 				maxSnippetLength -
 				Math.min(previousText.length, 10) -
 				searchText.length;
@@ -967,6 +992,8 @@ function polyfilled() {
 
 			return [previousText, searchText, nextText].join('');
 
+			// Get the next (or previous) text node from a given node. This may
+			// involve some traversal of the DOM.
 			function getNextTextNode(
 				node: Node | null,
 				getNext: (node: Node) => Node | null,
@@ -996,14 +1023,7 @@ function polyfilled() {
 				return next;
 			}
 
-			function nextSibling(node: Node) {
-				return node.nextSibling;
-			}
-
-			function previousSibling(node: Node) {
-				return node.previousSibling;
-			}
-
+			// Get the leftmost leaf in the DOM, starting from a given node
 			function getLeftLeaf(node: Node): Node {
 				while (node.childNodes.length > 0) {
 					return getLeftLeaf(node.childNodes[0]);
@@ -1011,6 +1031,7 @@ function polyfilled() {
 				return node;
 			}
 
+			// Get the rightmost leaf in the DOM, starting from a given node
 			function getRightLeaf(node: Node): Node {
 				while (node.childNodes.length > 0) {
 					return getRightLeaf(
@@ -1020,6 +1041,8 @@ function polyfilled() {
 				return node;
 			}
 
+			// Get the container for an element. This is just the first
+			// 'interesting' container in its ancestry tree.
 			function getContainer(node: Element): Element {
 				switch (node.tagName) {
 					case 'H1':
@@ -1040,21 +1063,10 @@ function polyfilled() {
 		}
 	}
 
-	function addViewClass(className: string) {
-		const layout = document.querySelector('.docs-layout')!;
-		layout.classList.add(className);
-	}
-
-	function removeViewClass(className: string) {
-		const layout = document.querySelector('.docs-layout')!;
-		layout.classList.remove(className);
-	}
-
-	function hasViewClass(className: string) {
-		const layout = document.querySelector('.docs-layout')!;
-		return layout.classList.contains(className);
-	}
-
+	/**
+	 * Scroll an element into view if it's not currently visible within its
+	 * container.
+	 */
 	function scrollIntoViewIfNessary(
 		element: HTMLElement,
 		container: HTMLElement
@@ -1070,10 +1082,13 @@ function polyfilled() {
 		}
 	}
 
+	/**
+	 * Update the location hash based on the currently visible doc contents.
+	 */
 	function updateHashFromContent() {
 		const content = <HTMLElement>document.querySelector('.docs-content')!;
 		let elements: NodeListOf<Element>;
-		if (hasViewClass('search-is-active')) {
+		if (viewer.classList.contains('search-is-active')) {
 			elements = content.querySelectorAll('mark')!;
 		} else {
 			elements = content.querySelectorAll('h1,h2,h3')!;
@@ -1097,14 +1112,14 @@ function polyfilled() {
 			above = elements[elements.length - 1];
 		}
 
-		const docs = getCurrentDocs();
-		updateHash(
-			createHash({
+		const docs = getCurrentDocset();
+		setHash(
+			{
 				project: docs.project,
 				version: docs.version,
 				page: docs.page,
 				section: above.id
-			}),
+			},
 			true
 		);
 
