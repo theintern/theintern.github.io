@@ -774,9 +774,16 @@ function polyfilled() {
 			selector.innerHTML = '';
 			versions.forEach(version => {
 				const option = document.createElement('option');
+				let text = `v${version}`;
+				if (version === docsets[docs.project].latest) {
+					text += ' (latest release)';
+				}
+				else if (version === docsets[docs.project].next) {
+					text += ' (development)';
+				}
 				option.value = version;
 				option.selected = version === docs.version;
-				option.textContent = `v${version}`;
+				option.textContent = text;
 				selector.appendChild(option);
 			});
 		} else {
