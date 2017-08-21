@@ -1214,7 +1214,7 @@ function polyfilled() {
 		}
 		const url = docset.url.replace(
 			/\/\/github\./,
-			'raw.githubusercontent.'
+			'//raw.githubusercontent.'
 		);
 
 		return `${url}/${dv.branch}/`;
