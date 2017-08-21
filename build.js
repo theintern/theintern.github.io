@@ -121,10 +121,11 @@ metalsmith.build(function(error) {
 		console.log('Built!');
 
 		if (publish) {
+			console.log('Publishing...');
 			execSync('git add .', { cwd: 'public' });
 			execSync('git commit --all -m "Updated doc build"', { cwd: 'public' });
 			execSync('git fetch public master:master'); 
-			console.log('Publishing');
+			console.log('Published code is now in master. Don\'t forget to push!');
 		}
 	}
 });
