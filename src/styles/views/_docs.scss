@@ -59,6 +59,7 @@
 	.menu {
 		ul {
 			list-style: none;
+			margin-bottom: 0;
 		}
 
 		.menu-list {
@@ -102,18 +103,6 @@
 			}
 		}
 
-		.search-results {
-			.menu-list {
-				> li > ul {
-					display: block;
-				}
-			}
-
-			.no-results {
-				color: $secondary;
-			}
-		}
-
 		.field {
 			margin: 0.75rem 1rem;
 
@@ -133,42 +122,45 @@
 			}
 		}
 
-		.version-selector,
-		.search-results {
+		.version-selector {
 			display: none;
 		}
+
+	}
+
+	.search-dropdown {
+		margin-right: 4px;
 
 		.search-field {
 			input {
 				box-shadow: none;
 				border-right: none;
-				border-color: $secondary;
+				border-color: $primary;
 			}
 			.control .button {
 				border-left: none;
-				border-color: $secondary;
+				border-color: $primary;
 				color: $secondary;
 				// width matches padding in select dropdown
 				width: 2.5em;
 			}
 		}
-	}
 
-	.search-is-active .menu {
-		.docset-contents {
-			display: none;
+		.dropdown-content {
+			max-height: 40vw;
+			overflow: auto;
 		}
-		.search-results {
-			display: block;
+
+		.menu-list {
+			margin: 0;
+
+			> li > ul {
+				display: block;
+			}
 		}
-		.search-field {
-			input {
-				border-color: $primary;
-			}
-			.control .button {
-				border-color: $primary;
-				color: $primary;
-			}
+
+		.no-results {
+			color: $secondary;
 		}
 	}
 

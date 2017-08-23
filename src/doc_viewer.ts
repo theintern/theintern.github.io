@@ -162,7 +162,7 @@ function polyfilled() {
 		// Live search as the user types into the search dropdown input
 		let searchTimer: number | undefined;
 		document.querySelector(
-			'.menu .search-field'
+			'.header .search-dropdown'
 		)!.addEventListener('input', event => {
 			if (searchTimer) {
 				clearTimeout(searchTimer);
@@ -173,10 +173,10 @@ function polyfilled() {
 		});
 
 		document.querySelector(
-			'.menu .search-field .button'
+			'.header .search-dropdown .button'
 		)!.addEventListener('click', () => {
 			const input = <HTMLInputElement>document.querySelector(
-				'.menu .search-field input'
+				'.header .search-dropdown input'
 			);
 			input.value = '';
 			search('');
@@ -198,6 +198,32 @@ function polyfilled() {
 				menuTimer = undefined;
 				updateHashFromContent();
 			}, menuHighlightDelay);
+		});
+
+		// Open the search dropdown if the user clicks the search button
+		const searchDropdown = document.querySelector(
+			'.header .search-dropdown'
+		)!;
+		searchDropdown.addEventListener('click', function(event) {
+			const target = <HTMLElement>event.target;
+			if (target.classList.contains('dropdown-trigger')) {
+				searchDropdown.classList.toggle('is-active');
+				if (searchDropdown.classList.contains('is-active')) {
+					searchDropdown.querySelector('input')!.focus();
+				}
+			}
+		});
+
+		// Close the search dropdown if the user clicks outside of it
+		document.body.addEventListener('click', function(event) {
+			const target = <HTMLElement>event.target;
+			if (
+				searchDropdown.classList.contains('is-active') &&
+				target !== searchDropdown &&
+				!searchDropdown.contains(target)
+			) {
+				searchDropdown.classList.remove('is-active');
+			}
 		});
 
 		// After the page is loaded, ensure the docset selector reflects what's
@@ -492,7 +518,7 @@ function polyfilled() {
 	 * Highlight the active element in the sidebar menu
 	 */
 	function highlightActiveSection() {
-		const menus = document.querySelectorAll('.menu .menu-list')!;
+		const menus = document.querySelectorAll('.docs-nav .menu-list')!;
 		if (menus.length === 0) {
 			return;
 		}
@@ -776,8 +802,7 @@ function polyfilled() {
 				let text = `v${version}`;
 				if (version === docsets[docs.project].latest) {
 					text += ' (latest release)';
-				}
-				else if (version === docsets[docs.project].next) {
+				} else if (version === docsets[docs.project].next) {
 					text += ' (development)';
 				}
 				option.value = version;
@@ -906,19 +931,12 @@ function polyfilled() {
 	 */
 	function search(term: string) {
 		const searchResults = document.querySelector(
-			'.menu .search-results .menu-list'
+			'.header .search-results'
 		)!;
 		searchResults.innerHTML = '';
 
 		const highlightTerm = term.trim();
 		const searchTerm = highlightTerm.toLowerCase();
-
-		if (highlightTerm) {
-			viewer.classList.add('search-is-active');
-		} else {
-			viewer.classList.remove('search-is-active');
-			updateHashFromContent();
-		}
 
 		const docset = getDocset()!;
 		const finders: PromiseLike<any>[] = [];
@@ -949,12 +967,17 @@ function polyfilled() {
 		Promise.all(finders).then(() => {
 			if (searchResults.childNodes.length === 0) {
 				searchResults.innerHTML =
-					'<div class="no-results">No results found</div>';
+					'<li class="no-results">No results found</li>';
+			} else {
+				findAllMatches(searchResults, false);
 			}
 		});
 
 		// Find all the matches for the user's text
-		function findAllMatches(page: Element): Promise<SearchResult[]> {
+		function findAllMatches(
+			page: Element,
+			saveMatches = true
+		): Promise<SearchResult[]> {
 			return new Promise(resolve => {
 				const highlighter = new Mark(page);
 				highlighter.unmark();
@@ -966,12 +989,14 @@ function polyfilled() {
 					ignorePunctuation: ['“', '”', '‘', '’'],
 					separateWordSearch: false,
 					each: (element: Element) => {
-						element.id = `search-result-${matches.length}`;
-						matches.push({
-							element,
-							section: element.id,
-							snippet: createSnippet(element)
-						});
+						if (saveMatches) {
+							element.id = `search-result-${matches.length}`;
+							matches.push({
+								element,
+								section: element.id,
+								snippet: createSnippet(element)
+							});
+						}
 					},
 					done: () => {
 						resolve(matches);
