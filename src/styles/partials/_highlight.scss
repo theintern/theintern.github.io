@@ -81,11 +81,11 @@
 
 
 .hljs {
-	background: $code-background;
+	background: $grey-dark;
 	border-radius: 3px;
 	color: #c5c8c6;
 	display: block;
-	font-family: $font-code;
+	font-family: $family-monospace;
 	font-size: $code-font-size;
 	margin-bottom: 1.5em;
 	overflow-x: auto;

@@ -1,5 +1,15 @@
-@import "global/variables";
+// Bulma overrides
+$primary: #2EC186;
+$secondary: #7C8EA1;
+$border: #E1E4E6;
+$light: #FAFBFC;
+$grey: #F0F2F5;
+$grey-dark: #4A4A4A;
+$code: #C94169;
+$family-monospace: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,'Source Code Pro',monospace;
+
 @import "../../node_modules/bulma/bulma";
+@import "global/variables";
 @import "global/mixins";
 @import "global/typography";
 @import "global/global";

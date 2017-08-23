@@ -1,7 +1,7 @@
 .page-home {
 	padding-top: 3vw;
 	.hero {
-		border-bottom: 1px solid $border-color;
+		border-bottom: 1px solid $border;
 		padding-top: 5vw;
 		.title {
 			margin-bottom: 1.5rem;
@@ -16,10 +16,10 @@
 		}
 	}
 	.features {
-		border-bottom: 1px solid $border-color;
+		border-bottom: 1px solid $border;
 	}
 	.who {
-		border-bottom: 1px solid $border-color;
+		border-bottom: 1px solid $border;
 		.column {
 			text-align: center;
 			svg {
@@ -84,8 +84,8 @@
 
 			thead {
 				th {
-					background: $dark-grey;
-					border-color: $dark-grey;
+					background: $grey-dark;
+					border-color: $grey-dark;
 					text-align: center;
 					font-size: 80%;
 					a {

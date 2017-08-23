@@ -30,10 +30,7 @@ body {
 }
 
 code:not(.hljs) {
-	background: $inline-code-background;
 	border-radius: 3px;
-	color: rgb(36, 41, 46);
-	font-family: $font-code;
 	font-size: $code-font-size;
 	padding: 0.2em;
 	white-space: nowrap;

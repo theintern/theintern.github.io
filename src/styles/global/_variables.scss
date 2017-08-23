@@ -1,30 +1,12 @@
 $mobile: 768px;
 
-$title-font: 'Zilla Slab', serif;
-
-$primary: #2EC186;
-$secondary: #7C8EA1;
-$grey-darker: #4A4A4A;
-$dark-grey: $grey-darker;
-$border-color: #E1E4E6;
-$button-border-color: #C8D1D8;
-$light: #FAFBFC;
-$grey: #F0F2F5;
-$color-inline-code: #C94169;
-
 // Typography
-$heading-weight: 500;
-$heading-color: $dark-grey;
-$font-mono: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,'Source Code Pro',monospace;
-$font-code: $font-mono;
 $body-font: 'Source Sans Pro', sans-serif;
 $body-text: #333;
+$title-font: 'Zilla Slab', serif;
 
-$inline-code-background: rgba(27, 31, 35, 0.05);
-$code-background: #1d1f21;
-$code-font-size: 0.85rem;
+$code-font-size: 0.8rem;
 
 $info-highlight: #368CF8;
 $warning-highlight: #EA565E;
 $deprecated-highlight: $grey-darker;
-$table-border: #E0E2E5;

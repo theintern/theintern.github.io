@@ -30,7 +30,7 @@
 	}
 	.docs-nav {
 		background: $light;
-		border-right: 1px solid $border-color;
+		border-right: 1px solid $border;
 		padding: 0;
 		
 		.tabs.is-toggle {
@@ -46,7 +46,7 @@
 		padding-left: 5vw;
 		padding-right: 5vw;
 		>h1 {
-			border-bottom: 1px solid $border-color;
+			border-bottom: 1px solid $border;
 			padding-bottom: 1.5rem;
 			margin-bottom: 2rem;
 		}
@@ -200,15 +200,16 @@
 
 	table {
 		th {
-			background: $table-border;
-			border-color: $light;
+			background: $grey-dark;
+			border-color: $grey-darker;
+			color: $light;
 		}
 	}
 
 	.docset-selector {
 		margin-bottom: 0.5rem;
 		box-shadow: none;
-		border-color: $border-color;
+		border-color: $border;
 
 		.card-header {
 			cursor: pointer;
@@ -241,7 +242,7 @@
 
 		.card-content {
 			max-height: 0;
-			border-bottom: solid 1px $border-color;
+			border-bottom: solid 1px $border;
 			transition: max-height 0.25s ease;
 			transition: padding 0.25s ease;
 			padding: 0;
