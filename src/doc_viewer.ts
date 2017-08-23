@@ -720,19 +720,21 @@ function polyfilled() {
 				return defaultLinkRender(tokens, idx, options, env, self);
 			};
 
-			// Generate heading anchors with the same format as GitHub pages
-			// (this isn't terribly robust yet)
-			markdown.use(markdownitHeadingAnchor, {
-				slugify: (str: string) => {
-					return str
-						.toLowerCase()
-						.replace(/[^A-Za-z0-9_ ]/g, '')
-						.replace(/\s+/g, '-');
-				}
-			});
+			// Generating heading IDs for in-page links
+			markdown.renderer.rules.heading_open = (
+				tokens: any[],
+				idx: number,
+				_options: any,
+				env: any
+			) => {
+				const token = tokens[idx];
+				const content = tokens[idx + 1].content;
+				const id = env.slugify(content);
+				return `<${token.tag} id="${id}">`;
+			};
 		}
 
-		return markdown.render(text, { page });
+		return markdown.render(text, { page, slugify: createSlugifier() });
 	}
 
 	/**
@@ -1234,5 +1236,29 @@ function polyfilled() {
 		);
 
 		return `${url}/${dv.branch}/`;
+	}
+
+	/**
+	 * Create a function to generate URL slugs for a page.
+	 */
+	function createSlugifier() {
+		const cache: { [slug: string]: boolean } = {};
+		return (str: string) => {
+			let slug = str
+				.toLowerCase()
+				.replace(/[^A-Za-z0-9_ ]/g, '')
+				.replace(/\s+/g, '-');
+			if (cache[slug]) {
+				let i = 1;
+				let next = `${slug}-${i}`;
+				while (cache[next]) {
+					i++;
+					next = `${slug}-${i}`;
+				}
+				slug = next;
+			}
+			cache[slug] = true;
+			return slug;
+		};
 	}
 }
