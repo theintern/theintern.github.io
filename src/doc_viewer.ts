@@ -59,6 +59,7 @@ interface DocSetInfo {
 interface DocInfo {
 	project: string;
 	version: string;
+	type: 'docs' | 'api';
 	page: string;
 	section: string;
 }
@@ -499,6 +500,7 @@ function polyfilled() {
 		const currentPage = createHash({
 			project: currentDocs.project,
 			version: currentDocs.version,
+			type: currentDocs.type,
 			page: currentDocs.page
 		});
 
@@ -564,33 +566,32 @@ function polyfilled() {
 			return;
 		}
 
-		const hash = decodeHash();
-		const parts = hash.split('/').map(part => decodeURIComponent(part));
-		const project = parts[0];
-		const version = parts[1];
-		const docset = getDocset({ project, version })!;
-		const page = parts[2] || docset.data.pages[0];
-		const section = parts[3];
+		const hash = parseHash();
+		const docset = getDocset(hash)!;
+
+		if (viewer) {
+			viewer.setAttribute('data-doc-type', hash.type);
+		}
 
 		// The hash encodes our state -- ensure it points to a valid docset
-		if (!version) {
+		if (!hash.version) {
 			const parts: Partial<DocInfo> = {
 				project: docset.project,
 				version: docset.version
 			};
-			if (page) {
-				parts.page = page;
+			if (hash.page) {
+				parts.page = hash.page;
 			}
-			if (section) {
-				parts.section = section;
+			if (hash.section) {
+				parts.section = hash.section;
 			}
 			setHash(parts);
+		} else {
+			Promise.resolve(loadDocset(hash)).then(() => {
+				showPage(hash.page, hash.section);
+				updateDocsetSelector();
+			});
 		}
-
-		Promise.resolve(loadDocset({ project, version })).then(() => {
-			showPage(page, section);
-			updateDocsetSelector();
-		});
 	}
 
 	/**
@@ -815,45 +816,34 @@ function polyfilled() {
 	 * identify a page, use default values.
 	 */
 	function getCurrentDocset(): DocInfo {
-		const hash = decodeHash();
-		let [project, version, page, section] = hash
-			.split('/')
-			.map(part => decodeURIComponent(part));
-		if (!project) {
-			project = defaultDocs.project;
+		const data = parseHash();
+		if (!data.project) {
+			data.project = defaultDocs.project;
 		}
-		if (!version) {
-			version = docsets[project].latest;
+		if (!data.version) {
+			data.version = docsets[data.project].latest;
 		}
-		if (!page) {
-			page = docsets[project].versions[version].pages[0];
+		if (!data.page) {
+			data.page = docsets[data.project].versions[data.version].pages[0];
 		}
-		return {
-			project,
-			version,
-			page,
-			section
-		};
+		if (!data.type) {
+			data.type = 'docs';
+		}
+		return data;
 	}
 
 	/**
 	 * Create a link hash for a given docset.
-	 *
-	 * If this is changed, update decodeHash to match.
 	 */
 	function createHash(info: Partial<DocInfo>) {
 		const currentDocs = getCurrentDocset();
-		const docs = { ...info };
-		if (!docs.project) {
-			docs.project = currentDocs.project;
-		}
-		if (!docs.version) {
-			docs.version = currentDocs.version;
-		}
-		// if (!docs.page) {
-		// 	docs.page = docsets[docs.project].versions[docs.version].pages[0];
-		// }
-		const parts = [docs.project, docs.version, docs.page];
+		const docs = {
+			project: currentDocs.project,
+			version: currentDocs.version,
+			type: 'docs',
+			...info
+		};
+		const parts = [docs.project, docs.version, docs.type, docs.page];
 		if (docs.section) {
 			parts.push(docs.section);
 		}
@@ -861,14 +851,14 @@ function polyfilled() {
 	}
 
 	/**
-	 * Return a decoded version of the hash.
-	 *
-	 * This method is the counterpart to createHash. Currently it just returns
-	 * the hash, but createHash may eventually do something more interesting,
-	 * like encoding the entire created hash.
+	 * Parse the hash into a DocInfo structure.
 	 */
-	function decodeHash() {
-		return location.hash.slice(1);
+	function parseHash(): DocInfo {
+		const hash = location.hash.slice(1);
+		let [project, version, type, page, section] = hash
+			.split('/')
+			.map(part => decodeURIComponent(part));
+		return <DocInfo>{ project, version, type, page, section };
 	}
 
 	/**
