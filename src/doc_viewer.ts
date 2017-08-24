@@ -777,9 +777,9 @@ function polyfilled() {
 				const option = document.createElement('option');
 				let text = `v${version}`;
 				if (version === docsets[docs.project].latest) {
-					text += ' (latest release)';
+					text += ' (release)';
 				} else if (version === docsets[docs.project].next) {
-					text += ' (development)';
+					text += ' (dev)';
 				}
 				option.value = version;
 				option.selected = version === docs.version;
