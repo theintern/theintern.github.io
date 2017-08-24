@@ -413,7 +413,7 @@ function polyfilled() {
 		// Install the current docset's menu in the menu container
 		function showMenu() {
 			const menu = document.querySelector(
-				'.docs-menu .menu .docset-contents'
+				'.docs-menu .menu'
 			)!;
 			const menuList = menu.querySelector('.menu-list');
 			if (menuList) {
@@ -475,7 +475,7 @@ function polyfilled() {
 	 */
 	function highlightActivePage() {
 		const menu = document.querySelector(
-			'.menu .docset-contents .menu-list'
+			'.docs-menu .menu .menu-list'
 		)!;
 		const active = menu.querySelector('.is-active-page');
 		if (active) {
@@ -497,7 +497,7 @@ function polyfilled() {
 	 * Highlight the active element in the sidebar menu
 	 */
 	function highlightActiveSection() {
-		const menu = document.querySelector('.docset-contents .menu-list')!;
+		const menu = document.querySelector('.docs-menu .menu-list')!;
 		if (!menu) {
 			return;
 		}
