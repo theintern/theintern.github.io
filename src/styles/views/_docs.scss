@@ -37,33 +37,55 @@
 
 	.docs-nav {
 		background: $border;
-		display: flex;
-		align-items: stretch;
 
-		.navbar-brand .navbar-item:not(:last-child) {
-			padding-right: 0;
+		.search-button {
+			&.is-active,
+			&.is-active:hover {
+				background: $primary;
+				color: $light;
+			}
+
+			&:hover {
+				background: $navbar-item-hover-background-color;
+			}
 		}
 
-		.navbar-menu {
-			display: flex;
-			box-shadow: none;
-			align-items: stretch;
-			padding: 0;
-			flex-grow: 1;
-
-			.navbar-end,
-			.navbar-item {
-				display: flex;
+		.navbar-brand {
+			.project-selector {
+				padding-right: 0;
 			}
 
-			.navbar-item {
-				align-items: center;
-			}
-
-			.navbar-end {
+			.search-button {
 				margin-left: auto;
-				align-items: stretch;
+
+				// Don't display the search button in the navbar-brand when the
+				// view is in desktop mode
+				@media screen and (min-width: $desktop) {
+					display: none;
+				}
 			}
+
+			// The search button is to the left of the burger, and will provide
+			// the left margin
+			.navbar-burger {
+				margin-left: 0;
+			}
+		}
+
+		// Don't display the search button at the end of the navbar (outside
+		// the brand) when the view is not in desktop mode
+		@media screen and (max-width: $desktop) {
+			> .search-button {
+				display: none;
+			}
+		}
+	}
+
+	// Remove the shadow from navbar menus in non-desktop mode; the background
+	// contrast is sufficient.
+	@media screen and (max-width: $desktop) {
+		.navbar-menu {
+			box-shadow: none;
 		}
 	}
 
@@ -218,11 +240,6 @@
 			.docs-menu {
 				display: none;
 			}
-		}
-
-		.navbar .search-button {
-			background: $primary;
-			color: $light;
 		}
 	}
 

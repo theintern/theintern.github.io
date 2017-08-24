@@ -122,43 +122,68 @@ function polyfilled() {
 
 	ready.then(() => {
 		viewer = <HTMLElement>document.body;
+		searchPanel = <HTMLElement>document.querySelector('.search-panel')!;
 
 		// Handle updates to the project + version selects.
 		document.querySelector(
 			'.docs-nav'
 		)!.addEventListener('change', event => {
 			const target: Element = <Element>event.target;
-			if (target.tagName === 'SELECT') {
-				const select = <HTMLSelectElement>target;
-				const docs = getCurrentDocset();
+			if (target.tagName !== 'SELECT') {
+				return;
+			}
 
-				if (target.getAttribute('data-select-property') === 'project') {
-					docs.page = getDocset({
-						project: select.value
-					})!.data.pages[0];
-					docs.project = select.value;
-					docs.version = docsets[select.value].latest;
-				} else {
-					docs.page = getDocset({
-						project: docs.project,
-						version: select.value
-					})!.data.pages[0];
-					docs.version = select.value;
-				}
+			const select = <HTMLSelectElement>target;
+			const docs = getCurrentDocset();
 
-				setHash({
+			if (target.getAttribute('data-select-property') === 'project') {
+				docs.page = getDocset({
+					project: select.value
+				})!.data.pages[0];
+				docs.project = select.value;
+				docs.version = docsets[select.value].latest;
+			} else {
+				docs.page = getDocset({
 					project: docs.project,
-					version: docs.version,
-					page: docs.page
-				});
+					version: select.value
+				})!.data.pages[0];
+				docs.version = select.value;
+			}
+
+			setHash({
+				project: docs.project,
+				version: docs.version,
+				page: docs.page
+			});
+		});
+
+		// Open the search dropdown if the user clicks a search button
+		document.querySelector(
+			'.docs-nav'
+		)!.addEventListener('click', event => {
+			let target = <HTMLElement>event.target;
+
+			if (target.classList.contains('fa')) {
+				// An icon was clicked, get its parent
+				target = target.parentElement!;
+			}
+
+			if (target.classList.contains('search-button')) {
+				target.classList.toggle('is-active');
+				viewer.classList.toggle('is-searching');
+				if (viewer.classList.contains('is-searching')) {
+					searchPanel.querySelector('input')!.focus();
+				}
+			} else if (target.classList.contains('navbar-burger')) {
+				const menuId = target.getAttribute('data-target')!;
+				const menu = document.getElementById(menuId)!;
+				target.classList.toggle('is-active');
+				menu.classList.toggle('is-active');
 			}
 		});
 
 		// Live search as the user types into the search dropdown input
 		let searchTimer: number | undefined;
-		searchPanel = <HTMLElement>document.querySelector(
-			'.search-panel'
-		)!;
 		searchPanel.addEventListener('input', event => {
 			if (searchTimer) {
 				clearTimeout(searchTimer);
@@ -168,6 +193,7 @@ function polyfilled() {
 			}, searchDelay);
 		});
 
+		// Clear the search field when the user clicks the 'x' in the search box
 		searchPanel.querySelector('.button')!.addEventListener('click', () => {
 			const input = <HTMLInputElement>searchPanel.querySelector('input');
 			input.value = '';
@@ -191,15 +217,6 @@ function polyfilled() {
 				menuTimer = undefined;
 				updateHashFromContent();
 			}, menuHighlightDelay);
-		});
-
-		// Open the search dropdown if the user clicks the search button
-		const searchButton = document.querySelector('.header .search-button')!;
-		searchButton.addEventListener('click', function() {
-			viewer.classList.toggle('is-searching');
-			if (viewer.classList.contains('is-searching')) {
-				searchPanel.querySelector('input')!.focus();
-			}
 		});
 
 		// After the page is loaded, ensure the docset selector reflects what's
@@ -412,9 +429,7 @@ function polyfilled() {
 
 		// Install the current docset's menu in the menu container
 		function showMenu() {
-			const menu = document.querySelector(
-				'.docs-menu .menu'
-			)!;
+			const menu = document.querySelector('.docs-menu .menu')!;
 			const menuList = menu.querySelector('.menu-list');
 			if (menuList) {
 				menu.removeChild(menuList);
@@ -474,9 +489,7 @@ function polyfilled() {
 	 * Highlight the active page in the sidebar menu
 	 */
 	function highlightActivePage() {
-		const menu = document.querySelector(
-			'.docs-menu .menu .menu-list'
-		)!;
+		const menu = document.querySelector('.docs-menu .menu .menu-list')!;
 		const active = menu.querySelector('.is-active-page');
 		if (active) {
 			active.classList.remove('is-active-page');
@@ -887,9 +900,7 @@ function polyfilled() {
 	 * box with the results.
 	 */
 	function search(term: string) {
-		const searchResults = searchPanel.querySelector(
-			'.search-results'
-		)!;
+		const searchResults = searchPanel.querySelector('.search-results')!;
 		searchResults.innerHTML = '';
 
 		const highlightTerm = term.trim();
@@ -1117,13 +1128,7 @@ function polyfilled() {
 	 */
 	function updateHashFromContent() {
 		const content = <HTMLElement>document.querySelector('.docs-content')!;
-		let elements: NodeListOf<Element>;
-		if (viewer.classList.contains('search-is-active')) {
-			elements = content.querySelectorAll('mark')!;
-		} else {
-			elements = content.querySelectorAll('h1,h2,h3')!;
-		}
-
+		const elements = content.querySelectorAll('h1,h2,h3')!;
 		const viewportTop = content.offsetTop + content.scrollTop;
 
 		let above: Element | undefined;
