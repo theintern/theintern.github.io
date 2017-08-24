@@ -93,6 +93,7 @@ function polyfilled() {
 	const maxSnippetLength = 60;
 	const searchDelay = 300;
 	const menuHighlightDelay = 20;
+	const minSearchTermLength = 4;
 
 	// Super simple router. The location hash fully controls the state of the
 	// doc viewer. Changes to the project and version selectors will update the
@@ -937,6 +938,10 @@ function polyfilled() {
 
 		const highlightTerm = term.trim();
 		const searchTerm = highlightTerm.toLowerCase();
+
+		if (!highlightTerm || highlightTerm.length < minSearchTermLength) {
+			return;
+		}
 
 		const docset = getDocset()!;
 		const finders: PromiseLike<any>[] = [];
