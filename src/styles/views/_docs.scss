@@ -10,6 +10,11 @@
 .page-docs {
 	display: flex;
 	flex-direction: column;
+
+	.docs-layout {
+		position: relative;
+	}
+
 	@include tablet {
 		.docs-layout {
 			flex: 1 1 auto;
@@ -21,14 +26,48 @@
 			}
 		}
 	}
+
 	.header {
 		flex: 0 0 auto;
-		border-bottom: 1px solid $border-color;
 	}
+
 	.footer {
 		flex: 0 0 auto;
 	}
+
 	.docs-nav {
+		background: $border;
+		display: flex;
+		align-items: stretch;
+
+		.navbar-brand .navbar-item:not(:last-child) {
+			padding-right: 0;
+		}
+
+		.navbar-menu {
+			display: flex;
+			box-shadow: none;
+			align-items: stretch;
+			padding: 0;
+			flex-grow: 1;
+
+			.navbar-end,
+			.navbar-item {
+				display: flex;
+			}
+
+			.navbar-item {
+				align-items: center;
+			}
+
+			.navbar-end {
+				margin-left: auto;
+				align-items: stretch;
+			}
+		}
+	}
+
+	.docs-menu {
 		background: $light;
 		border-right: 1px solid $border;
 		padding: 0;
@@ -41,6 +80,7 @@
 			}
 		}
 	}
+
 	.docs-content {
 		position: relative;
 		padding-left: 5vw;
@@ -56,6 +96,7 @@
 			margin-bottom: 0;
 		}
 	}
+
 	.menu {
 		ul {
 			list-style: none;
@@ -103,40 +144,59 @@
 			}
 		}
 
-		.field {
-			margin: 0.75rem 1rem;
-
-			.select {
-				width: 100%;
-
-				select {
-					width: 100%;
-				}
-			}
-		}
-
-		@media screen and (max-width: 768px) {
-			.field {
-				margin-left: 1.5rem;
-				margin-right: 1.5rem;
-			}
-		}
-
 		.version-selector {
 			display: none;
 		}
-
 	}
 
-	.search-dropdown {
-		margin-right: 4px;
+	.search-panel {
+		position: absolute;
+		align-items: start;
+		background: $light;
+		z-index: 50;
+		top: 4px;
+		right: 4px;
+		width: 20rem;
+		padding: 0;
+		overflow: hidden;
+
+		display: none;
+
+		.menu-list {
+			> li > ul {
+				display: block;
+			}
+			> li:last-child {
+				margin-bottom: 1rem;
+			}
+			> li:first-child {
+				margin-top: 1rem;
+			}
+		}
+
+		.menu {
+			max-height: 15rem;
+			max-width: 20rem;
+			overflow: auto;
+		}
+
+		.no-results {
+			color: $secondary;
+		}
 
 		.search-field {
+			width: 100%;
+			min-width: 8em;
+			padding: 0.75rem;
+			margin: 0;
+			background: $grey;
+
 			input {
 				box-shadow: none;
 				border-right: none;
 				border-color: $primary;
 			}
+
 			.control .button {
 				border-left: none;
 				border-color: $primary;
@@ -145,22 +205,49 @@
 				width: 2.5em;
 			}
 		}
+	}
 
-		.dropdown-content {
-			max-height: 40vw;
-			overflow: auto;
+	&.is-searching {
+		.search-panel {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
 		}
 
-		.menu-list {
-			margin: 0;
-
-			> li > ul {
-				display: block;
+		// When search is active in mobile mode, hide the doc menu
+		@media screen and (max-width: $mobile) {
+			.docs-menu {
+				display: none;
 			}
 		}
 
-		.no-results {
-			color: $secondary;
+		.navbar .search-button {
+			background: $primary;
+			color: $light;
+		}
+	}
+
+	@media screen and (max-width: $mobile) {
+		.search-panel {
+			position: static;
+			width: auto;
+			border: none;
+			border-bottom: solid 1px $border;
+			border-radius: 0;
+			box-shadow: none;
+
+			.search-field {
+				padding-left: 1.5rem;
+				padding-right: 1.5rem;
+				border: none;
+				width: auto;
+				background: none;
+			}
+
+			.menu {
+				max-height: none;
+				max-width: none;
+			}
 		}
 	}
 
@@ -278,7 +365,7 @@
 }
 
 .no-script {
-	.docs-nav {
+	.docs-menu {
 		display: none;
 	}
 

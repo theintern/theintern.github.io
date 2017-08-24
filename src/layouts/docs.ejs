@@ -14,40 +14,56 @@
 	<body class="page-docs page-secondary no-script">
 		<% include partials/header %>
 
-		<div class="columns docs-layout">
-			<div class="column is-3 docs-column docs-nav">
-				<aside class="menu">
-					<div class="card docset-selector">
-						<div class="card-header">
-							<div class="card-header-title">
-								<span class="project">Intern</span>
-								<span class="version">3</span>
-							</div>
-							<a class="card-header-icon">
-								<span class="icon">
-									<i class="fa fa-angle-down"></i>
-								</span>
-							</a>
-						</div>
-						<div class="card-content">
-							<div class="field project-selector">
-								<div class="control is-expanded">
-									<div class="select is-fullwidth is-primary is-small">
-										<select data-select-property="project">
-										</select>
-									</div>
+		<header class="header">
+			<div class="container">
+				<nav class="navbar docs-nav">
+					<div class="navbar-brand">
+						<div class="navbar-item project-selector">
+							<div class="control is-expanded">
+								<div class="select is-fullwidth is-primary is-small">
+									<select data-select-property="project">
+									</select>
 								</div>
 							</div>
-							<div class="field version-selector">
-								<div class="control is-expanded">
-									<div class="select is-fullwidth is-primary is-small">
-										<select data-select-property="version">
-										</select>
-									</div>
+						</div>
+						<div class="navbar-item version-selector">
+							<div class="control is-expanded">
+								<div class="select is-fullwidth is-primary is-small">
+									<select data-select-property="version">
+									</select>
 								</div>
 							</div>
 						</div>
 					</div>
+					<div class="navbar-menu">
+						<div class="navbar-end">
+							<a class="navbar-item search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><i class="fa fa-search dropdown-trigger"></i></a>
+						</div>
+					</div>
+				</nav>
+			</div>
+		</header>
+
+		<div class="columns docs-layout">
+			<div class="search-panel dropdown-content" id="search-panel" role="menu">
+				<div class="field search-field has-addons">
+					<div class="control is-expanded">
+						<input class="input is-small" type="text" placeholder="Search">
+					</div>
+					<div class="control">
+						<a class="button is-small" title="Clear search results">
+							<span class="icon is-small"><i class="fa fa-close"></i></span>
+						</a>
+					</div>
+				</div>
+				<div class="menu">
+					<ul class="search-results menu-list">
+					</ul>
+				</div>
+			</div>
+
+			<div class="column is-3 docs-column docs-menu">
+				<aside class="menu">
 					<div class="docset-contents">
 						<ul class="menu-list">
 						</ul>

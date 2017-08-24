@@ -88,6 +88,7 @@ function polyfilled() {
 	let viewer: HTMLElement;
 	let skipPageLoad = false;
 	let ignoreScroll = false;
+	let searchPanel: HTMLElement;
 
 	const defaultDocs = { project: 'Intern' };
 	const maxSnippetLength = 60;
@@ -120,14 +121,7 @@ function polyfilled() {
 	});
 
 	ready.then(() => {
-		viewer = <HTMLElement>document.querySelector('.docs-layout')!;
-
-		// Toggle the doc selector when the header is clicked
-		const docsetSelect = document.querySelector('.menu .docset-selector')!;
-		const docsetSelectHeader = docsetSelect.querySelector('.card-header')!;
-		docsetSelectHeader.addEventListener('click', function() {
-			docsetSelect.classList.toggle('is-active');
-		});
+		viewer = <HTMLElement>document.body;
 
 		// Handle updates to the project + version selects.
 		document.querySelector(
@@ -162,9 +156,10 @@ function polyfilled() {
 
 		// Live search as the user types into the search dropdown input
 		let searchTimer: number | undefined;
-		document.querySelector(
-			'.header .search-dropdown'
-		)!.addEventListener('input', event => {
+		searchPanel = <HTMLElement>document.querySelector(
+			'.search-panel'
+		)!;
+		searchPanel.addEventListener('input', event => {
 			if (searchTimer) {
 				clearTimeout(searchTimer);
 			}
@@ -173,14 +168,11 @@ function polyfilled() {
 			}, searchDelay);
 		});
 
-		document.querySelector(
-			'.header .search-dropdown .button'
-		)!.addEventListener('click', () => {
-			const input = <HTMLInputElement>document.querySelector(
-				'.header .search-dropdown input'
-			);
+		searchPanel.querySelector('.button')!.addEventListener('click', () => {
+			const input = <HTMLInputElement>searchPanel.querySelector('input');
 			input.value = '';
 			search('');
+			searchPanel.querySelector('input')!.focus();
 		});
 
 		// Update the url hash as the user scrolls
@@ -202,28 +194,11 @@ function polyfilled() {
 		});
 
 		// Open the search dropdown if the user clicks the search button
-		const searchDropdown = document.querySelector(
-			'.header .search-dropdown'
-		)!;
-		searchDropdown.addEventListener('click', function(event) {
-			const target = <HTMLElement>event.target;
-			if (target.classList.contains('dropdown-trigger')) {
-				searchDropdown.classList.toggle('is-active');
-				if (searchDropdown.classList.contains('is-active')) {
-					searchDropdown.querySelector('input')!.focus();
-				}
-			}
-		});
-
-		// Close the search dropdown if the user clicks outside of it
-		document.body.addEventListener('click', function(event) {
-			const target = <HTMLElement>event.target;
-			if (
-				searchDropdown.classList.contains('is-active') &&
-				target !== searchDropdown &&
-				!searchDropdown.contains(target)
-			) {
-				searchDropdown.classList.remove('is-active');
+		const searchButton = document.querySelector('.header .search-button')!;
+		searchButton.addEventListener('click', function() {
+			viewer.classList.toggle('is-searching');
+			if (viewer.classList.contains('is-searching')) {
+				searchPanel.querySelector('input')!.focus();
 			}
 		});
 
@@ -320,7 +295,6 @@ function polyfilled() {
 			container.setAttribute('data-doc-version', docset.version);
 
 			updateDocsetSelector();
-			updateDocsetName();
 			showMenu();
 		});
 
@@ -439,7 +413,7 @@ function polyfilled() {
 		// Install the current docset's menu in the menu container
 		function showMenu() {
 			const menu = document.querySelector(
-				'.docs-nav .menu .docset-contents'
+				'.docs-menu .menu .docset-contents'
 			)!;
 			const menuList = menu.querySelector('.menu-list');
 			if (menuList) {
@@ -523,41 +497,38 @@ function polyfilled() {
 	 * Highlight the active element in the sidebar menu
 	 */
 	function highlightActiveSection() {
-		const menus = document.querySelectorAll('.docs-nav .menu-list')!;
-		if (menus.length === 0) {
+		const menu = document.querySelector('.docset-contents .menu-list')!;
+		if (!menu) {
 			return;
 		}
 
-		for (let i = 0; i < menus.length; i++) {
-			const menu = menus[i];
-			const active = menu.querySelector('.is-active');
-			if (active) {
-				active.classList.remove('is-active');
-			}
+		const active = menu.querySelector('.is-active');
+		if (active) {
+			active.classList.remove('is-active');
+		}
 
-			const currentSection = location.hash;
-			let link = <HTMLElement>menu.querySelector(
-				`li > a[href="${currentSection}"]`
+		const currentSection = location.hash;
+		let link = <HTMLElement>menu.querySelector(
+			`li > a[href="${currentSection}"]`
+		)!;
+		if (!link) {
+			const currentDocs = getCurrentDocset();
+			const currentPage = createHash({
+				project: currentDocs.project,
+				version: currentDocs.version,
+				page: currentDocs.page
+			});
+			link = <HTMLElement>menu.querySelector(
+				`li > a[href="${currentPage}"]`
 			)!;
-			if (!link) {
-				const currentDocs = getCurrentDocset();
-				const currentPage = createHash({
-					project: currentDocs.project,
-					version: currentDocs.version,
-					page: currentDocs.page
-				});
-				link = <HTMLElement>menu.querySelector(
-					`li > a[href="${currentPage}"]`
-				)!;
-			}
+		}
 
-			if (link) {
-				link.classList.add('is-active');
-				scrollIntoViewIfNessary(
-					link,
-					<HTMLElement>document.querySelector('.docs-nav')!
-				);
-			}
+		if (link) {
+			link.classList.add('is-active');
+			scrollIntoViewIfNessary(
+				link,
+				<HTMLElement>document.querySelector('.docs-menu')!
+			);
 		}
 	}
 
@@ -824,25 +795,6 @@ function polyfilled() {
 			'.navbar-menu a[data-title="Github"]'
 		);
 		link.href = getDocVersionUrl(docs);
-
-		updateDocsetName();
-	}
-
-	/**
-	 * Update the docset name in the sidebar to show the current project and
-	 * version.
-	 */
-	function updateDocsetName() {
-		const docs = getCurrentDocset();
-		const docsetSelector = document.querySelector(
-			'.menu .docset-selector'
-		)!;
-
-		const project = docsetSelector.querySelector('.project')!;
-		project.textContent = docs.project;
-
-		const version = docsetSelector.querySelector('.version')!;
-		version.textContent = docs.version;
 	}
 
 	/**
@@ -935,8 +887,8 @@ function polyfilled() {
 	 * box with the results.
 	 */
 	function search(term: string) {
-		const searchResults = document.querySelector(
-			'.header .search-results'
+		const searchResults = searchPanel.querySelector(
+			'.search-results'
 		)!;
 		searchResults.innerHTML = '';
 
