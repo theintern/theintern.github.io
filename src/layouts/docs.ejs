@@ -15,41 +15,39 @@
 		<% include partials/header %>
 
 		<header class="header">
-			<div class="container">
-				<nav class="navbar docs-nav">
-					<div class="navbar-brand">
-						<div class="navbar-item project-selector">
-							<div class="control is-expanded">
-								<div class="select is-fullwidth is-primary is-small">
-									<select data-select-property="project">
-									</select>
-								</div>
+			<nav class="navbar docs-nav">
+				<div class="navbar-brand">
+					<div class="navbar-item project-selector">
+						<div class="control is-expanded">
+							<div class="select is-fullwidth is-primary is-small">
+								<select data-select-property="project">
+								</select>
 							</div>
-						</div>
-						<div class="navbar-item version-selector">
-							<div class="control is-expanded">
-								<div class="select is-fullwidth is-primary is-small">
-									<select data-select-property="version">
-									</select>
-								</div>
-							</div>
-						</div>
-						<a class="navbar-item search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><i class="fa fa-search"></i></a>
-						<div class="navbar-burger" data-target="navMenubd-example">
-							<span></span>
-							<span></span>
-							<span></span>
 						</div>
 					</div>
-					<div class="navbar-menu">
-						<div class="navbar-start">
-							<a class="navbar-item" title="Docs">Docs</i></a>
-							<a class="navbar-item" title="Docs">API</i></a>
+					<div class="navbar-item version-selector">
+						<div class="control is-expanded">
+							<div class="select is-fullwidth is-primary is-small">
+								<select data-select-property="version">
+								</select>
+							</div>
 						</div>
 					</div>
 					<a class="navbar-item search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><i class="fa fa-search"></i></a>
-				</nav>
-			</div>
+					<div class="navbar-burger" data-target="docs-nav-menu">
+						<span></span>
+						<span></span>
+						<span></span>
+					</div>
+				</div>
+				<div class="navbar-menu"i id="docs-nav-menu">
+					<div class="navbar-start">
+						<a class="navbar-item" title="Docs">Docs</i></a>
+						<a class="navbar-item" title="Docs">API</i></a>
+					</div>
+				</div>
+				<a class="navbar-item search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><i class="fa fa-search"></i></a>
+			</nav>
 		</header>
 
 		<div class="columns docs-layout">
