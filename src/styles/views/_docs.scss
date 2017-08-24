@@ -38,16 +38,9 @@
 	.docs-nav {
 		background: $border;
 
-		.search-button {
-			&.is-active,
-			&.is-active:hover {
-				background: $primary;
-				color: $light;
-			}
-
-			&:hover {
-				background: $navbar-item-hover-background-color;
-			}
+		// For consistency wiht the search button in navbar-brand
+		.search-button:hover {
+			background: $navbar-item-hover-background-color;
 		}
 
 		.navbar-brand {
@@ -79,6 +72,14 @@
 				display: none;
 			}
 		}
+	}
+
+	// Highlight 'active' search buttons using global page state
+	&.is-searching .navbar-item.search-button,
+	&[data-doc-type="docs"] .navbar-item[data-doc-type="docs"],
+	&[data-doc-type="api"] .navbar-item[data-doc-type="api"] {
+		background-color: $primary;
+		color: $light;
 	}
 
 	// Remove the shadow from navbar menus in non-desktop mode; the background

@@ -569,10 +569,6 @@ function polyfilled() {
 		const hash = parseHash();
 		const docset = getDocset(hash)!;
 
-		if (viewer) {
-			viewer.setAttribute('data-doc-type', hash.type);
-		}
-
 		// The hash encodes our state -- ensure it points to a valid docset
 		if (!hash.version) {
 			const parts: Partial<DocInfo> = {
@@ -588,6 +584,7 @@ function polyfilled() {
 			setHash(parts);
 		} else {
 			Promise.resolve(loadDocset(hash)).then(() => {
+				viewer.setAttribute('data-doc-type', hash.type);
 				showPage(hash.page, hash.section);
 				updateDocsetSelector();
 			});
