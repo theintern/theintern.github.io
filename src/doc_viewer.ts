@@ -474,6 +474,13 @@ function polyfilled() {
 		content.removeChild(content.children[0]);
 		content.appendChild(page.element);
 
+		// Do highlighting before scrolling a sectoin into view. Highlighting
+		// also involves scroll manipulation, and if the viewer is using a
+		// mobile layout, we want the content scroll to take priority over the
+		// menu scroll.
+		highlightActivePage();
+		highlightActiveSection();
+
 		// Showing the page will probably scroll the content area, but we don't
 		// want to invoke the normal scroll handling code in this case.
 		ignoreScroll = true;
@@ -487,9 +494,6 @@ function polyfilled() {
 			content.scrollTop = 0;
 			content.scrollIntoView();
 		}
-
-		highlightActivePage();
-		highlightActiveSection();
 	}
 
 	/**
