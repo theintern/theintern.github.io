@@ -95,9 +95,29 @@ interface Slugifier {
 	(url: string): string;
 }
 
-// This is related to TypeDoc's Reflection class
-interface ApiItem {
-	comment: ApiComment;
+// The Reflection interfaces are lifted directly from TypeDoc
+// TODO: Just import them once this is modularlized
+interface Comment {
+	shortText: string;
+	text: string;
+	returns: string;
+	tags: {
+		tagName: string;
+		paramName: string;
+		text: string;
+	}[];
+}
+
+interface Type {
+	type: string;
+}
+
+interface Reflection {
+	id: number;
+	name: string;
+	originalName: string;
+	kind: number;
+	kindString: string;
 	flags: {
 		isPrivate?: boolean;
 		isProtected?: boolean;
@@ -110,61 +130,148 @@ interface ApiItem {
 		hasExportAssignment?: boolean;
 		isConstructorProperty?: boolean;
 	};
-	id: number;
-	kind: number;
-	kindString: string;
-	name: string;
-}
-
-interface ApiData extends ApiItem {
-	children: ApiData[];
-	defaultValue?: string;
-	groups: {
-		title: string;
-		kind: number;
-		children: number[];
+	parent: Reflection;
+	comment: Comment;
+	sources: SourceReference[];
+	decorators: {
+		name: string;
+		type?: Type;
+		arguments?: any;
 	}[];
-	inheritedFrom?: ApiType;
-	originalName: string;
-	signatures?: ApiSignature[];
-	sources?: ApiSource[];
-	type?: ApiType;
+	decorates: Type[];
+	url: string;
+	anchor: string;
+	hasOwnDocument: boolean;
+	cssClasses: string;
 }
 
-interface ApiSource {
+interface TypeContainer extends Reflection {
+	type: Type;
+}
+
+interface TypeParameterReflection extends Reflection, TypeContainer {
+	parent: DeclarationReflection;
+	type: Type;
+}
+
+interface DefaultValueContainer extends Reflection {
+	defaultValue: string;
+}
+
+interface ParameterReflection
+	extends Reflection,
+		DefaultValueContainer,
+		TypeContainer {
+	parent: SignatureReflection;
+	defaultValue: string;
+	type: Type;
+}
+
+interface TypeParameterContainer extends Reflection {
+	typeParameters: TypeParameterReflection[];
+}
+
+interface SignatureReflection
+	extends Reflection,
+		TypeContainer,
+		TypeParameterContainer {
+	parent: ContainerReflection;
+	parameters: ParameterReflection[];
+	typeParameters: TypeParameterReflection[];
+	type: Type;
+	overwrites: Type;
+	inheritedFrom: Type;
+	implementationOf: Type;
+}
+
+interface DeclarationHierarchy {
+	types: Type[];
+	next?: DeclarationHierarchy;
+	isTarget?: boolean;
+}
+
+interface DeclarationReflection
+	extends ContainerReflection,
+		DefaultValueContainer,
+		TypeContainer,
+		TypeParameterContainer {
+	type: Type;
+	typeParameters: TypeParameterReflection[];
+	signatures: SignatureReflection[];
+	indexSignature: SignatureReflection;
+	getSignature: SignatureReflection;
+	setSignature: SignatureReflection;
+	defaultValue: string;
+	overwrites: Type;
+	inheritedFrom: Type;
+	implementationOf: Type;
+	extendedTypes: Type[];
+	extendedBy: Type[];
+	implementedTypes: Type[];
+	implementedBy: Type[];
+	typeHierarchy: DeclarationHierarchy;
+}
+
+interface ReflectionGroup {
+	title: string;
+	kind: number;
+	children: Reflection[];
+	cssClasses: string;
+	allChildrenHaveOwnDocument: Function;
+	allChildrenAreInherited: boolean;
+	allChildrenArePrivate: boolean;
+	allChildrenAreProtectedOrPrivate: boolean;
+	allChildrenAreExternal: boolean;
+	someChildrenAreExported: boolean;
+}
+
+interface ContainerReflection extends Reflection {
+	children: DeclarationReflection[];
+	groups: ReflectionGroup[];
+}
+
+interface SourceReference {
+	file?: SourceFile;
 	fileName: string;
 	line: number;
 	character: number;
+	url?: string;
 }
 
-interface ApiType {
-	type: string;
-	value?: string;
-	name?: string;
-	types?: ApiType[];
-	elementType?: ApiType;
-	declaration?: ApiDeclaration;
-	typeArguments?: ApiType[];
+interface SourceFile {
+	fullFileName: string;
+	fileName: string;
+	name: string;
+	url: string;
+	parent: SourceDirectory;
+	reflections: Reflection[];
+	groups: ReflectionGroup[];
 }
 
-interface ApiDeclaration extends ApiItem {
-	children: ApiParameter[];
-	signatures: ApiSignature[];
+interface SourceDirectory {
+	parent: SourceDirectory;
+	directories: {
+		[name: string]: SourceDirectory;
+	};
+	groups: ReflectionGroup[];
+	files: SourceFile[];
+	name: string;
+	dirName: string;
+	url: string;
 }
 
-interface ApiParameter extends ApiItem {
-	type: ApiType;
-	defaultValue?: string;
-}
-
-interface ApiSignature extends ApiItem {
-	parameters?: ApiParameter[];
-	type: ApiType;
-}
-
-interface ApiComment {
-	shortText: string;
-	text?: string;
+interface ProjectReflection extends ContainerReflection {
+	reflections: {
+		[id: number]: Reflection;
+	};
+	symbolMapping: {
+		[symbolId: number]: number;
+	};
+	directory: SourceDirectory;
+	files: SourceFile[];
+	name: string;
+	readme: string;
+	packageInfo: any;
 }
 
 declare const markdownitHeadingAnchor: any;
@@ -1432,14 +1539,11 @@ function polyfilled() {
 	function createSlugifier() {
 		const cache: { [slug: string]: boolean } = Object.create(null);
 		return (str: string) => {
-			console.log('slugifying ' + str + ' with', cache);
 			let slug = str
 				.toLowerCase()
 				.replace(/[^A-Za-z0-9_ ]/g, '')
 				.replace(/\s+/g, '-');
-			console.log('  initial: ' + slug);
 			if (cache[slug]) {
-				console.log('  adding...');
 				let i = 1;
 				let next = `${slug}-${i}`;
 				while (cache[next]) {
@@ -1456,7 +1560,7 @@ function polyfilled() {
 	/**
 	 * Render the API pages for a docset
 	 */
-	function renderApiPages(setId: DocSetId, data: ApiData) {
+	function renderApiPages(setId: DocSetId, data: ProjectReflection) {
 		const docset = getDocset(setId)!;
 		const docs = docset.docs;
 		const pages = (docs.apiPages = <string[]>[]);
@@ -1486,7 +1590,7 @@ function polyfilled() {
 			});
 
 		// Render a module page
-		function renderModule(module: ApiData, context: RenderContext) {
+		function renderModule(module: ContainerReflection, context: RenderContext) {
 			const { createHeading, page } = context;
 
 			if (module.comment) {
@@ -1535,7 +1639,7 @@ function polyfilled() {
 		}
 
 		// Render a class
-		function renderClass(cls: ApiData, context: RenderContext) {
+		function renderClass(cls: DeclarationReflection, context: RenderContext) {
 			const { page, createHeading } = context;
 			const heading = createHeading(3, cls.name);
 			page.element.appendChild(heading);
@@ -1545,6 +1649,10 @@ function polyfilled() {
 				if (link) {
 					heading.appendChild(link);
 				}
+			}
+
+			// TODO: Render inheritance chain
+			if (cls.extendedTypes) {
 			}
 
 			if (cls.comment) {
@@ -1570,12 +1678,12 @@ function polyfilled() {
 		}
 
 		// Render a class method
-		function renderMethod(method: ApiData, context: RenderContext) {
+		function renderMethod(method: DeclarationReflection, context: RenderContext) {
 			renderFunction(method, context, 4);
 		}
 
 		// Render a TypeScript interface
-		function renderInterface(iface: ApiData, context: RenderContext) {
+		function renderInterface(iface: DeclarationReflection, context: RenderContext) {
 			const { page, createHeading } = context;
 			const heading = createHeading(3, iface.name);
 			page.element.appendChild(heading);
@@ -1616,7 +1724,7 @@ function polyfilled() {
 		}
 
 		// Render a class or interface property
-		function renderProperty(property: ApiData, context: RenderContext) {
+		function renderProperty(property: DeclarationReflection, context: RenderContext) {
 			const { page, createHeading } = context;
 			const heading = createHeading(4, property.name);
 			page.element.appendChild(heading);
@@ -1638,7 +1746,7 @@ function polyfilled() {
 
 		// Render an exported function
 		function renderFunction(
-			func: ApiData,
+			func: DeclarationReflection,
 			context: RenderContext,
 			level = 3
 		) {
@@ -1665,7 +1773,7 @@ function polyfilled() {
 
 		// Render a function/method signature
 		function renderSignatures(
-			signatures: ApiSignature[],
+			signatures: SignatureReflection[],
 			context: RenderContext
 		) {
 			const { page } = context;
@@ -1685,7 +1793,7 @@ function polyfilled() {
 
 			const parameters = signatures.reduce((params, sig) => {
 				return params.concat(sig.parameters || []);
-			}, <ApiParameter[]>[]);
+			}, <ParameterReflection[]>[]);
 			if (parameters.length > 0) {
 				renderParameterTable(parameters, context);
 			}
@@ -1693,7 +1801,7 @@ function polyfilled() {
 
 		// Render a table of signature parameters
 		function renderParameterTable(
-			parameters: ApiParameter[],
+			parameters: ParameterReflection[],
 			context: RenderContext
 		) {
 			const { page } = context;
@@ -1724,7 +1832,7 @@ function polyfilled() {
 		}
 
 		// Render a literal value
-		function renderLiteral(value: ApiData, context: RenderContext) {
+		function renderLiteral(value: DeclarationReflection, context: RenderContext) {
 			const { page, createHeading } = context;
 			page.element.appendChild(createHeading(3, value.name));
 			if (value.kindString === 'Object literal') {
@@ -1744,7 +1852,7 @@ function polyfilled() {
 		}
 
 		// Render an element comment
-		function renderComment(comment: ApiComment, context: RenderContext) {
+		function renderComment(comment: Comment, context: RenderContext) {
 			const { page } = context;
 			const p = document.createElement('p');
 			p.innerHTML = commentToHtml(comment, page.name);
@@ -1752,7 +1860,7 @@ function polyfilled() {
 		}
 
 		// Generate HTML for an API comment
-		function commentToHtml(comment: ApiComment, pageName: string) {
+		function commentToHtml(comment: Comment, pageName: string) {
 			let parts: string[] = [];
 
 			if (comment.shortText) {
@@ -1792,7 +1900,7 @@ function polyfilled() {
 		}
 
 		// Render a link to an element's source code
-		function createSourceLink(source: ApiSource) {
+		function createSourceLink(source: SourceReference) {
 			// Don't try to create links for files with absolute paths
 			if (source.fileName[0] === '/') {
 				return;
@@ -1811,7 +1919,7 @@ function polyfilled() {
 
 		// Generate a string representation of a function/method signature
 		function signatureToString(
-			signature: ApiSignature,
+			signature: SignatureReflection,
 			isParameter = false
 		): string {
 			const name = signature.name === '__call' ? '' : signature.name;
@@ -1835,7 +1943,8 @@ function polyfilled() {
 		}
 
 		// Generate a string representation of a type
-		function typeToString(type: ApiType): string {
+		// TODO: Should be Type?
+		function typeToString(type: any): string {
 			if (type.type === 'stringLiteral') {
 				return `'${type.value}'`;
 			} else if (type.type === 'union') {
@@ -1847,7 +1956,7 @@ function polyfilled() {
 				const d = type.declaration!;
 				if (d.kindString === 'Type literal') {
 					if (d.children) {
-						const parts = d.children.map(child => {
+						const parts = d.children.map((child: any) => {
 							return `${child.name}: ${typeToString(child.type)}`;
 						});
 						return `{ ${parts.join(', ')} }`;
@@ -1859,7 +1968,7 @@ function polyfilled() {
 
 			let returnType = type.name!;
 			if (type.typeArguments) {
-				const args = type.typeArguments.map(arg => {
+				const args = type.typeArguments.map((arg: any) => {
 					return typeToString(arg);
 				});
 				returnType += `<${args.join(', ')}>`;
@@ -1869,7 +1978,7 @@ function polyfilled() {
 
 		// Get all the exported, public members from an API item. Members
 		// prefixed by '_', and inherited members, are currently excluded.
-		function getExports(entry: ApiData) {
+		function getExports(entry: ContainerReflection) {
 			if (!entry.children) {
 				return [];
 			}
