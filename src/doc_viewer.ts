@@ -91,6 +91,10 @@ interface SearchResult {
 	snippet: string;
 }
 
+interface Slugifier {
+	(url: string): string;
+}
+
 // This is related to TypeDoc's Reflection class
 interface ApiItem {
 	comment: ApiComment;
@@ -371,7 +375,9 @@ function polyfilled() {
 						.then(text => {
 							return ready.then(() => {
 								text = filterGhContent(text);
-								const html = render(text, { page: name });
+								const html = render(text, {
+									info: { page: name }
+								});
 								const element = document.createElement('div');
 								element.innerHTML = html;
 
@@ -821,7 +827,10 @@ function polyfilled() {
 	/**
 	 * Render markdown into HTML. Lazily initialize the markdown renderer.
 	 */
-	function render(text: string, page?: Partial<DocInfo>) {
+	function render(
+		text: string,
+		context: { info?: Partial<DocInfo>; slugify?: Slugifier }
+	) {
 		if (!markdown) {
 			markdown = markdownit({
 				// Customize the syntax highlighting process
@@ -951,11 +960,26 @@ function polyfilled() {
 						if (page.indexOf('/') !== -1) {
 							pageBase = page.slice(0, page.lastIndexOf('/') + 1);
 						}
-						href[1] = createHash({
-							page: pageBase + cleanFile,
-							section: hash,
-							type
-						});
+
+						// API links may be to things like 'Class.member'.
+						if (
+							type === 'api' &&
+							/\w+\.\w+/.test(cleanFile) &&
+							!/\.md$/.test(cleanFile)
+						) {
+							const [mod, member] = cleanFile.split('.');
+							href[1] = createHash({
+								page: pageBase + mod,
+								section: member,
+								type
+							});
+						} else {
+							href[1] = createHash({
+								page: pageBase + cleanFile,
+								section: hash,
+								type
+							});
+						}
 					}
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
@@ -975,7 +999,10 @@ function polyfilled() {
 			};
 		}
 
-		return markdown.render(text, { page, slugify: createSlugifier() });
+		context = context || Object.create(null);
+		context.slugify = context.slugify || createSlugifier();
+
+		return markdown.render(text, context);
 	}
 
 	/**
@@ -1403,13 +1430,16 @@ function polyfilled() {
 	 * Create a function to generate URL slugs for a page.
 	 */
 	function createSlugifier() {
-		const cache: { [slug: string]: boolean } = {};
+		const cache: { [slug: string]: boolean } = Object.create(null);
 		return (str: string) => {
+			console.log('slugifying ' + str + ' with', cache);
 			let slug = str
 				.toLowerCase()
 				.replace(/[^A-Za-z0-9_ ]/g, '')
 				.replace(/\s+/g, '-');
+			console.log('  initial: ' + slug);
 			if (cache[slug]) {
+				console.log('  adding...');
 				let i = 1;
 				let next = `${slug}-${i}`;
 				while (cache[next]) {
@@ -1430,29 +1460,37 @@ function polyfilled() {
 		const docset = getDocset(setId)!;
 		const docs = docset.docs;
 		const pages = (docs.apiPages = <string[]>[]);
-		const cache = (docs.apiCache = <{ [key: string]: DocPage }>{});
-
+		const cache = (docs.apiCache = <{
+			[key: string]: DocPage;
+		}>Object.create(null));
 		const modules = getExports(data)!;
-		const slugify = createSlugifier();
+
+		interface RenderContext {
+			page: DocPage;
+			createHeading: (level: number, text: string) => HTMLElement;
+		}
 
 		modules
 			.filter(module => {
 				return getExports(module).length > 0;
 			})
 			.forEach(module => {
+				const createHeading = getHeadingCreator(createSlugifier());
 				const name = module.name.replace(/^"/, '').replace(/"$/, '');
 				pages.push(name);
 				const element = document.createElement('div');
 				const page = (cache[name] = { name, title: name, element });
 
 				element.appendChild(createHeading(1, name));
-				renderModule(module, page);
+				renderModule(module, { page, createHeading });
 			});
 
 		// Render a module page
-		function renderModule(module: ApiData, page: DocPage) {
+		function renderModule(module: ApiData, context: RenderContext) {
+			const { createHeading, page } = context;
+
 			if (module.comment) {
-				renderComment(module.comment, page);
+				renderComment(module.comment, context);
 			}
 
 			const exports = getExports(module);
@@ -1461,7 +1499,7 @@ function polyfilled() {
 			if (classes.length > 0) {
 				page.element.appendChild(createHeading(2, 'Classes'));
 				classes.forEach(cls => {
-					renderClass(cls, page);
+					renderClass(cls, context);
 				});
 			}
 
@@ -1471,7 +1509,7 @@ function polyfilled() {
 			if (interfaces.length > 0) {
 				page.element.appendChild(createHeading(2, 'Interfaces'));
 				interfaces.forEach(iface => {
-					renderInterface(iface, page);
+					renderInterface(iface, context);
 				});
 			}
 
@@ -1481,7 +1519,7 @@ function polyfilled() {
 			if (functions.length > 0) {
 				page.element.appendChild(createHeading(2, 'Functions'));
 				functions.forEach(func => {
-					renderFunction(func, page);
+					renderFunction(func, context);
 				});
 			}
 
@@ -1491,13 +1529,14 @@ function polyfilled() {
 			if (constants.length > 0) {
 				page.element.appendChild(createHeading(2, 'Constants'));
 				constants.forEach(constant => {
-					renderLiteral(constant, page);
+					renderLiteral(constant, context);
 				});
 			}
 		}
 
 		// Render a class
-		function renderClass(cls: ApiData, page: DocPage) {
+		function renderClass(cls: ApiData, context: RenderContext) {
+			const { page, createHeading } = context;
 			const heading = createHeading(3, cls.name);
 			page.element.appendChild(heading);
 
@@ -1509,7 +1548,7 @@ function polyfilled() {
 			}
 
 			if (cls.comment) {
-				renderComment(cls.comment, page);
+				renderComment(cls.comment, context);
 			}
 
 			const exports = getExports(cls);
@@ -1518,7 +1557,7 @@ function polyfilled() {
 				ex => ex.kindString === 'Property'
 			);
 			properties.forEach(property => {
-				renderProperty(property, page);
+				renderProperty(property, context);
 			});
 			const methods = exports.filter(
 				ex =>
@@ -1526,17 +1565,18 @@ function polyfilled() {
 					ex.kindString === 'Constructor'
 			);
 			methods.forEach(method => {
-				renderMethod(method, page);
+				renderMethod(method, context);
 			});
 		}
 
 		// Render a class method
-		function renderMethod(method: ApiData, page: DocPage) {
-			renderFunction(method, page, 4);
+		function renderMethod(method: ApiData, context: RenderContext) {
+			renderFunction(method, context, 4);
 		}
 
 		// Render a TypeScript interface
-		function renderInterface(iface: ApiData, page: DocPage) {
+		function renderInterface(iface: ApiData, context: RenderContext) {
+			const { page, createHeading } = context;
 			const heading = createHeading(3, iface.name);
 			page.element.appendChild(heading);
 
@@ -1548,12 +1588,12 @@ function polyfilled() {
 			}
 
 			if (iface.comment) {
-				renderComment(iface.comment, page);
+				renderComment(iface.comment, context);
 			}
 
 			if (iface.signatures) {
 				page.element.appendChild(createHeading(4, 'Call signatures'));
-				renderSignatures(iface.signatures, page);
+				renderSignatures(iface.signatures, context);
 			}
 
 			const exports = getExports(iface);
@@ -1562,7 +1602,7 @@ function polyfilled() {
 				ex => ex.kindString === 'Property'
 			);
 			properties.forEach(property => {
-				renderProperty(property, page);
+				renderProperty(property, context);
 			});
 
 			const methods = exports.filter(
@@ -1571,12 +1611,13 @@ function polyfilled() {
 					ex.kindString === 'Constructor'
 			);
 			methods.forEach(method => {
-				renderMethod(method, page);
+				renderMethod(method, context);
 			});
 		}
 
 		// Render a class or interface property
-		function renderProperty(property: ApiData, page: DocPage) {
+		function renderProperty(property: ApiData, context: RenderContext) {
+			const { page, createHeading } = context;
 			const heading = createHeading(4, property.name);
 			page.element.appendChild(heading);
 
@@ -1591,12 +1632,17 @@ function polyfilled() {
 			renderCode(text, page);
 
 			if (property.comment) {
-				renderComment(property.comment, page);
+				renderComment(property.comment, context);
 			}
 		}
 
 		// Render an exported function
-		function renderFunction(func: ApiData, page: DocPage, level = 3) {
+		function renderFunction(
+			func: ApiData,
+			context: RenderContext,
+			level = 3
+		) {
+			const { page, createHeading } = context;
 			const heading = createHeading(level, func.name);
 			page.element.appendChild(heading);
 
@@ -1607,18 +1653,22 @@ function polyfilled() {
 				}
 			}
 
-			renderSignatures(func.signatures!, page);
+			renderSignatures(func.signatures!, context);
 
 			for (let signature of func.signatures!) {
 				if (signature.comment) {
-					renderComment(signature.comment, page);
+					renderComment(signature.comment, context);
 					break;
 				}
 			}
 		}
 
 		// Render a function/method signature
-		function renderSignatures(signatures: ApiSignature[], page: DocPage) {
+		function renderSignatures(
+			signatures: ApiSignature[],
+			context: RenderContext
+		) {
+			const { page } = context;
 			for (let sig of signatures) {
 				const container = document.createElement('p');
 				const text = hljs.highlight(
@@ -1637,15 +1687,16 @@ function polyfilled() {
 				return params.concat(sig.parameters || []);
 			}, <ApiParameter[]>[]);
 			if (parameters.length > 0) {
-				renderParameterTable(parameters, page);
+				renderParameterTable(parameters, context);
 			}
 		}
 
 		// Render a table of signature parameters
 		function renderParameterTable(
 			parameters: ApiParameter[],
-			page: DocPage
+			context: RenderContext
 		) {
+			const { page } = context;
 			const params = parameters.filter(param => {
 				return param.comment || param.defaultValue;
 			});
@@ -1673,7 +1724,8 @@ function polyfilled() {
 		}
 
 		// Render a literal value
-		function renderLiteral(value: ApiData, page: DocPage) {
+		function renderLiteral(value: ApiData, context: RenderContext) {
+			const { page, createHeading } = context;
 			page.element.appendChild(createHeading(3, value.name));
 			if (value.kindString === 'Object literal') {
 				const parts = value.children.map(child => {
@@ -1682,13 +1734,18 @@ function polyfilled() {
 					}
 					return child.defaultValue;
 				});
-				const text = `{\n\t${parts.join(',\n\t')}\n}`;
+				let type = typeToString(value.type!);
+				type = type === 'object' ? '' : `: ${type}`;
+				const text = `${value.name}${type} = {\n\t${parts.join(
+					',\n\t'
+				)}\n}`;
 				renderCode(text, page);
 			}
 		}
 
 		// Render an element comment
-		function renderComment(comment: ApiComment, page: DocPage) {
+		function renderComment(comment: ApiComment, context: RenderContext) {
+			const { page } = context;
 			const p = document.createElement('p');
 			p.innerHTML = commentToHtml(comment, page.name);
 			page.element.appendChild(p);
@@ -1709,8 +1766,9 @@ function polyfilled() {
 			return parts.join('');
 
 			function renderText(text: string) {
-				text = text.replace(/\[\[(\w+)]]/g, '[$1]($1)');
-				return render(text, { page: pageName, type: 'api' });
+				// Fix jsdoc-style links
+				text = text.replace(/\[\[(.*?)]]/g, '[$1]($1)');
+				return render(text, { info: { page: pageName, type: 'api' } });
 			}
 		}
 
@@ -1824,11 +1882,13 @@ function polyfilled() {
 		}
 
 		// Create a heading element at a given level, including an anchor ID.
-		function createHeading(level: number, text: string) {
-			const heading = document.createElement(`h${level}`);
-			heading.appendChild(document.createTextNode(text));
-			heading.id = slugify(text);
-			return heading;
+		function getHeadingCreator(slugify: Slugifier) {
+			return (level: number, text: string) => {
+				const heading = document.createElement(`h${level}`);
+				heading.appendChild(document.createTextNode(text));
+				heading.id = slugify(text);
+				return heading;
+			};
 		}
 
 		// Create a DOM table
