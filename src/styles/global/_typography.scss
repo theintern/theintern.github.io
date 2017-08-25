@@ -1,6 +1,6 @@
 html,
 body {
-	@include fluid(font-size, 16px, 18px);
+	@include fluid(font-size, 14px, 16px);
 	font-family: $body-font;
 	font-weight: 400;
 	line-height: 1.45;

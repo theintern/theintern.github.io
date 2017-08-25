@@ -13,11 +13,13 @@
  *      current page and docset menu are displayed.
  */
 
+type DocType = 'api' | 'docs';
+
 interface DocSet {
 	url: string;
 	latest: string;
 	next: string;
-	versions: { [version: string]: DocSetVersion };
+	versions: { [version: string]: Docs };
 }
 
 /**
@@ -25,41 +27,54 @@ interface DocSet {
  * or docBase are not, they will be constructed using the standard GitHub URL
  * format.
  */
-interface DocSetVersion {
+interface Docs {
 	// The base URL for the docset
 	url?: string;
 	// The base URL from which the pages should be loaded
 	docBase?: string;
 	// The branch or tag in the repo where docs will be loaded from.
 	branch?: string;
-	// The markdown pages that make up the docset
+	// The path to an API data file
+	api?: string;
+
+	// The paths to  markdown pages that make up the docset, relative to
+	// docBase
 	pages: string[];
 	// A cache of rendered documents
-	cache?: { [name: string]: DocPage };
+	pageCache?: { [name: string]: DocPage };
+
+	// The IDs of generated API pages
+	apiPages?: string[];
+	// A cache of rendered api doc pages
+	apiCache?: { [name: string]: DocPage };
+
 	// The rendered menu element
 	menu?: Element;
+	// The rendered api menu element
+	apiMenu?: Element;
 }
 
 interface DocPage {
+	name: string;
 	element: Element;
 	title: string;
 }
 
 interface DocSetId {
 	project: string;
-	version?: string;
+	version: string;
 }
 
 interface DocSetInfo {
 	project: string;
 	version: string;
-	data: DocSetVersion;
+	docs: Docs;
 }
 
 interface DocInfo {
 	project: string;
 	version: string;
-	type: 'docs' | 'api';
+	type: DocType;
 	page: string;
 	section: string;
 }
@@ -74,6 +89,78 @@ interface SearchResult {
 	element: Element;
 	section?: string;
 	snippet: string;
+}
+
+// This is related to TypeDoc's Reflection class
+interface ApiItem {
+	comment: ApiComment;
+	flags: {
+		isPrivate?: boolean;
+		isProtected?: boolean;
+		isPublic?: boolean;
+		isStatic?: boolean;
+		isExported?: boolean;
+		isExternal?: boolean;
+		isOptional?: boolean;
+		isRest?: boolean;
+		hasExportAssignment?: boolean;
+		isConstructorProperty?: boolean;
+	};
+	id: number;
+	kind: number;
+	kindString: string;
+	name: string;
+}
+
+interface ApiData extends ApiItem {
+	children: ApiData[];
+	defaultValue?: string;
+	groups: {
+		title: string;
+		kind: number;
+		children: number[];
+	}[];
+	inheritedFrom?: ApiType;
+	originalName: string;
+	signatures?: ApiSignature[];
+	sources?: ApiSource[];
+	type?: ApiType;
+}
+
+interface ApiSource {
+	fileName: string;
+	line: number;
+	character: number;
+}
+
+interface ApiType {
+	type: string;
+	value?: string;
+	name?: string;
+	types?: ApiType[];
+	elementType?: ApiType;
+	declaration?: ApiDeclaration;
+	typeArguments?: ApiType[];
+}
+
+interface ApiDeclaration extends ApiItem {
+	children: ApiParameter[];
+	signatures: ApiSignature[];
+}
+
+interface ApiParameter extends ApiItem {
+	type: ApiType;
+	defaultValue?: string;
+}
+
+interface ApiSignature extends ApiItem {
+	parameters?: ApiParameter[];
+	type: ApiType;
+}
+
+interface ApiComment {
+	shortText: string;
+	text?: string;
 }
 
 declare const markdownitHeadingAnchor: any;
@@ -91,7 +178,10 @@ function polyfilled() {
 	let ignoreScroll = false;
 	let searchPanel: HTMLElement;
 
-	const defaultDocs = { project: 'Intern' };
+	const defaultDocs = {
+		project: 'Intern',
+		version: docsets['Intern'].latest
+	};
 	const maxSnippetLength = 60;
 	const searchDelay = 300;
 	const menuHighlightDelay = 20;
@@ -109,7 +199,7 @@ function polyfilled() {
 		setHash({
 			project: docset.project,
 			version: docset.version,
-			page: docset.data.pages[0]
+			page: docset.docs.pages[0]
 		});
 	} else {
 		processHash();
@@ -135,20 +225,17 @@ function polyfilled() {
 			}
 
 			const select = <HTMLSelectElement>target;
-			const docs = getCurrentDocset();
+			const docs = getDocInfo();
 
 			if (target.getAttribute('data-select-property') === 'project') {
-				docs.page = getDocset({
-					project: select.value
-				})!.data.pages[0];
+				// The project was changed
 				docs.project = select.value;
 				docs.version = docsets[select.value].latest;
+				docs.page = getDocset(docs)!.docs.pages[0];
 			} else {
-				docs.page = getDocset({
-					project: docs.project,
-					version: select.value
-				})!.data.pages[0];
+				// The version was changed
 				docs.version = select.value;
+				docs.page = getDocset(docs)!.docs.pages[0];
 			}
 
 			setHash({
@@ -219,10 +306,6 @@ function polyfilled() {
 				updateHashFromContent();
 			}, menuHighlightDelay);
 		});
-
-		// After the page is loaded, ensure the docset selector reflects what's
-		// being displayed.
-		updateDocsetSelector();
 	});
 
 	/**
@@ -254,52 +337,73 @@ function polyfilled() {
 			container.getAttribute('data-doc-version') === docset.version
 		) {
 			// The docset is already visible, so don't do anything
-			return;
+			return Promise.resolve(docset);
 		}
 
-		const pageNames = docset.data.pages;
+		const pageNames = docset.docs.pages;
 		const docBase = getDocBaseUrl(docset);
+		const hasApi = Boolean(docset.docs.api);
 
-		let cache = docset.data.cache!;
+		let cache = docset.docs.pageCache!;
 		let load: PromiseLike<any>;
 
 		if (!cache) {
 			// The docset hasn't been loaded yet
-			cache = docset.data.cache = <{ [name: string]: DocPage }>{};
+			cache = docset.docs.pageCache = <{
+				[name: string]: DocPage;
+			}>Object.create(null);
 
-			load = Promise.all(
-				pageNames.map(name => {
+			const loads: PromiseLike<any>[] = [];
+			const docs = docset.docs;
+
+			if (hasApi) {
+				loads.push(
+					fetch(docBase + docs.api).then(response => {
+						return response.json();
+					})
+				);
+			}
+
+			loads.push(
+				...pageNames.map(name => {
 					return fetch(docBase + name)
 						.then(response => response.text())
 						.then(text => {
 							return ready.then(() => {
 								text = filterGhContent(text);
-								const html = render(text, name);
+								const html = render(text, { page: name });
 								const element = document.createElement('div');
 								element.innerHTML = html;
 
-								const heading = document.createElement('div');
-								heading.className = 'page-heading';
-
 								const h1 = element.querySelector('h1')!;
-								heading.appendChild(h1);
-								element.insertBefore(
-									heading,
-									element.firstChild
-								);
-
-								heading.appendChild(
-									createGitHubLink(docset, name)
-								);
+								element.insertBefore(h1, element.firstChild);
+								h1.appendChild(createGitHubLink(docset, name));
 								const title =
 									(h1 && h1.textContent) || docset.project;
-								cache[name] = { element, title };
+								cache[name] = { name, element, title };
 							});
 						});
 				})
-			).then(() => {
+			);
+
+			load = Promise.all(loads).then(loadData => {
+				if (hasApi) {
+					const data = loadData[0];
+					renderApiPages(
+						{
+							project: docset.project,
+							version: docset.version
+						},
+						data
+					);
+				}
+
 				// All pages need to have been loaded to create the docset menu
-				createMenu();
+				createMenu(docset, 'docs');
+
+				if (hasApi) {
+					createMenu(docset, 'api', 4);
+				}
 			});
 		} else {
 			// The docset is already loaded
@@ -308,12 +412,9 @@ function polyfilled() {
 
 		// When both the docset and the page are ready, update the UI
 		return Promise.all([ready, load]).then(() => {
-			const container = document.querySelector('.docs-content')!;
-			container.setAttribute('data-doc-project', docset.project);
-			container.setAttribute('data-doc-version', docset.version);
-
+			updateNavBarLinks();
 			updateDocsetSelector();
-			showMenu();
+			return docset;
 		});
 
 		// Remove content that may be in the raw GH pages documents that
@@ -346,106 +447,186 @@ function polyfilled() {
 			}, text);
 		}
 
-		// Create the sidebar menu for a page
-		function createMenu() {
-			const menu = document.createElement('ul');
-			menu.className = 'menu-list';
-			docset.data.menu = menu;
-
-			pageNames.forEach(pageName => {
-				const page = cache[pageName];
-				let root: MenuNode;
-				try {
-					root = createNode(page.element.querySelector('h1')!);
-				} catch (error) {
-					root = {
-						level: 1,
-						element: document.createElement('li'),
-						children: []
-					};
-				}
-				const headings = page.element.querySelectorAll('h2,h3')!;
-				const stack: MenuNode[][] = <MenuNode[][]>[[root]];
-				let children: MenuNode[];
-
-				for (let i = 0; i < headings.length; i++) {
-					let heading = headings[i];
-					let newNode = createNode(heading);
-					let level = newNode.level;
-
-					if (level === stack[0][0].level) {
-						stack[0].unshift(newNode);
-					} else if (level > stack[0][0].level) {
-						stack.unshift([newNode]);
-					} else {
-						while (stack[0][0].level > level) {
-							children = stack.shift()!.reverse();
-							stack[0][0].children = children;
-						}
-						if (level === stack[0][0].level) {
-							stack[0].unshift(newNode);
-						} else {
-							stack.unshift([newNode]);
-						}
-					}
-				}
-
-				while (stack.length > 1) {
-					children = stack.shift()!.reverse();
-					stack[0][0].children = children;
-				}
-
-				const li = createLinkItem(page.title, pageName);
-				if (root.children.length > 0) {
-					li.appendChild(createSubMenu(root.children, pageName));
-				}
-
-				menu.appendChild(li);
-			});
-
-			function createSubMenu(children: MenuNode[], pageName: string) {
-				const ul = document.createElement('ul');
-
-				children.forEach(child => {
-					const heading = child.element;
-					const li = createLinkItem(
-						heading.textContent!,
-						pageName,
-						heading.id
-					);
-					if (child.children.length > 0) {
-						li.appendChild(createSubMenu(child.children, pageName));
-					}
-					ul.appendChild(li);
+		//  Update the links in doc navbar
+		function updateNavBarLinks() {
+			const navbar = <HTMLElement>document.querySelector(
+				'.docs-nav .navbar-start'
+			);
+			['docs', 'api'].forEach((type: DocType) => {
+				const link = <HTMLLinkElement>navbar.querySelector(
+					`.navbar-item[data-doc-type="${type}"]`
+				)!;
+				link.href = createHash({
+					project: docset.project,
+					version: docset.version,
+					type
 				});
-
-				return ul;
-			}
-
-			function createNode(heading: Element) {
-				const level = parseInt(heading.tagName.slice(1), 10);
-				return { level, element: heading, children: <MenuNode[]>[] };
-			}
+			});
 		}
 
-		// Install the current docset's menu in the menu container
-		function showMenu() {
-			const menu = document.querySelector('.docs-menu .menu')!;
-			const menuList = menu.querySelector('.menu-list');
-			if (menuList) {
-				menu.removeChild(menuList);
+		// Select the currently active project in the project selector.
+		function updateDocsetSelector() {
+			const docs = getDocInfo();
+			const selector = document.querySelector(
+				'select[data-select-property="project"]'
+			)!;
+
+			if (selector.children.length === 0) {
+				Object.keys(docsets).forEach(name => {
+					const option = document.createElement('option');
+					option.value = name;
+					option.textContent = name;
+					selector.appendChild(option);
+				});
 			}
-			menu.appendChild(docset.data.menu!);
+
+			const option = <HTMLOptionElement>selector.querySelector(
+				`option[value="${getDocInfo().project}"]`
+			);
+			if (option) {
+				option.selected = true;
+			}
+
+			const versions = Object.keys(docsets[docs.project].versions);
+			// If more than one version is available, show the version selector
+			if (versions.length > 1) {
+				viewer.classList.add('multi-version');
+
+				const selector = document.querySelector(
+					'select[data-select-property="version"]'
+				)!;
+				selector.innerHTML = '';
+				versions.forEach(version => {
+					const option = document.createElement('option');
+					let text = `v${version}`;
+					if (version === docsets[docs.project].latest) {
+						text += ' (release)';
+					} else if (version === docsets[docs.project].next) {
+						text += ' (dev)';
+					}
+					option.value = version;
+					option.selected = version === docs.version;
+					option.textContent = text;
+					selector.appendChild(option);
+				});
+			} else {
+				viewer.classList.remove('multi-version');
+			}
+
+			// Update the gibhub link
+			const link = <HTMLAnchorElement>document.querySelector(
+				'.navbar-menu a[data-title="Github"]'
+			);
+			link.href = getDocVersionUrl(docs);
+		}
+	}
+
+	// Create the sidebar menu for a docset
+	function createMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
+		const docset = getDocset(info)!;
+		const docs = docset.docs;
+		const pageNames = type === 'api' ? docs.apiPages! : docs.pages;
+		const cache = type === 'api' ? docs.apiCache! : docs.pageCache!;
+
+		const menu = document.createElement('ul');
+		menu.className = 'menu-list';
+		if (type === 'api') {
+			docs.apiMenu = menu;
+		} else {
+			docs.menu = menu;
+		}
+
+		pageNames.forEach(pageName => {
+			const page = cache[pageName];
+			let root: MenuNode;
+			try {
+				root = createNode(page.element.querySelector('h1')!);
+			} catch (error) {
+				root = {
+					level: 1,
+					element: document.createElement('li'),
+					children: []
+				};
+			}
+
+			const headingTags = [];
+			for (let i = 2; i <= maxDepth; i++) {
+				headingTags.push(`h${i}`);
+			}
+
+			const headings = page.element.querySelectorAll(
+				headingTags.join(',')
+			)!;
+			const stack: MenuNode[][] = <MenuNode[][]>[[root]];
+			let children: MenuNode[];
+
+			for (let i = 0; i < headings.length; i++) {
+				let heading = headings[i];
+				let newNode = createNode(heading);
+				let level = newNode.level;
+
+				if (level === stack[0][0].level) {
+					stack[0].unshift(newNode);
+				} else if (level > stack[0][0].level) {
+					stack.unshift([newNode]);
+				} else {
+					while (stack[0][0].level > level) {
+						children = stack.shift()!.reverse();
+						stack[0][0].children = children;
+					}
+					if (level === stack[0][0].level) {
+						stack[0].unshift(newNode);
+					} else {
+						stack.unshift([newNode]);
+					}
+				}
+			}
+
+			while (stack.length > 1) {
+				children = stack.shift()!.reverse();
+				stack[0][0].children = children;
+			}
+
+			const li = createLinkItem(page.title, { page: pageName, type });
+			if (root.children.length > 0) {
+				li.appendChild(createSubMenu(root.children, pageName));
+			}
+
+			menu.appendChild(li);
+		});
+
+		function createSubMenu(children: MenuNode[], pageName: string) {
+			const ul = document.createElement('ul');
+
+			children.forEach(child => {
+				const heading = child.element;
+				const li = createLinkItem(heading.textContent!, {
+					page: pageName,
+					section: heading.id,
+					type
+				});
+				if (child.children.length > 0) {
+					li.appendChild(createSubMenu(child.children, pageName));
+				}
+				ul.appendChild(li);
+			});
+
+			return ul;
+		}
+
+		function createNode(heading: Element) {
+			const level = parseInt(heading.tagName.slice(1), 10);
+			return { level, element: heading, children: <MenuNode[]>[] };
 		}
 	}
 
 	/**
 	 * Create a link item for a menu
 	 */
-	function createLinkItem(text: string, pageName: string, section?: string) {
+	function createLinkItem(text: string, info: Partial<DocInfo>) {
 		const li = document.createElement('li');
 		const link = document.createElement('a');
-		link.href = createHash({ page: pageName, section });
+		link.href = createHash(info);
 		link.textContent = text;
 		link.title = text;
 		li.appendChild(link);
@@ -455,13 +636,15 @@ function polyfilled() {
 	/**
 	 * Show a page in the currently loaded docset
 	 */
-	function showPage(name: string, section?: string) {
-		const docset = getDocset()!.data;
-		const page = docset.cache![name];
+	function showPage(type: DocType, name: string, section?: string) {
+		const docset = getDocset()!.docs;
+		const page = getPage(docset, type, name);
 		const content = <HTMLElement>document.body.querySelector(
 			'.docs-content'
 		)!;
-		content.removeChild(content.children[0]);
+		if (content.children.length > 0) {
+			content.removeChild(content.children[0]);
+		}
 		content.appendChild(page.element);
 
 		// Do highlighting before scrolling a sectoin into view. Highlighting
@@ -487,6 +670,17 @@ function polyfilled() {
 	}
 
 	/**
+	 * Get a page from a docset
+	 */
+	function getPage(docs: Docs, type: DocType, name?: string) {
+		if (!name) {
+			const pageNames = type === 'docs' ? docs.pages : docs.apiPages!;
+			name = pageNames[0];
+		}
+		return type === 'docs' ? docs.pageCache![name] : docs.apiCache![name];
+	}
+
+	/**
 	 * Highlight the active page in the sidebar menu
 	 */
 	function highlightActivePage() {
@@ -496,16 +690,18 @@ function polyfilled() {
 			active.classList.remove('is-active-page');
 		}
 
-		const currentDocs = getCurrentDocset();
+		const docs = getDocInfo();
 		const currentPage = createHash({
-			project: currentDocs.project,
-			version: currentDocs.version,
-			type: currentDocs.type,
-			page: currentDocs.page
+			project: docs.project,
+			version: docs.version,
+			type: docs.type,
+			page: docs.page
 		});
 
 		const pageLink = menu.querySelector(`li > a[href="${currentPage}"]`)!;
-		pageLink.parentElement!.classList.add('is-active-page');
+		if (pageLink) {
+			pageLink.parentElement!.classList.add('is-active-page');
+		}
 	}
 
 	/**
@@ -527,11 +723,12 @@ function polyfilled() {
 			`li > a[href="${currentSection}"]`
 		)!;
 		if (!link) {
-			const currentDocs = getCurrentDocset();
+			const docs = getDocInfo();
 			const currentPage = createHash({
-				project: currentDocs.project,
-				version: currentDocs.version,
-				page: currentDocs.page
+				project: docs.project,
+				version: docs.version,
+				type: docs.type,
+				page: docs.page
 			});
 			link = <HTMLElement>menu.querySelector(
 				`li > a[href="${currentPage}"]`
@@ -545,6 +742,21 @@ function polyfilled() {
 				<HTMLElement>document.querySelector('.docs-menu')!
 			);
 		}
+	}
+
+	/**
+	 * Install the current docset's docs menu in the menu container
+	 */
+	function showMenu(type?: DocType) {
+		type = type || 'docs';
+		const docs = getDocset()!.docs;
+		const menu = document.querySelector('.docs-menu .menu')!;
+		const menuList = menu.querySelector('.menu-list');
+		if (menuList) {
+			menu.removeChild(menuList);
+		}
+		const docMenu = type === 'docs' ? docs.menu! : docs.apiMenu!;
+		menu.appendChild(docMenu);
 	}
 
 	/**
@@ -573,7 +785,8 @@ function polyfilled() {
 		if (!hash.version) {
 			const parts: Partial<DocInfo> = {
 				project: docset.project,
-				version: docset.version
+				version: docset.version,
+				type: hash.type
 			};
 			if (hash.page) {
 				parts.page = hash.page;
@@ -583,10 +796,15 @@ function polyfilled() {
 			}
 			setHash(parts);
 		} else {
-			Promise.resolve(loadDocset(hash)).then(() => {
+			loadDocset(hash).then(() => {
 				viewer.setAttribute('data-doc-type', hash.type);
-				showPage(hash.page, hash.section);
-				updateDocsetSelector();
+
+				const container = document.querySelector('.docs-content')!;
+				container.setAttribute('data-doc-project', docset.project);
+				container.setAttribute('data-doc-version', docset.version);
+
+				showMenu(hash.type);
+				showPage(hash.type, hash.page, hash.section);
 			});
 		}
 	}
@@ -594,7 +812,7 @@ function polyfilled() {
 	/**
 	 * Render markdown into HTML. Lazily initialize the markdown renderer.
 	 */
-	function render(text: string, page?: string) {
+	function render(text: string, page?: Partial<DocInfo>) {
 		if (!markdown) {
 			markdown = markdownit({
 				// Customize the syntax highlighting process
@@ -714,21 +932,22 @@ function polyfilled() {
 				if (!file) {
 					// This is an in-page anchor link
 					href[1] = createHash({ page: env.page, section: hash });
-				} else if (/\.md/.test(file) && !/\/\//.test(file)) {
+				} else if (!/\/\//.test(file)) {
 					// This is a link to a local markdown file. Make a hash
 					// link that's relative to the current page.
-					const cleanFile = file.replace(/^\.\//, '');
-					let pageBase = '';
-					if (env.page.indexOf('/') !== -1) {
-						pageBase = env.page.slice(
-							0,
-							env.page.lastIndexOf('/') + 1
-						);
+					if (env.page) {
+						const { page, type } = env.page;
+						const cleanFile = file.replace(/^\.\//, '');
+						let pageBase = '';
+						if (page.indexOf('/') !== -1) {
+							pageBase = page.slice(0, page.lastIndexOf('/') + 1);
+						}
+						href[1] = createHash({
+							page: pageBase + cleanFile,
+							section: hash,
+							type
+						});
 					}
-					href[1] = createHash({
-						page: pageBase + cleanFile,
-						section: hash
-					});
 				}
 				return defaultLinkRender(tokens, idx, options, env, self);
 			};
@@ -751,68 +970,10 @@ function polyfilled() {
 	}
 
 	/**
-	 * Select the currently active project in the project selector.
+	 * Get information about the currently displayed docset. If the location
+	 * hash does not identify a page, use default values.
 	 */
-	function updateDocsetSelector() {
-		const docs = getCurrentDocset();
-		const selector = document.querySelector(
-			'select[data-select-property="project"]'
-		)!;
-
-		if (selector.children.length === 0) {
-			Object.keys(docsets).forEach(name => {
-				const option = document.createElement('option');
-				option.value = name;
-				option.textContent = name;
-				selector.appendChild(option);
-			});
-		}
-
-		const option = <HTMLOptionElement>selector.querySelector(
-			`option[value="${getCurrentDocset().project}"]`
-		);
-		if (option) {
-			option.selected = true;
-		}
-
-		const versions = Object.keys(docsets[docs.project].versions);
-		// If more than one version is available, show the version selector
-		if (versions.length > 1) {
-			viewer.classList.add('multi-version');
-
-			const selector = document.querySelector(
-				'select[data-select-property="version"]'
-			)!;
-			selector.innerHTML = '';
-			versions.forEach(version => {
-				const option = document.createElement('option');
-				let text = `v${version}`;
-				if (version === docsets[docs.project].latest) {
-					text += ' (release)';
-				} else if (version === docsets[docs.project].next) {
-					text += ' (dev)';
-				}
-				option.value = version;
-				option.selected = version === docs.version;
-				option.textContent = text;
-				selector.appendChild(option);
-			});
-		} else {
-			viewer.classList.remove('multi-version');
-		}
-
-		// Update the gibhub link
-		const link = <HTMLAnchorElement>document.querySelector(
-			'.navbar-menu a[data-title="Github"]'
-		);
-		link.href = getDocVersionUrl(docs);
-	}
-
-	/**
-	 * Get the current docset from the location hash. If the hash does not
-	 * identify a page, use default values.
-	 */
-	function getCurrentDocset(): DocInfo {
+	function getDocInfo() {
 		const data = parseHash();
 		if (!data.project) {
 			data.project = defaultDocs.project;
@@ -820,11 +981,16 @@ function polyfilled() {
 		if (!data.version) {
 			data.version = docsets[data.project].latest;
 		}
-		if (!data.page) {
-			data.page = docsets[data.project].versions[data.version].pages[0];
-		}
 		if (!data.type) {
 			data.type = 'docs';
+		}
+		if (!data.page) {
+			const docs = docsets[data.project].versions[data.version];
+			if (data.type === 'docs') {
+				data.page = docs.pages[0];
+			} else {
+				data.page = docs.apiPages ? docs.apiPages[0] : '';
+			}
 		}
 		return data;
 	}
@@ -833,16 +999,20 @@ function polyfilled() {
 	 * Create a link hash for a given docset.
 	 */
 	function createHash(info: Partial<DocInfo>) {
-		const currentDocs = getCurrentDocset();
+		const currentDocs = getDocInfo();
 		const docs = {
 			project: currentDocs.project,
 			version: currentDocs.version,
 			type: 'docs',
 			...info
 		};
-		const parts = [docs.project, docs.version, docs.type, docs.page];
-		if (docs.section) {
-			parts.push(docs.section);
+		const parts = [docs.project, docs.version, docs.type];
+		if (docs.page) {
+			parts.push(docs.page);
+
+			if (docs.section) {
+				parts.push(docs.section);
+			}
 		}
 		return '#' + parts.map(encodeURIComponent).join('/');
 	}
@@ -865,7 +1035,7 @@ function polyfilled() {
 	 * active docset will be returned.
 	 */
 	function getDocset(setId?: DocSetId): DocSetInfo | undefined {
-		const docs = setId || getCurrentDocset();
+		const docs = setId || getDocInfo();
 		const project = docsets[docs.project];
 		if (!project) {
 			return;
@@ -878,7 +1048,7 @@ function polyfilled() {
 		return {
 			project: docs.project,
 			version: docs.version!,
-			data: project.versions[docs.version]
+			docs: project.versions[docs.version]
 		};
 	}
 
@@ -899,23 +1069,22 @@ function polyfilled() {
 
 		const docset = getDocset()!;
 		const finders: PromiseLike<any>[] = [];
-		for (let name of docset.data.pages) {
-			const page = docset.data.cache![name];
+		for (let name of docset.docs.pages) {
+			const page = docset.docs.pageCache![name];
 			finders.push(
 				findAllMatches(page.element).then(matches => {
 					if (matches.length > 0) {
-						const link = createLinkItem(page.title, name);
+						const link = createLinkItem(page.title, { page: name });
 						searchResults.appendChild(link);
 
 						const submenu = document.createElement('ul');
 						link.appendChild(submenu);
 
 						matches.forEach(match => {
-							const link = createLinkItem(
-								match.snippet,
-								name,
-								match.section
-							);
+							const link = createLinkItem(match.snippet, {
+								page: name,
+								section: match.section
+							});
 							submenu.appendChild(link);
 						});
 					}
@@ -1134,11 +1303,12 @@ function polyfilled() {
 			above = elements[elements.length - 1];
 		}
 
-		const docs = getCurrentDocset();
+		const docs = getDocInfo();
 		setHash(
 			{
 				project: docs.project,
 				version: docs.version,
+				type: <DocType>viewer.getAttribute('data-doc-type')!,
 				page: docs.page,
 				section: above.id
 			},
@@ -1162,15 +1332,19 @@ function polyfilled() {
 	 */
 	function createGitHubLink(
 		info: { project: string; version: string },
-		page: string
+		page: string,
+		iconName = 'file-text-o'
 	) {
 		const link = document.createElement('a');
+		link.className = 'has-icon';
 		link.title = 'View page source';
 
 		const span = document.createElement('span');
 		span.className = 'icon';
+
 		const icon = document.createElement('i');
-		icon.className = 'fa fa-file-text-o';
+		icon.className = `fa fa-${iconName}`;
+
 		span.appendChild(icon);
 		link.appendChild(span);
 
@@ -1238,5 +1412,430 @@ function polyfilled() {
 			cache[slug] = true;
 			return slug;
 		};
+	}
+
+	/**
+	 * Render the API pages for a docset
+	 */
+	function renderApiPages(setId: DocSetId, data: ApiData) {
+		const docset = getDocset(setId)!;
+		const docs = docset.docs;
+		const pages = (docs.apiPages = <string[]>[]);
+		const cache = (docs.apiCache = <{ [key: string]: DocPage }>{});
+
+		const modules = getExports(data)!;
+		const slugify = createSlugifier();
+
+		modules
+			.filter(module => {
+				return getExports(module).length > 0;
+			})
+			.forEach(module => {
+				const name = module.name.replace(/^"/, '').replace(/"$/, '');
+				pages.push(name);
+				const element = document.createElement('div');
+				const page = (cache[name] = { name, title: name, element });
+
+				element.appendChild(createHeading(1, name));
+				renderModule(module, page);
+			});
+
+		// Render a module page
+		function renderModule(module: ApiData, page: DocPage) {
+			if (module.comment) {
+				renderComment(module.comment, page);
+			}
+
+			const exports = getExports(module);
+
+			const classes = exports.filter(ex => ex.kindString === 'Class');
+			if (classes.length > 0) {
+				page.element.appendChild(createHeading(2, 'Classes'));
+				classes.forEach(cls => {
+					renderClass(cls, page);
+				});
+			}
+
+			const interfaces = exports.filter(
+				ex => ex.kindString === 'Interface'
+			);
+			if (interfaces.length > 0) {
+				page.element.appendChild(createHeading(2, 'Interfaces'));
+				interfaces.forEach(iface => {
+					renderInterface(iface, page);
+				});
+			}
+
+			const functions = exports.filter(
+				ex => ex.kindString === 'Function'
+			);
+			if (functions.length > 0) {
+				page.element.appendChild(createHeading(2, 'Functions'));
+				functions.forEach(func => {
+					renderFunction(func, page);
+				});
+			}
+
+			const constants = exports.filter(
+				ex => ex.kindString === 'Object literal'
+			);
+			if (constants.length > 0) {
+				page.element.appendChild(createHeading(2, 'Constants'));
+				constants.forEach(constant => {
+					renderLiteral(constant, page);
+				});
+			}
+		}
+
+		// Render a class
+		function renderClass(cls: ApiData, page: DocPage) {
+			const heading = createHeading(3, cls.name);
+			page.element.appendChild(heading);
+
+			if (cls.sources) {
+				const link = createSourceLink(cls.sources[0])!;
+				if (link) {
+					heading.appendChild(link);
+				}
+			}
+
+			if (cls.comment) {
+				renderComment(cls.comment, page);
+			}
+
+			const exports = getExports(cls);
+
+			const properties = exports.filter(
+				ex => ex.kindString === 'Property'
+			);
+			properties.forEach(property => {
+				renderProperty(property, page);
+			});
+			const methods = exports.filter(
+				ex =>
+					ex.kindString === 'Method' ||
+					ex.kindString === 'Constructor'
+			);
+			methods.forEach(method => {
+				renderMethod(method, page);
+			});
+		}
+
+		// Render a class method
+		function renderMethod(method: ApiData, page: DocPage) {
+			renderFunction(method, page, 4);
+		}
+
+		// Render a TypeScript interface
+		function renderInterface(iface: ApiData, page: DocPage) {
+			const heading = createHeading(3, iface.name);
+			page.element.appendChild(heading);
+
+			if (iface.sources) {
+				const link = createSourceLink(iface.sources[0]);
+				if (link) {
+					heading.appendChild(link);
+				}
+			}
+
+			if (iface.comment) {
+				renderComment(iface.comment, page);
+			}
+
+			if (iface.signatures) {
+				page.element.appendChild(createHeading(4, 'Call signatures'));
+				renderSignatures(iface.signatures, page);
+			}
+
+			const exports = getExports(iface);
+
+			const properties = exports.filter(
+				ex => ex.kindString === 'Property'
+			);
+			properties.forEach(property => {
+				renderProperty(property, page);
+			});
+
+			const methods = exports.filter(
+				ex =>
+					ex.kindString === 'Method' ||
+					ex.kindString === 'Constructor'
+			);
+			methods.forEach(method => {
+				renderMethod(method, page);
+			});
+		}
+
+		// Render a class or interface property
+		function renderProperty(property: ApiData, page: DocPage) {
+			const heading = createHeading(4, property.name);
+			page.element.appendChild(heading);
+
+			if (property.sources) {
+				const link = createSourceLink(property.sources[0]);
+				if (link) {
+					heading.appendChild(link);
+				}
+			}
+
+			const text = `${property.name}: ${typeToString(property.type!)}`;
+			renderCode(text, page);
+
+			if (property.comment) {
+				renderComment(property.comment, page);
+			}
+		}
+
+		// Render an exported function
+		function renderFunction(func: ApiData, page: DocPage, level = 3) {
+			const heading = createHeading(level, func.name);
+			page.element.appendChild(heading);
+
+			if (func.sources) {
+				const link = createSourceLink(func.sources[0]);
+				if (link) {
+					heading.appendChild(link);
+				}
+			}
+
+			renderSignatures(func.signatures!, page);
+
+			for (let signature of func.signatures!) {
+				if (signature.comment) {
+					renderComment(signature.comment, page);
+					break;
+				}
+			}
+		}
+
+		// Render a function/method signature
+		function renderSignatures(signatures: ApiSignature[], page: DocPage) {
+			for (let sig of signatures) {
+				const container = document.createElement('p');
+				const text = hljs.highlight('typescript', signatureToString(sig), true).value;
+				const code = document.createElement('code');
+				code.className = 'hljs lang-typescript';
+				code.innerHTML = text;
+				container.appendChild(code);
+				page.element.appendChild(container);
+			}
+
+			const parameters = signatures.reduce((params, sig) => {
+				return params.concat(sig.parameters || []);
+			}, <ApiParameter[]>[]);
+			if (parameters.length > 0) {
+				renderParameterTable(parameters, page);
+			}
+		}
+
+		// Render a table of signature parameters
+		function renderParameterTable(
+			parameters: ApiParameter[],
+			page: DocPage
+		) {
+			const params = parameters.filter(param => {
+				return param.comment || param.defaultValue;
+			});
+
+			if (params.length > 0) {
+				const rows = params.map(param => {
+					const comment =
+						param.comment &&
+						commentToHtml(param.comment, page.name);
+					return [
+						param.name,
+						comment || '',
+						param.defaultValue || ''
+					];
+				});
+
+				const p = document.createElement('p');
+				const table = createTable(
+					['Parameter', 'Description', 'Default'],
+					rows
+				);
+				p.appendChild(table);
+				page.element.appendChild(p);
+			}
+		}
+
+		// Render a literal value
+		function renderLiteral(value: ApiData, page: DocPage) {
+			page.element.appendChild(createHeading(3, value.name));
+			if (value.kindString === 'Object literal') {
+				const parts = value.children.map(child => {
+					if (child.name) {
+						return `${child.name}: ${child.defaultValue}`;
+					}
+					return child.defaultValue;
+				});
+				const text = `{\n\t${parts.join(',\n\t')}\n}`;
+				renderCode(text, page);
+			}
+		}
+
+		// Render an element comment
+		function renderComment(comment: ApiComment, page: DocPage) {
+			const p = document.createElement('p');
+			p.innerHTML = commentToHtml(comment, page.name);
+			page.element.appendChild(p);
+		}
+
+		// Generate HTML for an API comment
+		function commentToHtml(comment: ApiComment, pageName: string) {
+			let parts: string[] = [];
+
+			if (comment.shortText) {
+				parts.push(renderText(comment.shortText));
+			}
+
+			if (comment.text) {
+				parts.push(renderText(comment.text));
+			}
+
+			return parts.join('');
+
+			function renderText(text: string) {
+				text = text.replace(/\[\[(\w+)]]/g, '[$1]($1)');
+				return render(text, { page: pageName, type: 'api' });
+			}
+		}
+
+		// Render a syntax-highlighted block of code
+		function renderCode(
+			text: string,
+			page: DocPage,
+			language = 'typescript'
+		) {
+			const code = document.createElement('code');
+			code.className = `hljs lang-${language}`;
+
+			const formatted = hljs.highlight(language, text, true).value;
+			code.innerHTML = formatted
+				.replace(/\n/g, '<br>')
+				.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
+
+			const container = document.createElement('p');
+			container.appendChild(code);
+			page.element.appendChild(container);
+		}
+
+		// Render a link to an element's source code
+		function createSourceLink(source: ApiSource) {
+			// Don't try to create links for files with absolute paths
+			if (source.fileName[0] === '/') {
+				return;
+			}
+
+			const sourceLink = createGitHubLink(
+				{
+					project: setId.project,
+					version: setId.version!
+				},
+				`src/${source.fileName}#L${source.line}`,
+				'code-fork'
+			);
+			sourceLink.title = `Defined at ${source.fileName}#L${source.line}`;
+			return sourceLink;
+		}
+
+		// Generate a string representation of a function/method signature
+		function signatureToString(
+			signature: ApiSignature,
+			isParameter = false
+		): string {
+			const name = signature.name === '__call' ? '' : signature.name;
+			let text = `${name}(`;
+			if (signature.parameters) {
+				const params = signature.parameters.map(param => {
+					const optional = param.flags.isOptional ? '?' : '';
+					return `${param.name}${optional}: ${typeToString(
+						param.type
+					)}`;
+				});
+				text += params.join(', ');
+			}
+
+			let returnType = typeToString(signature.type);
+
+			const sep = isParameter ? ' => ' : ': ';
+			text += `)${sep}${returnType}`;
+
+			return text;
+		}
+
+		// Generate a string representation of a type
+		function typeToString(type: ApiType): string {
+			if (type.type === 'stringLiteral') {
+				return `'${type.value}'`;
+			} else if (type.type === 'union') {
+				const strings = type.types!.map(typeToString);
+				return strings.join(' | ');
+			} else if (type.type === 'array') {
+				return `${typeToString(type.elementType!)}[]`;
+			} else if (type.type === 'reflection') {
+				const d = type.declaration!;
+				if (d.kindString === 'Type literal') {
+					if (d.children) {
+						const parts = d.children.map(child => {
+							return `${child.name}: ${typeToString(child.type)}`;
+						});
+						return `{ ${parts.join(', ')} }`;
+					} else if (d.signatures) {
+						return signatureToString(d.signatures[0], true);
+					}
+				}
+			}
+
+			let returnType = type.name!;
+			if (type.typeArguments) {
+				const args = type.typeArguments.map(arg => {
+					return typeToString(arg);
+				});
+				returnType += `<${args.join(', ')}>`;
+			}
+			return returnType;
+		}
+
+		// Get all the exported, public members from an API item. Members
+		// prefixed by '_', and inherited members, are currently excluded.
+		function getExports(entry: ApiData) {
+			if (!entry.children) {
+				return [];
+			}
+			return entry.children.filter(
+				child =>
+					child.flags.isExported &&
+					!/^_/.test(child.name) &&
+					!child.inheritedFrom
+			);
+		}
+
+		// Create a heading element at a given level, including an anchor ID.
+		function createHeading(level: number, text: string) {
+			const heading = document.createElement(`h${level}`);
+			heading.appendChild(document.createTextNode(text));
+			heading.id = slugify(text);
+			return heading;
+		}
+
+		// Create a DOM table
+		function createTable(headings: string[], rows: string[][]) {
+			const table = document.createElement('table');
+			table.className = 'table is-bordered';
+			const thead = document.createElement('thead');
+			table.appendChild(thead);
+			const tr = document.createElement('tr');
+			tr.innerHTML = `<th>${headings.join('</th><th>')}</th>`;
+			thead.appendChild(tr);
+			const tbody = document.createElement('tbody');
+			table.appendChild(tbody);
+			rows.forEach(row => {
+				const tr = document.createElement('tr');
+				tr.innerHTML = `<td>${row.join('</td><td>')}</td>`;
+				tbody.appendChild(tr);
+			});
+			return table;
+		}
 	}
 }

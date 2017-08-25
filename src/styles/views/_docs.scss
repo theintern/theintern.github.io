@@ -93,7 +93,7 @@
 	.docs-menu {
 		background: $light;
 		border-right: 1px solid $border;
-		padding: 1rem 0;
+		padding: 0.75rem 0;
 		
 		.tabs.is-toggle {
 			margin-bottom: 0;
@@ -310,6 +310,11 @@
 	}
 
 	table {
+		th, td {
+			// Tighten up the padding in API tables
+			padding: 0.25em 0.5em;
+		}
+
 		th {
 			background: $grey-dark;
 			border-color: $grey-darker;
@@ -373,17 +378,18 @@
 		}
 	}
 
-	.page-heading {
+	h1, h2, h3, h4 {
 		display: flex;
-		margin-bottom: 1rem;
+		align-items: center;
 
-		h1 {
-			flex-grow: 1;
-			margin-bottom: 0;
-		}
+		a.has-icon {
+			margin-left: 0.75rem;
+			display: flex;
+			align-items: center;
 
-		.icon {
-			margin-top: 0.3*(0.9*$size-1);
+			.fa {
+				font-size: 90%;
+			}
 		}
 	}
 }

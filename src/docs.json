@@ -71,6 +71,7 @@
 				"pages": ["README.md"]
 			},
 			"2": {
+                "api": "api.json",
                 "branch": "master",
 				"pages": ["README.md"]
 			}
