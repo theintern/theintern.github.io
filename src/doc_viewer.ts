@@ -377,7 +377,12 @@ function polyfilled() {
 
 								const h1 = element.querySelector('h1')!;
 								element.insertBefore(h1, element.firstChild);
-								h1.appendChild(createGitHubLink(docset, name));
+
+								const link = createGitHubLink(docset, name);
+								link.classList.add('edit-page');
+
+								h1.appendChild(link);
+
 								const title =
 									(h1 && h1.textContent) || docset.project;
 								cache[name] = { name, element, title };
@@ -1336,21 +1341,11 @@ function polyfilled() {
 	 */
 	function createGitHubLink(
 		info: { project: string; version: string },
-		page: string,
-		iconName = 'file-text-o'
+		page: string
 	) {
 		const link = document.createElement('a');
-		link.className = 'has-icon';
 		link.title = 'View page source';
-
-		const span = document.createElement('span');
-		span.className = 'icon';
-
-		const icon = document.createElement('i');
-		icon.className = `fa fa-${iconName}`;
-
-		span.appendChild(icon);
-		link.appendChild(span);
+		link.className = 'source-link';
 
 		const docset = docsets[info.project];
 		const dv = docset.versions[info.version];
@@ -1731,16 +1726,15 @@ function polyfilled() {
 				return;
 			}
 
-			const sourceLink = createGitHubLink(
+			const link = createGitHubLink(
 				{
 					project: setId.project,
 					version: setId.version!
 				},
-				`src/${source.fileName}#L${source.line}`,
-				'code-fork'
+				`src/${source.fileName}#L${source.line}`
 			);
-			sourceLink.title = `Defined at ${source.fileName}#L${source.line}`;
-			return sourceLink;
+			link.title = `${source.fileName}#L${source.line}`;
+			return link;
 		}
 
 		// Generate a string representation of a function/method signature

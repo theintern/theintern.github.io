@@ -388,17 +388,25 @@
 	}
 
 	h1, h2, h3, h4 {
-		display: flex;
-		align-items: center;
+		position: relative;
 
-		a.has-icon {
-			margin-left: 0.75rem;
-			display: flex;
-			align-items: center;
+		.source-link::before {
+			// code
+			content: '\f121';
+			font-family: FontAwesome;
+			font-size: 1rem;
+			font-weight: normal;
+			position: absolute;
+			right: 0;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+	}
 
-			.fa {
-				font-size: 90%;
-			}
+	h1 {
+		.edit-page::before {
+			// file-text-o
+			content: '\f0f6';
 		}
 	}
 }
