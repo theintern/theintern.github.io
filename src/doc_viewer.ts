@@ -452,6 +452,10 @@ function polyfilled() {
 			const navbar = <HTMLElement>document.querySelector(
 				'.docs-nav .navbar-start'
 			);
+
+			navbar.classList[docset.docs.api ? 'add' : 'remove']('has-api');
+			navbar.classList[docset.docs.pages ? 'add' : 'remove']('has-docs');
+
 			['docs', 'api'].forEach((type: DocType) => {
 				const link = <HTMLLinkElement>navbar.querySelector(
 					`.navbar-item[data-doc-type="${type}"]`

@@ -82,6 +82,15 @@
 		color: $light;
 	}
 
+	.navbar [data-doc-type] {
+		display: none;
+	}
+
+	.has-api [data-doc-type="api"],
+	.has-docs [data-doc-type="docs"] {
+		display: flex;
+	}
+
 	// Remove the shadow from navbar menus in non-desktop mode; the background
 	// contrast is sufficient.
 	@media screen and (max-width: $desktop) {
