@@ -1076,14 +1076,21 @@ function polyfilled() {
 			return;
 		}
 
-		const docset = getDocset()!;
+		const docType = <DocType>viewer.getAttribute('data-doc-type')!;
+		const docs = getDocset()!.docs;
+		const pages = docType === 'api' ? docs.apiPages! : docs.pages;
+		const cache = docType === 'api' ? docs.apiCache! : docs.pageCache!;
 		const finders: PromiseLike<any>[] = [];
-		for (let name of docset.docs.pages) {
-			const page = docset.docs.pageCache![name];
+
+		for (let name of pages) {
+			const page = cache[name];
 			finders.push(
 				findAllMatches(page.element).then(matches => {
 					if (matches.length > 0) {
-						const link = createLinkItem(page.title, { page: name });
+						const link = createLinkItem(page.title, {
+							page: name,
+							type: docType
+						});
 						searchResults.appendChild(link);
 
 						const submenu = document.createElement('ul');
@@ -1091,6 +1098,7 @@ function polyfilled() {
 
 						matches.forEach(match => {
 							const link = createLinkItem(match.snippet, {
+								type: docType,
 								page: name,
 								section: match.section
 							});
@@ -1106,6 +1114,8 @@ function polyfilled() {
 				searchResults.innerHTML =
 					'<li class="no-results">No results found</li>';
 			} else {
+				// Run the finder over the search results to make the searched
+				// word easier to see.
 				findAllMatches(searchResults, false);
 			}
 		});
