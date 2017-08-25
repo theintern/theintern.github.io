@@ -1293,7 +1293,7 @@ function polyfilled() {
 	 */
 	function updateHashFromContent() {
 		const content = <HTMLElement>document.querySelector('.docs-content')!;
-		const elements = content.querySelectorAll('h1,h2,h3')!;
+		const elements = content.querySelectorAll('h1,h2,h3,h4')!;
 		const viewportTop = content.offsetTop + content.scrollTop;
 
 		let above: Element | undefined;
