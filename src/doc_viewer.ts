@@ -1611,7 +1611,11 @@ function polyfilled() {
 		function renderSignatures(signatures: ApiSignature[], page: DocPage) {
 			for (let sig of signatures) {
 				const container = document.createElement('p');
-				const text = hljs.highlight('typescript', signatureToString(sig), true).value;
+				const text = hljs.highlight(
+					'typescript',
+					signatureToString(sig),
+					true
+				).value;
 				const code = document.createElement('code');
 				code.className = 'hljs lang-typescript';
 				code.innerHTML = text;
