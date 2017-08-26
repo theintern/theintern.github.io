@@ -26,6 +26,7 @@
 				]
 			},
 			"4": {
+                "api": "docs/api.json",
                 "branch": "master",
 				"pages": [
 					"README.md",
@@ -88,6 +89,7 @@
 				"pages": ["README.md"]
 			},
 			"2": {
+                "api": "docs/api.json",
                 "branch": "master",
 				"pages": ["README.md"]
 			}

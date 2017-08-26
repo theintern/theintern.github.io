@@ -1,12 +1,13 @@
 {
     "compilerOptions": {
         "target": "es5",
-        "module": "none",
+        "module": "commonjs",
+        "moduleResolution": "node",
         "lib": [
             "dom",
             "es5",
-            "es2015",
-            "es2015"
+            "es2015.collection",
+            "es2015.promise"
         ],
         "strict": true,
         "noUnusedLocals": true,
@@ -17,9 +18,12 @@
         "inlineSources": false,
         "sourceMap": true,
         "outDir": "./public",
-        "types": [
-            "highlight.js",
-            "markdown-it"
+        "typeRoots": [
+            "./node_modules/@types",
+            "./types"
         ]
-    }
+    },
+    "include": [
+        "./src/**/*.ts"
+    ]
 }

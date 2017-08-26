@@ -409,6 +409,46 @@
 			content: '\f0f6';
 		}
 	}
+
+	.api-metadata {
+		font-style: italic;
+
+		.api-label {
+			font-weight: bold;
+			font-style: normal;
+
+			&::after {
+				content: ': '
+			}
+		}
+	}
+
+	.type-arg {
+		&::before {
+			content: '<';
+		}
+		&::after {
+			content: '>';
+		}
+	}
+
+	.type-list {
+		> *::after {
+			content: ', ';
+		}
+		> *:last-child::after {
+			content: '';
+		}
+	}
+
+	.type-union {
+		> *::after {
+			content: ' | ';
+		}
+		> *:last-child::after {
+			content: '';
+		}
+	}
 }
 
 .no-script {

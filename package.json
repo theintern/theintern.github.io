@@ -3,9 +3,17 @@
 	"version": "0.0.0",
 	"private": true,
 	"dependencies": {
+		"@types/browser-sync": "0.0.36",
 		"@types/highlight.js": "~9.1.9",
 		"@types/markdown-it": "0.0.2",
+		"@types/node": "~8.0.25",
+		"@types/promise-polyfill": "~6.0.0",
+		"@types/strip-ansi": "~3.0.0",
+		"@types/webpack": "~3.0.10",
+		"@types/webpack-dev-middleware": "~1.9.3",
 		"autoprefixer": "~7.1.2",
+		"browser-sync": "~2.18.13",
+		"bs-fullscreen-message": "~1.1.0",
 		"bulma": "~0.5.1",
 		"ejs": "~2.5.7",
 		"jstransformer-ejs": "0.0.3",
@@ -17,12 +25,22 @@
 		"metalsmith-inline-source": "~1.0.6",
 		"metalsmith-layouts": "~1.8.1",
 		"metalsmith-sass": "~1.4.0",
+		"nodemon": "~1.11.0",
+		"promise-polyfill": "~6.0.2",
+		"strip-ansi": "~4.0.0",
+		"ts-loader": "~2.3.3",
+		"ts-node": "~3.3.0",
+		"typedoc": "~0.8.0",
 		"typescript": "~2.4.2",
-		"uglify-js": "~3.0.27"
+		"uglify-js": "~3.0.27",
+		"webpack": "~3.5.5",
+		"webpack-dev-middleware": "~1.12.0",
+		"webpack-polyfill-injector": "0.0.3",
+		"whatwg-fetch": "~2.0.3"
 	},
 	"scripts": {
-		"start": "node build.js serve",
-		"build": "node build.js",
-		"publish": "node build.js publish"
+		"start": "nodemon --exec ts-node build.ts serve",
+		"build": "ts-node build.ts",
+		"publish": "NODE_ENV=production ts-node build.ts publish"
 	}
 }

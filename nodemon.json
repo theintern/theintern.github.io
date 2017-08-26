@@ -1,0 +1,10 @@
+{
+    "ignoreRoot": [],
+    "ignore": [
+        "./.git",
+        "./node_modules/",
+        "./src/",
+        "./public/",
+        "./types/"
+    ]
+}
