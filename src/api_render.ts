@@ -706,7 +706,9 @@ function createTable(headings: string[], rows: string[][]) {
 		h(
 			'tbody',
 			{},
-			rows.map(row => h('tr', {}, row.map(text => h('td', {}, text))))
+			rows.map(row =>
+				h('tr', {}, row.map(html => h('td', { innerHTML: html })))
+			)
 		)
 	]);
 }
