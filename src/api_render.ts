@@ -165,7 +165,7 @@ function renderClass(cls: DeclarationReflection, level: number, context: RenderC
 
 // Render a class method
 function renderMethod(method: DeclarationReflection, level: number, context: RenderContext) {
-	renderFunction(method, level + 1, context);
+	renderFunction(method, level, context);
 }
 
 // Render a class or interface inheritance chain
