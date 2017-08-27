@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 import * as webpack from 'webpack';
 import webpackConfig from './webpack.config';
 import * as WebpackMiddleware from 'webpack-dev-middleware';
@@ -105,7 +106,6 @@ function runServer() {
 		logFileChanges: true,
 		middleware: [webpackMiddlware],
 		plugins: ['bs-fullscreen-message'],
-		reloadDelay: 1000,
 		files: [
 			'public/**/*',
 			{
@@ -153,6 +153,7 @@ function runMetalsmith(options?: { production?: boolean }) {
 		})
 		.source('./site')
 		.destination('./public')
+		.clean(false)
 		.use(docsets())
 		.use(inPlace())
 		.use(
@@ -181,7 +182,8 @@ function runMetalsmith(options?: { production?: boolean }) {
 			assets({
 				source: './site/assets'
 			})
-		);
+		)
+		.use(copyCheck());
 
 	const build = new Promise((resolve, reject) => {
 		metalsmith.build((error?: Error) => {
@@ -208,6 +210,29 @@ function runMetalsmith(options?: { production?: boolean }) {
 				const data = files['docs.json'].contents.toString('utf8');
 				metalsmith.metadata().docsets = JSON.parse(data);
 				delete files['docs.json'];
+			}
+			done();
+		};
+	}
+
+	// Remove any files from the files list that have equivalent contents to
+	// existing files.
+	function copyCheck() {
+		return (
+			files: { [key: string]: any },
+			metalsmith: any,
+			done: () => void
+		) => {
+			const dest = metalsmith.destination();
+			const names = Object.keys(files);
+			for (let name of names) {
+				const file = join(dest, name);
+				if (existsSync(file)) {
+					const contents = readFileSync(file);
+					if (files[name].contents.equals(contents)) {
+						delete files[name];
+					}
+				}
 			}
 			done();
 		};
