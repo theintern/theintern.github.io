@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import * as webpack from 'webpack';
@@ -66,14 +66,19 @@ const stripAnsi = require('strip-ansi');
 
 		if (publish) {
 			console.log('Publishing...');
-			execSync('git add .', { cwd: 'public' });
-			execSync('git commit --all -m "Updated doc build"', {
-				cwd: 'public'
-			});
-			execSync('git fetch public master:master');
-			console.log(
-				"Published code is now in master. Don't forget to push!"
-			);
+			const { status } = spawnSync('git', ['diff-index', '--quiet', 'HEAD']);
+			if (status !== 0) {
+				execSync('git add .', { cwd: 'public' });
+				execSync('git commit --all -m "Updated doc build"', {
+					cwd: 'public'
+				});
+				execSync('git fetch public master:master');
+				console.log(
+					"Published code is now in master. Don't forget to push!"
+				);
+			} else {
+				console.log('Nothing to publish (no changes)');
+			}
 		}
 	}
 })();
