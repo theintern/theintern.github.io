@@ -1,7 +1,7 @@
+import * as Mark from 'mark.js';
+
 import { DocType, getDocSet } from './docs';
 import { createLinkItem } from './render';
-
-import Mark = require('mark.js');
 
 const maxSnippetLength = 60;
 const minSearchTermLength = 4;

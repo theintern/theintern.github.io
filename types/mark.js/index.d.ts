@@ -41,13 +41,14 @@ declare module 'mark.js' {
 		filter: (node: Node, range: Range, term: string, totalMarks: number) => void;
 	}
 
-	class Mark {
-		constructor(context: Element | Element[] | NodeList | string);
+	interface Mark {
+		new (context: Element | Element[] | NodeList | string): Mark;
 		mark(keywords: string | string[], options?: Partial<MarkOptions>): Mark;
 		markRegExp(regexp: RegExp, options?: Partial<RegExpOptions>): Mark;
 		markRanges(ranges: Range[], options?: Partial<RangeOptions>): Mark;
 		unmark(): Mark;
 	}
 
-	export = Mark;
+	const m: Mark;
+	export = m;
 }
