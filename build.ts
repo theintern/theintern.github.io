@@ -82,6 +82,7 @@ function runServer() {
 		logFileChanges: true,
 		middleware: [webpackMiddlware],
 		plugins: ['bs-fullscreen-message'],
+		reloadDelay: 1000,
 		files: [
 			'public/**/*',
 			{
