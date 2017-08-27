@@ -21,7 +21,12 @@ import {
 	getNextVersion
 } from './docs';
 import { renderApiPages } from './api_render';
-import { addHeadingIcons, createGitHubLink, createLinkItem, renderMarkdown } from './render';
+import {
+	addHeadingIcons,
+	createGitHubLink,
+	createLinkItem,
+	renderMarkdown
+} from './render';
 import { createHash, parseHash } from './hash';
 import search from './search';
 

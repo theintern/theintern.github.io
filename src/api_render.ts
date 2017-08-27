@@ -80,7 +80,11 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 }
 
 // Render a module page
-function renderModule(module: ContainerReflection, level: number, context: RenderContext) {
+function renderModule(
+	module: ContainerReflection,
+	level: number,
+	context: RenderContext
+) {
 	const { renderHeading, slugIndex } = context;
 	const heading = renderHeading(level, module, context);
 	slugIndex[module.id] = heading.id;
@@ -126,7 +130,11 @@ function renderModule(module: ContainerReflection, level: number, context: Rende
 }
 
 // Render global variables
-function renderGlobals(global: DeclarationReflection, level: number, context: RenderContext) {
+function renderGlobals(
+	global: DeclarationReflection,
+	level: number,
+	context: RenderContext
+) {
 	const { renderHeading } = context;
 	renderHeading(level, 'Globals', context);
 
@@ -136,7 +144,11 @@ function renderGlobals(global: DeclarationReflection, level: number, context: Re
 }
 
 // Render a class
-function renderClass(cls: DeclarationReflection, level: number, context: RenderContext) {
+function renderClass(
+	cls: DeclarationReflection,
+	level: number,
+	context: RenderContext
+) {
 	const { renderHeading, slugIndex } = context;
 	const heading = renderHeading(level, cls, context);
 	slugIndex[cls.id] = heading.id;
@@ -164,7 +176,11 @@ function renderClass(cls: DeclarationReflection, level: number, context: RenderC
 }
 
 // Render a class method
-function renderMethod(method: DeclarationReflection, level: number, context: RenderContext) {
+function renderMethod(
+	method: DeclarationReflection,
+	level: number,
+	context: RenderContext
+) {
 	renderFunction(method, level, context);
 }
 
@@ -190,7 +206,11 @@ function renderParent(
 }
 
 // Render a TypeScript interface
-function renderInterface(iface: DeclarationReflection, level: number, context: RenderContext) {
+function renderInterface(
+	iface: DeclarationReflection,
+	level: number,
+	context: RenderContext
+) {
 	const { renderHeading, slugIndex } = context;
 	const heading = renderHeading(level, iface, context);
 	slugIndex[iface.id] = heading.id;
@@ -321,7 +341,11 @@ function renderParameterTable(
 }
 
 // Render a literal value
-function renderLiteral(value: DeclarationReflection, level: number, context: RenderContext) {
+function renderLiteral(
+	value: DeclarationReflection,
+	level: number,
+	context: RenderContext
+) {
 	const { page, renderHeading, slugIndex } = context;
 	const heading = renderHeading(level, value, context);
 	slugIndex[value.id] = heading.id;
@@ -606,8 +630,8 @@ function getHeadingRenderer(slugify: Slugifier) {
 		const text =
 			typeof content === 'string'
 				? content
-				// Module names are surrounded by '"'
-				: content.name.replace(/^"|"$/g, '');
+				: // Module names are surrounded by '"'
+					content.name.replace(/^"|"$/g, '');
 		heading.appendChild(document.createTextNode(text));
 		heading.id = slugify(text);
 

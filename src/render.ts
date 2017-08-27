@@ -30,7 +30,10 @@ export function createGitHubLink(
 /**
  * Create a link item for a menu
  */
-export function createLinkItem(content: Element | string, info: Partial<DocInfo>) {
+export function createLinkItem(
+	content: Element | string,
+	info: Partial<DocInfo>
+) {
 	const li = document.createElement('li');
 	const link = document.createElement('a');
 	link.href = createHash(info);

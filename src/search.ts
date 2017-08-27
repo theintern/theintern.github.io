@@ -10,8 +10,15 @@ const minSearchTermLength = 4;
  * Search the loaded docset for a given string. Update the search results
  * box with the results.
  */
-export default function search(term: string, docType: DocType, results: Element | string) {
-	const searchResults = typeof results === 'string' ? document.querySelector(results)! : results;
+export default function search(
+	term: string,
+	docType: DocType,
+	results: Element | string
+) {
+	const searchResults =
+		typeof results === 'string'
+			? document.querySelector(results)!
+			: results;
 	searchResults.innerHTML = '';
 
 	const highlightTerm = term.trim();
@@ -112,18 +119,10 @@ function createSnippet(searchMatch: Element) {
 
 	const previousSibling = (node: HTMLElement) => node.previousSibling;
 	let previousText = '';
-	let previous = getNextTextNode(
-		searchMatch,
-		previousSibling,
-		getRightLeaf
-	);
+	let previous = getNextTextNode(searchMatch, previousSibling, getRightLeaf);
 	while (previous && previousText.length < extraLength) {
 		previousText = previous.textContent! + previousText;
-		previous = getNextTextNode(
-			previous,
-			previousSibling,
-			getRightLeaf
-		)!;
+		previous = getNextTextNode(previous, previousSibling, getRightLeaf)!;
 	}
 
 	const nextSibling = (node: HTMLElement) => node.nextSibling;
@@ -195,9 +194,7 @@ function createSnippet(searchMatch: Element) {
 	// Get the rightmost leaf in the DOM, starting from a given node
 	function getRightLeaf(node: Node): Node {
 		while (node.childNodes.length > 0) {
-			return getRightLeaf(
-				node.childNodes[node.childNodes.length - 1]
-			);
+			return getRightLeaf(node.childNodes[node.childNodes.length - 1]);
 		}
 		return node;
 	}
