@@ -57,9 +57,7 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 				linksToResolve
 			};
 
-			const heading = renderHeading(1, module, context);
-			slugIndex[module.id] = heading.id;
-			renderModule(module, context);
+			renderModule(module, 1, context);
 		});
 
 	for (let { link, id } of linksToResolve) {
@@ -82,8 +80,10 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 }
 
 // Render a module page
-function renderModule(module: ContainerReflection, context: RenderContext) {
-	const { renderHeading } = context;
+function renderModule(module: ContainerReflection, level: number, context: RenderContext) {
+	const { renderHeading, slugIndex } = context;
+	const heading = renderHeading(level, module, context);
+	slugIndex[module.id] = heading.id;
 
 	if (hasComment(module.comment)) {
 		renderComment(module.comment, context);
@@ -93,56 +93,52 @@ function renderModule(module: ContainerReflection, context: RenderContext) {
 
 	const global = exports.filter(ex => ex.name === '__global')[0];
 	if (global) {
-		renderGlobals(global, context);
+		renderGlobals(global, level, context);
 	}
 
 	const classes = exports.filter(ex => ex.kindString === 'Class');
 	if (classes.length > 0) {
-		renderHeading(2, 'Classes', context);
 		classes.forEach(cls => {
-			renderClass(cls, context);
+			renderClass(cls, level + 1, context);
 		});
 	}
 
 	const interfaces = exports.filter(ex => ex.kindString === 'Interface');
 	if (interfaces.length > 0) {
-		renderHeading(2, 'Interfaces', context);
 		interfaces.forEach(iface => {
-			renderInterface(iface, context);
+			renderInterface(iface, level + 1, context);
 		});
 	}
 
 	const functions = exports.filter(ex => ex.kindString === 'Function');
 	if (functions.length > 0) {
-		renderHeading(2, 'Functions', context);
 		functions.forEach(func => {
-			renderFunction(func, context);
+			renderFunction(func, level + 1, context);
 		});
 	}
 
 	const constants = exports.filter(ex => ex.kindString === 'Object literal');
 	if (constants.length > 0) {
-		renderHeading(2, 'Constants', context);
 		constants.forEach(constant => {
-			renderLiteral(constant, context);
+			renderLiteral(constant, level + 1, context);
 		});
 	}
 }
 
 // Render global variables
-function renderGlobals(global: DeclarationReflection, context: RenderContext) {
+function renderGlobals(global: DeclarationReflection, level: number, context: RenderContext) {
 	const { renderHeading } = context;
-	renderHeading(2, 'Globals', context);
+	renderHeading(level, 'Globals', context);
 
 	for (let child of global.children) {
-		renderProperty(child, context);
+		renderProperty(child, level + 1, context);
 	}
 }
 
 // Render a class
-function renderClass(cls: DeclarationReflection, context: RenderContext) {
+function renderClass(cls: DeclarationReflection, level: number, context: RenderContext) {
 	const { renderHeading, slugIndex } = context;
-	const heading = renderHeading(3, cls, context);
+	const heading = renderHeading(level, cls, context);
 	slugIndex[cls.id] = heading.id;
 
 	if (cls.extendedTypes) {
@@ -157,19 +153,19 @@ function renderClass(cls: DeclarationReflection, context: RenderContext) {
 
 	const properties = exports.filter(ex => ex.kindString === 'Property');
 	properties.forEach(property => {
-		renderProperty(property, context);
+		renderProperty(property, level + 1, context);
 	});
 	const methods = exports.filter(
 		ex => ex.kindString === 'Method' || ex.kindString === 'Constructor'
 	);
 	methods.forEach(method => {
-		renderMethod(method, context);
+		renderMethod(method, level + 1, context);
 	});
 }
 
 // Render a class method
-function renderMethod(method: DeclarationReflection, context: RenderContext) {
-	renderFunction(method, context, 4);
+function renderMethod(method: DeclarationReflection, level: number, context: RenderContext) {
+	renderFunction(method, level + 1, context);
 }
 
 // Render a class or interface inheritance chain
@@ -194,9 +190,9 @@ function renderParent(
 }
 
 // Render a TypeScript interface
-function renderInterface(iface: DeclarationReflection, context: RenderContext) {
+function renderInterface(iface: DeclarationReflection, level: number, context: RenderContext) {
 	const { renderHeading, slugIndex } = context;
-	const heading = renderHeading(3, iface, context);
+	const heading = renderHeading(level, iface, context);
 	slugIndex[iface.id] = heading.id;
 
 	if (iface.extendedTypes) {
@@ -208,7 +204,7 @@ function renderInterface(iface: DeclarationReflection, context: RenderContext) {
 	}
 
 	if (iface.signatures) {
-		renderHeading(4, 'Call signatures', context);
+		renderHeading(level + 1, 'Call signatures', context);
 		renderSignatures(iface.signatures, context);
 	}
 
@@ -216,24 +212,25 @@ function renderInterface(iface: DeclarationReflection, context: RenderContext) {
 
 	const properties = exports.filter(ex => ex.kindString === 'Property');
 	properties.forEach(property => {
-		renderProperty(property, context);
+		renderProperty(property, level + 1, context);
 	});
 
 	const methods = exports.filter(
 		ex => ex.kindString === 'Method' || ex.kindString === 'Constructor'
 	);
 	methods.forEach(method => {
-		renderMethod(method, context);
+		renderMethod(method, level + 1, context);
 	});
 }
 
 // Render a class or interface property
 function renderProperty(
 	property: DeclarationReflection,
+	level: number,
 	context: RenderContext
 ) {
 	const { page, renderHeading, slugIndex } = context;
-	const heading = renderHeading(4, property, context);
+	const heading = renderHeading(level, property, context);
 	slugIndex[property.id] = heading.id;
 
 	if (property.inheritedFrom) {
@@ -253,8 +250,8 @@ function renderProperty(
  */
 function renderFunction(
 	func: DeclarationReflection,
-	context: RenderContext,
-	level = 3
+	level: number,
+	context: RenderContext
 ) {
 	const { renderHeading, slugIndex } = context;
 	const heading = renderHeading(level, func, context);
@@ -324,9 +321,9 @@ function renderParameterTable(
 }
 
 // Render a literal value
-function renderLiteral(value: DeclarationReflection, context: RenderContext) {
+function renderLiteral(value: DeclarationReflection, level: number, context: RenderContext) {
 	const { page, renderHeading, slugIndex } = context;
-	const heading = renderHeading(3, value, context);
+	const heading = renderHeading(level, value, context);
 	slugIndex[value.id] = heading.id;
 
 	if (value.kindString === 'Object literal') {
@@ -590,10 +587,20 @@ function getHeadingRenderer(slugify: Slugifier) {
 			type = 'Function';
 		}
 
+		if (type) {
+			heading.classList.add('is-type');
+		}
+
 		if (type === 'Method' || type === 'Function') {
-			heading.classList.add('is-callable');
+			heading.classList.add('is-type-callable');
 		} else if (type === 'Property') {
-			heading.classList.add('is-property');
+			heading.classList.add('is-type-property');
+		} else if (type === 'Constructor') {
+			heading.classList.add('is-type-constructor');
+		} else if (type === 'Class') {
+			heading.classList.add('is-type-class');
+		} else if (type === 'Interface') {
+			heading.classList.add('is-type-interface');
 		}
 
 		const text =

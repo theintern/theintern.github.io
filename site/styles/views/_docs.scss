@@ -391,22 +391,38 @@
 		}
 	}
 
-	.is-callable::before,
-	.is-property::before {
+	.is-type::before {
 		font-family: FontAwesome;
 		margin-right: 0.4em;
 		font-size: 70%;
 	}
 
-	.is-callable::before {
+	.is-type-callable::before {
+		// circle-play
 		content: '\f144';
 	}
 
-	.is-property::before {
+	.is-type-constructor::before {
+		// circle-plus
+		content: '\f055';
+	}
+
+	.is-type-class::before {
+		// square
+		content: '\f0c8';
+	}
+
+	.is-type-interface::before {
+		// empty square
+		content: '\f096';
+	}
+
+	.is-type-property::before {
+		// circle
 		content: '\f111';
 	}
 
-	h1, h2, h3, h4 {
+	.has-heading-icons {
 		display: flex;
 		align-items: center;
 

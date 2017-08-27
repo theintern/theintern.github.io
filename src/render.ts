@@ -66,6 +66,7 @@ export function addHeadingIcons(heading: Element) {
 	heading.textContent = '';
 	heading.appendChild(document.createTextNode(content));
 	heading.appendChild(container);
+	heading.classList.add('has-heading-icons');
 
 	return icons;
 }
