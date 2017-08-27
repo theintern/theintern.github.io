@@ -49,8 +49,31 @@ const stripAnsi = require('strip-ansi');
 	if (serve) {
 		await runServer();
 	} else {
-		await runMetalsmith({ production, publish });
+		if (publish) {
+			if (existsSync('public')) {
+				console.log('Removing existing public dir');
+				execSync('rm -r public');
+			}
+
+			console.log('Creating a clone of the master branch');
+			execSync('git clone -q . public');
+			execSync('git checkout -q master', { cwd: 'public' });
+		}
+
+		await runMetalsmith({ production });
 		await runWebpack();
+
+		if (publish) {
+			console.log('Publishing...');
+			execSync('git add .', { cwd: 'public' });
+			execSync('git commit --all -m "Updated doc build"', {
+				cwd: 'public'
+			});
+			execSync('git fetch public master:master');
+			console.log(
+				"Published code is now in master. Don't forget to push!"
+			);
+		}
 	}
 })();
 
@@ -113,10 +136,10 @@ function runWebpack() {
 	});
 }
 
-function runMetalsmith(options?: { production?: boolean; publish?: boolean }) {
+function runMetalsmith(options?: { production?: boolean }) {
 	console.log('Running Metalsmith...');
 
-	const { production = false, publish = false } = options || {};
+	const { production = false } = options || {};
 
 	const metalsmith = new Metalsmith(__dirname)
 		.metadata({
@@ -160,16 +183,6 @@ function runMetalsmith(options?: { production?: boolean; publish?: boolean }) {
 			})
 		);
 
-	if (publish) {
-		if (existsSync('public')) {
-			console.log('Removing existing public dir');
-			execSync('rm -r public');
-		}
-		console.log('Creating a clone of the master branch');
-		execSync('git clone -q . public');
-		execSync('git checkout -q master', { cwd: 'public' });
-	}
-
 	const build = new Promise((resolve, reject) => {
 		metalsmith.build((error?: Error) => {
 			if (error) {
@@ -182,23 +195,7 @@ function runMetalsmith(options?: { production?: boolean; publish?: boolean }) {
 
 	return build
 		.then(() => {
-			console.log('Built!');
-
-			if (publish) {
-				console.log('Publishing...');
-				execSync('git add .', { cwd: 'public' });
-				execSync('git commit --all -m "Updated doc build"', {
-					cwd: 'public'
-				});
-				execSync('git fetch public master:master');
-			}
-		})
-		.then(() => {
-			if (publish) {
-				console.log(
-					"Published code is now in master. Don't forget to push!"
-				);
-			}
+			console.log('Metalsmith finished');
 		});
 
 	function docsets() {
