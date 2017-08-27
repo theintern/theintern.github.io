@@ -132,6 +132,7 @@ function runWebpack() {
 			} else {
 				resolve();
 			}
+			console.log('Webpack finished');
 		});
 	});
 }

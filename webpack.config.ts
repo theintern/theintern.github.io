@@ -11,7 +11,15 @@ const config: Configuration = {
 		path: join(__dirname, 'public')
 	},
 	module: {
-		rules: [{ test: /\.ts$/, use: 'ts-loader' }]
+		rules: [
+			{
+				test: /\.ts$/,
+				loader: 'ts-loader',
+				options: {
+					silent: true
+				}
+			}
+		]
 	},
 	externals: {
 		'markdown-it': 'markdownit',
