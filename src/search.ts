@@ -17,7 +17,7 @@ export default function search(term: string, docType: DocType, results: Element 
 	const highlightTerm = term.trim();
 	const searchTerm = highlightTerm.toLowerCase();
 
-	if (!highlightTerm || highlightTerm.length < minSearchTermLength) {
+	if (searchTerm && searchTerm.length < minSearchTermLength) {
 		return;
 	}
 
@@ -55,8 +55,10 @@ export default function search(term: string, docType: DocType, results: Element 
 
 	Promise.all(finders).then(() => {
 		if (searchResults.childNodes.length === 0) {
-			searchResults.innerHTML =
-				'<li class="no-results">No results found</li>';
+			if (searchTerm) {
+				searchResults.innerHTML =
+					'<li class="no-results">No results found</li>';
+			}
 		} else {
 			// Run the finder over the search results to make the searched
 			// word easier to see.
@@ -65,7 +67,9 @@ export default function search(term: string, docType: DocType, results: Element 
 	});
 }
 
-// Find all the matches for the user's text
+/**
+ * Find all the matches for the user's text
+ */
 function findAllMatches(
 	searchTerm: string,
 	page: Element,
@@ -98,7 +102,9 @@ function findAllMatches(
 	});
 }
 
-// Get some text surrounding a search match
+/**
+ * Get some text surrounding a search match
+ */
 function createSnippet(searchMatch: Element) {
 	const searchText = searchMatch.textContent!;
 	const container = getContainer(searchMatch);
