@@ -5,6 +5,7 @@ import { DeclarationReflection } from 'typedoc/dist/lib/models/reflections/decla
 import { SignatureReflection } from 'typedoc/dist/lib/models/reflections/signature';
 import { ParameterReflection } from 'typedoc/dist/lib/models/reflections/parameter';
 import { ContainerReflection } from 'typedoc/dist/lib/models/reflections/container';
+import { TypeParameterReflection } from 'typedoc/dist/lib/models/reflections/type-parameter';
 import { Reflection } from 'typedoc/dist/lib/models/reflections/abstract';
 import { Type } from 'typedoc/dist/lib/models/types/abstract';
 import { StringLiteralType } from 'typedoc/dist/lib/models/types/string-literal';
@@ -16,6 +17,10 @@ import { ReferenceType } from 'typedoc/dist/lib/models/types/reference';
 import { IntrinsicType } from 'typedoc/dist/lib/models/types/intrinsic';
 import { UnknownType } from 'typedoc/dist/lib/models/types/unknown';
 import * as h from 'hyperscript';
+
+interface GenericReflection extends Reflection {
+	typeParameter: TypeParameterReflection[];
+}
 
 import { DocSetId, DocPage, getDocSet } from './docs';
 import { createHash } from './hash';
@@ -170,6 +175,17 @@ function renderClass(
 		renderParent(cls.extendedTypes, Relationship.Extends, context);
 	}
 
+	if (isGenericReflection(cls)) {
+		const typeParams = cls.typeParameter
+			.map(param => typeParameterToString(param))
+			.join(', ');
+		const declaration = `${cls.name}<${typeParams}>`;
+		const html = hljs.highlight('typescript', declaration, true).value;
+		context.page.element.appendChild(
+			h('p', {}, h('code.hljs.lang-typescript', { innerHTML: html }))
+		);
+	}
+
 	if (hasComment(cls.comment)) {
 		renderComment(cls.comment, context);
 	}
@@ -186,6 +202,21 @@ function renderClass(
 	methods.forEach(method => {
 		renderMethod(method, level + 1, context);
 	});
+}
+
+function isGenericReflection(type: Reflection): type is GenericReflection {
+	return (<any>type).typeParameter != null;
+}
+
+/**
+ * Render a type parameter
+ */
+function typeParameterToString(param: TypeParameterReflection) {
+	if (param.type) {
+		return `${param.name} extends ${typeToString(param.type)}`;
+	} else {
+		return param.name;
+	}
 }
 
 /**
@@ -493,6 +524,8 @@ function typeToString(type: Type): string {
 				return `{ ${parts.join(', ')} }`;
 			} else if (d.signatures) {
 				return signatureToString(d.signatures[0], true);
+			} else if (d.name === '__type') {
+				return '{ ... }';
 			}
 		}
 	} else if (isReferenceType(type)) {
