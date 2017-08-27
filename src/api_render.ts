@@ -7,6 +7,12 @@ import { ParameterReflection } from 'typedoc/dist/lib/models/reflections/paramet
 import { ContainerReflection } from 'typedoc/dist/lib/models/reflections/container';
 import { Reflection } from 'typedoc/dist/lib/models/reflections/abstract';
 import { Type } from 'typedoc/dist/lib/models/types/abstract';
+import { StringLiteralType } from 'typedoc/dist/lib/models/types/string-literal';
+import { UnionType } from 'typedoc/dist/lib/models/types/union';
+import { ArrayType } from 'typedoc/dist/lib/models/types/array';
+import { ReflectionType } from 'typedoc/dist/lib/models/types/reflection';
+import { ReferenceType } from 'typedoc/dist/lib/models/types/reference';
+import { IntrinsicType } from 'typedoc/dist/lib/models/types/intrinsic';
 import * as h from 'hyperscript';
 
 import { DocSetId, DocPage, getDocSet } from './docs';
@@ -130,7 +136,9 @@ function renderModule(
 	}
 }
 
-// Render global variables
+/**
+ * Render global variables
+ */
 function renderGlobals(
 	global: DeclarationReflection,
 	level: number,
@@ -144,7 +152,9 @@ function renderGlobals(
 	}
 }
 
-// Render a class
+/**
+ * Render a class
+ */
 function renderClass(
 	cls: DeclarationReflection,
 	level: number,
@@ -176,7 +186,9 @@ function renderClass(
 	});
 }
 
-// Render a class method
+/**
+ * Render a class method
+ */
 function renderMethod(
 	method: DeclarationReflection,
 	level: number,
@@ -185,7 +197,9 @@ function renderMethod(
 	renderFunction(method, level, context);
 }
 
-// Render a class or interface inheritance chain
+/**
+ * Render a class or interface inheritance chain
+ */
 function renderParent(
 	types: Type[],
 	relationship: Relationship,
@@ -200,7 +214,9 @@ function renderParent(
 	}
 }
 
-// Render a TypeScript interface
+/**
+ * Render a TypeScript interface
+ */
 function renderInterface(
 	iface: DeclarationReflection,
 	level: number,
@@ -238,7 +254,9 @@ function renderInterface(
 	});
 }
 
-// Render a class or interface property
+/**
+ * Render a class or interface property
+ */
 function renderProperty(
 	property: DeclarationReflection,
 	level: number,
@@ -282,7 +300,9 @@ function renderFunction(
 	}
 }
 
-// Render a function/method signature
+/**
+ * Render an array of function/method signatures
+ */
 function renderSignatures(
 	signatures: SignatureReflection[],
 	context: RenderContext
@@ -304,7 +324,9 @@ function renderSignatures(
 	}
 }
 
-// Render a table of signature parameters
+/**
+ * Render a table of signature parameters
+ */
 function renderParameterTable(
 	parameters: ParameterReflection[],
 	context: RenderContext
@@ -330,7 +352,9 @@ function renderParameterTable(
 	}
 }
 
-// Render a literal value
+/**
+ * Render a literal value
+ */
 function renderLiteral(
 	value: DeclarationReflection,
 	level: number,
@@ -348,13 +372,14 @@ function renderLiteral(
 			return child.defaultValue;
 		});
 		let type = typeToString(value.type!);
-		type = type === 'object' ? '' : `: ${type}`;
-		const text = `${value.name}${type} = {\n\t${parts.join(',\n\t')}\n}`;
+		const text = `${value.name}: ${type} = {\n\t${parts.join(',\n\t')}\n}`;
 		renderCode(text, page);
 	}
 }
 
-// Render an element comment
+/**
+ * Render a declaration comment
+ */
 function renderComment(comment: Comment, context: RenderContext) {
 	const { page } = context;
 	page.element.appendChild(
@@ -362,7 +387,9 @@ function renderComment(comment: Comment, context: RenderContext) {
 	);
 }
 
-// Generate HTML for an API comment
+/**
+ * Generate HTML for an API comment
+ */
 function commentToHtml(comment: Comment, pageName: string) {
 	let parts: string[] = [];
 
@@ -383,7 +410,9 @@ function commentToHtml(comment: Comment, pageName: string) {
 	}
 }
 
-// Render a syntax-highlighted block of code
+/**
+ * Render a syntax-highlighted block of code
+ */
 function renderCode(text: string, page: DocPage, language = 'typescript') {
 	const html = hljs
 		.highlight(language, text, true)
@@ -394,7 +423,9 @@ function renderCode(text: string, page: DocPage, language = 'typescript') {
 	);
 }
 
-// Render a link to an element's source code
+/**
+ * Render a link to an element's source code
+ */
 function createSourceLink(source: SourceReference, context: RenderContext) {
 	// Don't try to create links for files with absolute paths
 	if (source.fileName[0] === '/') {
@@ -412,7 +443,9 @@ function createSourceLink(source: SourceReference, context: RenderContext) {
 	return <HTMLAnchorElement>link;
 }
 
-// Generate a string representation of a function/method signature
+/**
+ * Generate a string representation of a function/method signature
+ */
 function signatureToString(
 	signature: SignatureReflection,
 	isParameter = false
@@ -435,17 +468,18 @@ function signatureToString(
 	return text;
 }
 
-// Generate a string representation of a type
-// TODO: Should be Type?
-function typeToString(type: any): string {
-	if (type.type === 'stringLiteral') {
+/**
+ * Generate a string representation of a type
+ */
+function typeToString(type: Type): string {
+	if (isStringLiteralType(type)) {
 		return `'${type.value}'`;
-	} else if (type.type === 'union') {
+	} else if (isUnionType(type)) {
 		const strings = type.types!.map(typeToString);
 		return strings.join(' | ');
-	} else if (type.type === 'array') {
+	} else if (isArrayType(type)) {
 		return `${typeToString(type.elementType!)}[]`;
-	} else if (type.type === 'reflection') {
+	} else if (isReflectionType(type)) {
 		const d = type.declaration!;
 		if (d.kindString === 'Type literal') {
 			if (d.children) {
@@ -459,17 +493,62 @@ function typeToString(type: any): string {
 				return signatureToString(d.signatures[0], true);
 			}
 		}
+	} else if (isReferenceType(type)) {
+		let str = type.name!;
+		if (type.typeArguments) {
+			const args = type.typeArguments.map((arg: any) => {
+				return typeToString(arg);
+			});
+			str += `<${args.join(', ')}>`;
+		}
+		return str;
+	} else if (isIntrinsicType(type)) {
+		return type.name;
 	}
 
-	let returnType = type.name!;
-	if (type.typeArguments) {
-		const args = type.typeArguments.map((arg: any) => {
-			return typeToString(arg);
-		});
-		returnType += `<${args.join(', ')}>`;
-	}
+	return type.type;
+}
 
-	return returnType;
+/**
+ * Indicate whether a value is a string literal
+ */
+function isStringLiteralType(type: Type): type is StringLiteralType {
+	return type.type === 'stringLiteral';
+}
+
+/**
+ * Indicate whether a value is a union
+ */
+function isUnionType(type: Type): type is UnionType {
+	return type.type === 'union';
+}
+
+/**
+ * Indicate whether a value is an array
+ */
+function isArrayType(type: Type): type is ArrayType {
+	return type.type === 'array';
+}
+
+/**
+ * Indicate whether a value is a reflection
+ */
+function isReflectionType(type: Type): type is ReflectionType {
+	return type.type === 'reflection';
+}
+
+/**
+ * Indicate whether a value is a reference type
+ */
+function isReferenceType(type: Type): type is ReferenceType {
+	return type.type === 'reference';
+}
+
+/**
+ * Indicate whether a value is an intrinsic type
+ */
+function isIntrinsicType(type: Type): type is IntrinsicType {
+	return type.type === 'intrinsic';
 }
 
 // Render a type to a DOM node
@@ -586,6 +665,8 @@ function getHeadingRenderer(slugify: Slugifier) {
 			classes.push('is-type-class');
 		} else if (type === 'Interface') {
 			classes.push('is-type-interface');
+		} else if (type === 'Object literal') {
+			classes.push('is-type-constant');
 		}
 
 		const text =

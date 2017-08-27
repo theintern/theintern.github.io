@@ -65,13 +65,41 @@
 			}
 		}
 
+		.type-legend {
+			display: none;
+			align-items: center;
+			text-transform: none;
+
+			.container {
+				margin-right: 1rem;
+			}
+
+			.is-type {
+				display: flex;
+				align-items: center;
+			}
+		}
+
 		// Don't display the search button at the end of the navbar (outside
 		// the brand) when the view is not in desktop mode
 		@media screen and (max-width: $desktop) {
 			> .search-button {
 				display: none;
 			}
+
+			.navbar-menu {
+				padding-top: 0;
+				padding-bottom: 0;
+			}
+
+			.type-legend {
+				padding: 0.25rem 0;
+			}
 		}
+	}
+
+	&[data-doc-type="api"] .type-legend {
+		display: flex;
 	}
 
 	// Highlight 'active' search buttons using global page state
@@ -399,8 +427,13 @@
 
 	.is-type::before {
 		font-family: FontAwesome;
-		margin-right: 0.4em;
-		font-size: 70%;
+		margin-right: 0.5em;
+		font-size: 60%;
+	}
+
+	h2.is-type::before,
+	h3.is-type::before {
+		font-size: 50%;
 	}
 
 	.is-type-callable::before {
@@ -426,6 +459,11 @@
 	.is-type-property::before {
 		// circle
 		content: '\f111';
+	}
+
+	.is-type-constant::before {
+		// circle
+		content: '\f292';
 	}
 
 	.has-heading-icons {
