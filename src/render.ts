@@ -30,14 +30,44 @@ export function createGitHubLink(
 /**
  * Create a link item for a menu
  */
-export function createLinkItem(text: string, info: Partial<DocInfo>) {
+export function createLinkItem(content: Element | string, info: Partial<DocInfo>) {
 	const li = document.createElement('li');
 	const link = document.createElement('a');
 	link.href = createHash(info);
-	link.textContent = text;
-	link.title = text;
+	if (typeof content === 'string') {
+		link.textContent = content;
+	} else {
+		link.textContent = content.textContent;
+		for (let i = 0; i < content.classList.length; i++) {
+			link.classList.add(content.classList[i]);
+		}
+	}
+	link.title = link.textContent!;
 	li.appendChild(link);
 	return li;
+}
+
+/**
+ * Setup an HTML heading to support icons
+ */
+export function addHeadingIcons(heading: Element) {
+	const existing = heading.querySelector('.heading-icons');
+	if (existing != null) {
+		return existing.childNodes[1];
+	}
+
+	const container = document.createElement('span');
+	container.className = 'heading-icons';
+	container.appendChild(document.createElement('span'));
+	const icons = document.createElement('span');
+	container.appendChild(icons);
+
+	const content = heading.textContent!;
+	heading.textContent = '';
+	heading.appendChild(document.createTextNode(content));
+	heading.appendChild(container);
+
+	return icons;
 }
 
 /**

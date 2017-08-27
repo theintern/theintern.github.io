@@ -5,11 +5,18 @@ import { DeclarationReflection } from 'typedoc/dist/lib/models/reflections/decla
 import { SignatureReflection } from 'typedoc/dist/lib/models/reflections/signature';
 import { ParameterReflection } from 'typedoc/dist/lib/models/reflections/parameter';
 import { ContainerReflection } from 'typedoc/dist/lib/models/reflections/container';
+import { Reflection } from 'typedoc/dist/lib/models/reflections/abstract';
 import { Type } from 'typedoc/dist/lib/models/types/abstract';
 
 import { DocSetId, DocPage, getDocSet } from './docs';
 import { createHash } from './hash';
-import { createGitHubLink, createSlugifier, renderMarkdown, Slugifier } from './render';
+import {
+	addHeadingIcons,
+	createGitHubLink,
+	createSlugifier,
+	renderMarkdown,
+	Slugifier
+} from './render';
 
 /**
  * Render the API pages for a docset
@@ -22,27 +29,61 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 		[key: string]: DocPage;
 	}>Object.create(null));
 	const modules = getExports(data)!;
-	const index = createApiIndex(data);
+	const apiIndex = createApiIndex(data);
+	const slugIndex: SlugIndex = {};
+	const pageIndex: { [id: number]: string } = {};
+	const linksToResolve: { link: HTMLAnchorElement; id: number }[] = [];
 
 	modules
 		.filter(module => {
+			// Only show modules that have exports
 			return getExports(module).length > 0;
 		})
 		.forEach(module => {
-			const createHeading = getHeadingCreator(createSlugifier());
+			const renderHeading = getHeadingRenderer(createSlugifier());
 			const name = module.name.replace(/^"/, '').replace(/"$/, '');
 			pages.push(name);
+			pageIndex[module.id] = name;
+
 			const element = document.createElement('div');
 			const page = (cache[name] = { name, title: name, element });
+			const context: RenderContext = {
+				page,
+				renderHeading,
+				api: data,
+				apiIndex,
+				slugIndex,
+				docSetId,
+				linksToResolve
+			};
 
-			element.appendChild(createHeading(1, name));
-			renderModule(module, { page, createHeading, index, docSetId });
+			const heading = renderHeading(1, module, context);
+			slugIndex[module.id] = heading.id;
+			renderModule(module, context);
 		});
+
+	for (let { link, id } of linksToResolve) {
+		const type = apiIndex[id];
+		const module = findModule(id, apiIndex);
+
+		if (module === type) {
+			link.href = createHash({
+				page: pageIndex[module.id],
+				type: 'api'
+			});
+		} else {
+			link.href = createHash({
+				page: pageIndex[module.id],
+				section: slugIndex[type.id],
+				type: 'api'
+			});
+		}
+	}
 }
 
 // Render a module page
 function renderModule(module: ContainerReflection, context: RenderContext) {
-	const { createHeading, page } = context;
+	const { renderHeading } = context;
 
 	if (hasComment(module.comment)) {
 		renderComment(module.comment, context);
@@ -50,9 +91,14 @@ function renderModule(module: ContainerReflection, context: RenderContext) {
 
 	const exports = getExports(module);
 
+	const global = exports.filter(ex => ex.name === '__global')[0];
+	if (global) {
+		renderGlobals(global, context);
+	}
+
 	const classes = exports.filter(ex => ex.kindString === 'Class');
 	if (classes.length > 0) {
-		page.element.appendChild(createHeading(2, 'Classes'));
+		renderHeading(2, 'Classes', context);
 		classes.forEach(cls => {
 			renderClass(cls, context);
 		});
@@ -60,7 +106,7 @@ function renderModule(module: ContainerReflection, context: RenderContext) {
 
 	const interfaces = exports.filter(ex => ex.kindString === 'Interface');
 	if (interfaces.length > 0) {
-		page.element.appendChild(createHeading(2, 'Interfaces'));
+		renderHeading(2, 'Interfaces', context);
 		interfaces.forEach(iface => {
 			renderInterface(iface, context);
 		});
@@ -68,7 +114,7 @@ function renderModule(module: ContainerReflection, context: RenderContext) {
 
 	const functions = exports.filter(ex => ex.kindString === 'Function');
 	if (functions.length > 0) {
-		page.element.appendChild(createHeading(2, 'Functions'));
+		renderHeading(2, 'Functions', context);
 		functions.forEach(func => {
 			renderFunction(func, context);
 		});
@@ -76,28 +122,31 @@ function renderModule(module: ContainerReflection, context: RenderContext) {
 
 	const constants = exports.filter(ex => ex.kindString === 'Object literal');
 	if (constants.length > 0) {
-		page.element.appendChild(createHeading(2, 'Constants'));
+		renderHeading(2, 'Constants', context);
 		constants.forEach(constant => {
 			renderLiteral(constant, context);
 		});
 	}
 }
 
+// Render global variables
+function renderGlobals(global: DeclarationReflection, context: RenderContext) {
+	const { renderHeading } = context;
+	renderHeading(2, 'Globals', context);
+
+	for (let child of global.children) {
+		renderProperty(child, context);
+	}
+}
+
 // Render a class
 function renderClass(cls: DeclarationReflection, context: RenderContext) {
-	const { page, createHeading } = context;
-	const heading = createHeading(3, cls.name);
-	page.element.appendChild(heading);
-
-	if (cls.sources) {
-		const link = createSourceLink(cls.sources[0], context)!;
-		if (link) {
-			heading.appendChild(link);
-		}
-	}
+	const { renderHeading, slugIndex } = context;
+	const heading = renderHeading(3, cls, context);
+	slugIndex[cls.id] = heading.id;
 
 	if (cls.extendedTypes) {
-		renderExtends(cls.extendedTypes, context);
+		renderParent(cls.extendedTypes, Relationship.Extends, context);
 	}
 
 	if (hasComment(cls.comment)) {
@@ -124,14 +173,18 @@ function renderMethod(method: DeclarationReflection, context: RenderContext) {
 }
 
 // Render a class or interface inheritance chain
-function renderExtends(types: Type[], context: RenderContext) {
+function renderParent(
+	types: Type[],
+	relationship: Relationship,
+	context: RenderContext
+) {
 	for (let type of types) {
 		const p = document.createElement('p');
 		p.className = 'api-metadata';
 
 		const span = document.createElement('span');
 		span.className = 'api-label';
-		span.textContent = 'Extends';
+		span.textContent = `${relationship}: `;
 		p.appendChild(span);
 
 		p.appendChild(renderType(type, context));
@@ -142,19 +195,12 @@ function renderExtends(types: Type[], context: RenderContext) {
 
 // Render a TypeScript interface
 function renderInterface(iface: DeclarationReflection, context: RenderContext) {
-	const { page, createHeading } = context;
-	const heading = createHeading(3, iface.name);
-	page.element.appendChild(heading);
-
-	if (iface.sources) {
-		const link = createSourceLink(iface.sources[0], context);
-		if (link) {
-			heading.appendChild(link);
-		}
-	}
+	const { renderHeading, slugIndex } = context;
+	const heading = renderHeading(3, iface, context);
+	slugIndex[iface.id] = heading.id;
 
 	if (iface.extendedTypes) {
-		renderExtends(iface.extendedTypes, context);
+		renderParent(iface.extendedTypes, Relationship.Extends, context);
 	}
 
 	if (hasComment(iface.comment)) {
@@ -162,7 +208,7 @@ function renderInterface(iface: DeclarationReflection, context: RenderContext) {
 	}
 
 	if (iface.signatures) {
-		page.element.appendChild(createHeading(4, 'Call signatures'));
+		renderHeading(4, 'Call signatures', context);
 		renderSignatures(iface.signatures, context);
 	}
 
@@ -186,15 +232,12 @@ function renderProperty(
 	property: DeclarationReflection,
 	context: RenderContext
 ) {
-	const { page, createHeading } = context;
-	const heading = createHeading(4, property.name);
-	page.element.appendChild(heading);
+	const { page, renderHeading, slugIndex } = context;
+	const heading = renderHeading(4, property, context);
+	slugIndex[property.id] = heading.id;
 
-	if (property.sources) {
-		const link = createSourceLink(property.sources[0], context);
-		if (link) {
-			heading.appendChild(link);
-		}
+	if (property.inheritedFrom) {
+		renderParent([property.inheritedFrom], Relationship.Inherited, context);
 	}
 
 	const text = `${property.name}: ${typeToString(property.type!)}`;
@@ -205,22 +248,17 @@ function renderProperty(
 	}
 }
 
-// Render an exported function
+/**
+ * Render an exported function
+ */
 function renderFunction(
 	func: DeclarationReflection,
 	context: RenderContext,
 	level = 3
 ) {
-	const { page, createHeading } = context;
-	const heading = createHeading(level, func.name);
-	page.element.appendChild(heading);
-
-	if (func.sources) {
-		const link = createSourceLink(func.sources[0], context);
-		if (link) {
-			heading.appendChild(link);
-		}
-	}
+	const { renderHeading, slugIndex } = context;
+	const heading = renderHeading(level, func, context);
+	slugIndex[func.id] = heading.id;
 
 	renderSignatures(func.signatures!, context);
 
@@ -287,8 +325,10 @@ function renderParameterTable(
 
 // Render a literal value
 function renderLiteral(value: DeclarationReflection, context: RenderContext) {
-	const { page, createHeading } = context;
-	page.element.appendChild(createHeading(3, value.name));
+	const { page, renderHeading, slugIndex } = context;
+	const heading = renderHeading(3, value, context);
+	slugIndex[value.id] = heading.id;
+
 	if (value.kindString === 'Object literal') {
 		const parts = value.children.map(child => {
 			if (child.name) {
@@ -478,13 +518,15 @@ function renderType(type: any, context: RenderContext): HTMLElement {
 	const returnType = document.createElement('span');
 	if (type.type === 'reference' && type.id != null) {
 		const link = document.createElement('a');
-		const source = context.index[type.id].sources[0].fileName.replace(/\.ts$/, '');
-		link.href = createHash({
-			page: source,
-			type: 'api'
-		});
 		link.textContent = type.name;
 		returnType.appendChild(link);
+
+		// Push this link onto the list to be resolved later, once all the
+		// slugs have been generated
+		context.linksToResolve.push({
+			link,
+			id: type.id
+		});
 	} else {
 		returnType.appendChild(document.createTextNode(type.name));
 	}
@@ -504,26 +546,76 @@ function renderType(type: any, context: RenderContext): HTMLElement {
 	return returnType;
 }
 
-// Get all the exported, public members from an API item. Members
-// prefixed by '_', and inherited members, are currently excluded.
+/**
+ * Find the module that contains a given declaration ID
+ */
+function findModule(id: number, index: ApiIndex) {
+	let declaration = <Reflection>index[id];
+	while (declaration && declaration.kindString !== 'External module') {
+		declaration = declaration.parent;
+	}
+	return declaration;
+}
+
+/**
+ * Get all the exported, public members from an API item. Members
+ * prefixed by '_', and inherited members, are currently excluded.
+ */
 function getExports(entry: ContainerReflection) {
 	if (!entry.children) {
 		return [];
 	}
 	return entry.children.filter(
 		child =>
-			child.flags.isExported &&
-			!/^_/.test(child.name) &&
-			!child.inheritedFrom
+			(child.flags.isExported &&
+				// Don't include private (by convention) members
+				!/^_/.test(child.name)) ||
+			child.name === '__global'
 	);
 }
 
 // Create a heading element at a given level, including an anchor ID.
-function getHeadingCreator(slugify: Slugifier) {
-	return (level: number, text: string) => {
+function getHeadingRenderer(slugify: Slugifier) {
+	return (
+		level: number,
+		content: Reflection | string,
+		context: RenderContext
+	) => {
 		const heading = document.createElement(`h${level}`);
+
+		let type: string | undefined;
+		if (typeof content !== 'string') {
+			type = content.kindString;
+		} else if (content === 'Call signatures') {
+			type = 'Function';
+		}
+
+		if (type === 'Method' || type === 'Function') {
+			heading.classList.add('is-callable');
+		} else if (type === 'Property') {
+			heading.classList.add('is-property');
+		}
+
+		const text =
+			typeof content === 'string'
+				? content
+				// Module names are surrounded by '"'
+				: content.name.replace(/^"|"$/g, '');
 		heading.appendChild(document.createTextNode(text));
 		heading.id = slugify(text);
+
+		let sourceLink: HTMLAnchorElement | undefined;
+		if (typeof content !== 'string' && content.sources) {
+			sourceLink = createSourceLink(content.sources[0], context);
+		}
+
+		if (sourceLink) {
+			const icons = addHeadingIcons(heading);
+			icons.appendChild(sourceLink);
+		}
+
+		context.page.element.appendChild(heading);
+
 		return heading;
 	};
 }
@@ -551,9 +643,14 @@ function hasComment(comment: Comment) {
 	return comment && (comment.text || comment.shortText);
 }
 
+/**
+ * Create an index of TypeDoc declaration IDs to data structures. This function
+ * also creates parent relationships.
+ */
 function createApiIndex(data: ProjectReflection) {
 	const index: ApiIndex = {};
 	data.children.forEach(child => {
+		child.parent = data;
 		walkTree(child);
 	});
 	return index;
@@ -562,6 +659,7 @@ function createApiIndex(data: ProjectReflection) {
 		index[data.id] = data;
 		if (data.children) {
 			data.children.forEach(child => {
+				child.parent = data;
 				walkTree(child);
 			});
 		}
@@ -569,10 +667,27 @@ function createApiIndex(data: ProjectReflection) {
 }
 
 type ApiIndex = { [key: number]: DeclarationReflection };
+type SlugIndex = { [key: number]: string };
+
+interface HeadingRenderer {
+	(
+		level: number,
+		content: Reflection | string,
+		context: RenderContext
+	): HTMLElement;
+}
 
 interface RenderContext {
 	page: DocPage;
-	createHeading: (level: number, text: string) => HTMLElement;
-	index: ApiIndex;
+	renderHeading: HeadingRenderer;
+	apiIndex: ApiIndex;
+	slugIndex: SlugIndex;
+	api: ProjectReflection;
 	docSetId: DocSetId;
+	linksToResolve: { link: HTMLAnchorElement; id: number }[];
+}
+
+enum Relationship {
+	Extends = 'Extends',
+	Inherited = 'Inherited from'
 }

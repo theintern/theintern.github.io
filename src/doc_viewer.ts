@@ -21,7 +21,7 @@ import {
 	getNextVersion
 } from './docs';
 import { renderApiPages } from './api_render';
-import { createGitHubLink, createLinkItem, renderMarkdown } from './render';
+import { addHeadingIcons, createGitHubLink, createLinkItem, renderMarkdown } from './render';
 import { createHash, parseHash } from './hash';
 import search from './search';
 
@@ -235,12 +235,11 @@ function loadDocset(setId: DocSetId) {
 							element.innerHTML = html;
 
 							const h1 = element.querySelector('h1')!;
-							element.insertBefore(h1, element.firstChild);
-
+							const icons = addHeadingIcons(h1);
 							const link = createGitHubLink(docset, name);
 							link.classList.add('edit-page');
-
-							h1.appendChild(link);
+							icons.appendChild(link);
+							element.insertBefore(h1, element.firstChild);
 
 							const title =
 								(h1 && h1.textContent) || docset.project;
@@ -468,7 +467,7 @@ function createMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
 
 		children.forEach(child => {
 			const heading = child.element;
-			const li = createLinkItem(heading.textContent!, {
+			const li = createLinkItem(heading, {
 				page: pageName,
 				section: heading.id,
 				type

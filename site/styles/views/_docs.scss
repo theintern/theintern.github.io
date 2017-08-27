@@ -135,6 +135,10 @@
 			margin-bottom: 0;
 		}
 
+		li .sigil {
+			font-size: inherit;
+		}
+
 		.menu-list {
 			> li > ul {
 				display: none;
@@ -387,39 +391,58 @@
 		}
 	}
 
-	h1, h2, h3, h4 {
-		position: relative;
-
-		.source-link::before {
-			// code
-			content: '\f121';
-			font-family: FontAwesome;
-			font-size: 1rem;
-			font-weight: normal;
-			position: absolute;
-			right: 0;
-			top: 50%;
-			transform: translateY(-50%);
-		}
+	.is-callable::before,
+	.is-property::before {
+		font-family: FontAwesome;
+		margin-right: 0.4em;
+		font-size: 70%;
 	}
 
-	h1 {
-		.edit-page::before {
-			// file-text-o
-			content: '\f0f6';
+	.is-callable::before {
+		content: '\f144';
+	}
+
+	.is-property::before {
+		content: '\f111';
+	}
+
+	h1, h2, h3, h4 {
+		display: flex;
+		align-items: center;
+
+		.heading-icons {
+			flex-grow: 1;
+			display: flex;
+
+			> span:first-child {
+				flex-grow: 1;
+			}
+			> span:last-child {
+				flex-grow: 0;
+			}
+
+			a {
+				display: flex;
+			}
+
+			.source-link::before {
+				// code
+				content: '\f121';
+				font-family: FontAwesome;
+				font-size: 60%;
+				font-weight: normal;
+			}
+
+			.edit-page::before {
+				// file-text-o
+				content: '\f0f6';
+			}
 		}
 	}
 
 	.api-metadata {
-		font-style: italic;
-
 		.api-label {
 			font-weight: bold;
-			font-style: normal;
-
-			&::after {
-				content: ': '
-			}
 		}
 	}
 
