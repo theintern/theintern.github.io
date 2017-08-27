@@ -1,5 +1,6 @@
 import * as MarkdownIt from 'markdown-it';
 import * as hljs from 'highlight.js';
+import * as h from 'hyperscript';
 
 import { DocInfo, getDocSet, getProjectUrl } from './docs';
 import { createHash } from './hash';
@@ -15,16 +16,13 @@ export function createGitHubLink(
 	info: { project: string; version: string },
 	page: string
 ) {
-	const link = document.createElement('a');
-	link.title = 'View page source';
-	link.className = 'source-link';
-
 	const docset = getDocSet(info)!;
 	const docsetUrl = getProjectUrl(info.project);
 	const dv = docset.docs;
-	link.href = `${docsetUrl}/blob/${dv.branch}/${page}`;
-
-	return link;
+	return h('a.source-link', {
+		title: 'View page source',
+		href: `${docsetUrl}/blob/${dv.branch}/${page}`
+	});
 }
 
 /**
@@ -34,20 +32,29 @@ export function createLinkItem(
 	content: Element | string,
 	info: Partial<DocInfo>
 ) {
-	const li = document.createElement('li');
-	const link = document.createElement('a');
-	link.href = createHash(info);
+	let text: string;
+	let classes: string[] = [];
 	if (typeof content === 'string') {
-		link.textContent = content;
+		text = content;
 	} else {
-		link.textContent = content.textContent;
+		text = content.textContent!;
 		for (let i = 0; i < content.classList.length; i++) {
-			link.classList.add(content.classList[i]);
+			classes.push(content.classList[i]);
 		}
 	}
-	link.title = link.textContent!;
-	li.appendChild(link);
-	return li;
+	return h(
+		'li',
+		{},
+		h(
+			'a',
+			{
+				href: createHash(info),
+				title: text,
+				className: classes.join(' ')
+			},
+			text
+		)
+	);
 }
 
 /**
@@ -59,11 +66,8 @@ export function addHeadingIcons(heading: Element) {
 		return existing.childNodes[1];
 	}
 
-	const container = document.createElement('span');
-	container.className = 'heading-icons';
-	container.appendChild(document.createElement('span'));
-	const icons = document.createElement('span');
-	container.appendChild(icons);
+	const container = h('span.heading-icons', {}, [h('span'), h('span')]);
+	const icons = container.childNodes[1];
 
 	const content = heading.textContent!;
 	heading.textContent = '';

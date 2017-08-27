@@ -7,6 +7,7 @@ import { ParameterReflection } from 'typedoc/dist/lib/models/reflections/paramet
 import { ContainerReflection } from 'typedoc/dist/lib/models/reflections/container';
 import { Reflection } from 'typedoc/dist/lib/models/reflections/abstract';
 import { Type } from 'typedoc/dist/lib/models/types/abstract';
+import * as h from 'hyperscript';
 
 import { DocSetId, DocPage, getDocSet } from './docs';
 import { createHash } from './hash';
@@ -45,7 +46,7 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 			pages.push(name);
 			pageIndex[module.id] = name;
 
-			const element = document.createElement('div');
+			const element = h('div');
 			const page = (cache[name] = { name, title: name, element });
 			const context: RenderContext = {
 				page,
@@ -191,16 +192,10 @@ function renderParent(
 	context: RenderContext
 ) {
 	for (let type of types) {
-		const p = document.createElement('p');
-		p.className = 'api-metadata';
-
-		const span = document.createElement('span');
-		span.className = 'api-label';
-		span.textContent = `${relationship}: `;
-		p.appendChild(span);
-
+		const p = h('p.api-metadata', {}, [
+			h('span.api-label', {}, `${relationship}: `)
+		]);
 		p.appendChild(renderType(type, context));
-
 		context.page.element.appendChild(p);
 	}
 }
@@ -294,14 +289,11 @@ function renderSignatures(
 ) {
 	const { page } = context;
 	for (let sig of signatures) {
-		const container = document.createElement('p');
-		const text = hljs.highlight('typescript', signatureToString(sig), true)
+		const html = hljs.highlight('typescript', signatureToString(sig), true)
 			.value;
-		const code = document.createElement('code');
-		code.className = 'hljs lang-typescript';
-		code.innerHTML = text;
-		container.appendChild(code);
-		page.element.appendChild(container);
+		page.element.appendChild(
+			h('p', {}, [h('code.hljs.lang-typescript', { innerHTML: html })])
+		);
 	}
 
 	const parameters = signatures.reduce((params, sig) => {
@@ -330,13 +322,11 @@ function renderParameterTable(
 			return [param.name, comment || '', param.defaultValue || ''];
 		});
 
-		const p = document.createElement('p');
-		const table = createTable(
-			['Parameter', 'Description', 'Default'],
-			rows
+		page.element.appendChild(
+			h('p', {}, [
+				createTable(['Parameter', 'Description', 'Default'], rows)
+			])
 		);
-		p.appendChild(table);
-		page.element.appendChild(p);
 	}
 }
 
@@ -367,9 +357,9 @@ function renderLiteral(
 // Render an element comment
 function renderComment(comment: Comment, context: RenderContext) {
 	const { page } = context;
-	const p = document.createElement('p');
-	p.innerHTML = commentToHtml(comment, page.name);
-	page.element.appendChild(p);
+	page.element.appendChild(
+		h('p', { innerHTML: commentToHtml(comment, page.name) })
+	);
 }
 
 // Generate HTML for an API comment
@@ -395,17 +385,13 @@ function commentToHtml(comment: Comment, pageName: string) {
 
 // Render a syntax-highlighted block of code
 function renderCode(text: string, page: DocPage, language = 'typescript') {
-	const code = document.createElement('code');
-	code.className = `hljs lang-${language}`;
-
-	const formatted = hljs.highlight(language, text, true).value;
-	code.innerHTML = formatted
-		.replace(/\n/g, '<br>')
+	const html = hljs
+		.highlight(language, text, true)
+		.value.replace(/\n/g, '<br>')
 		.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
-
-	const container = document.createElement('p');
-	container.appendChild(code);
-	page.element.appendChild(container);
+	page.element.appendChild(
+		h('p', {}, [h(`code.hljs.lang-${language}`, { innerHTML: html })])
+	);
 }
 
 // Render a link to an element's source code
@@ -415,7 +401,7 @@ function createSourceLink(source: SourceReference, context: RenderContext) {
 		return;
 	}
 
-	const link = createGitHubLink(
+	const link = <HTMLElement>createGitHubLink(
 		{
 			project: context.docSetId.project,
 			version: context.docSetId.version!
@@ -423,7 +409,7 @@ function createSourceLink(source: SourceReference, context: RenderContext) {
 		`src/${source.fileName}#L${source.line}`
 	);
 	link.title = `${source.fileName}#L${source.line}`;
-	return link;
+	return <HTMLAnchorElement>link;
 }
 
 // Generate a string representation of a function/method signature
@@ -489,18 +475,9 @@ function typeToString(type: any): string {
 // Render a type to a DOM node
 function renderType(type: any, context: RenderContext): HTMLElement {
 	if (type.type === 'stringLiteral') {
-		const node = document.createElement('span');
-		node.className = 'type-literal';
-		node.textContent = type.value;
-		return node;
+		return h('span.type-literal', {}, type.value);
 	} else if (type.type === 'union') {
-		const nodes = type.types!.map(renderType);
-		const container = document.createElement('span');
-		container.className = 'type-union';
-		for (let node of nodes) {
-			container.appendChild(node);
-		}
-		return container;
+		return h('span.type-union', {}, type.types!.map(renderType));
 	} else if (type.type === 'array') {
 		const node = renderType(type.elementType!, context);
 		node.classList.add('type-array');
@@ -510,36 +487,25 @@ function renderType(type: any, context: RenderContext): HTMLElement {
 		if (d.kindString === 'Type literal') {
 			if (d.children) {
 				const parts = d.children.map((child: any) => {
-					const node = document.createElement('span');
-					const label = document.createElement('span');
-					label.className = 'type-label';
-					label.textContent = child.name;
-					node.appendChild(label);
-
 					const typeNode = renderType(child.type, context);
-					node.appendChild(typeNode);
-					return node;
+					return h('span', {}, [
+						h('span.type-label', {}, child.name),
+						typeNode
+					]);
 				});
 
-				const container = document.createElement('span');
-				container.className = 'type-list';
-				for (let part of parts) {
-					container.appendChild(part);
-				}
-				return container;
+				return h('span.type-list', {}, parts);
 			} else if (d.signatures) {
-				const node = document.createElement('span');
-				node.className = 'type-signature';
-				node.innerHTML = signatureToString(d.signatures[0], true);
-				return node;
+				return h('span.type-signature', {
+					innerHTML: signatureToString(d.signatures[0], true)
+				});
 			}
 		}
 	}
 
-	const returnType = document.createElement('span');
+	const returnType = h('span');
 	if (type.type === 'reference' && type.id != null) {
-		const link = document.createElement('a');
-		link.textContent = type.name;
+		const link = h('a', {}, type.name);
 		returnType.appendChild(link);
 
 		// Push this link onto the list to be resolved later, once all the
@@ -556,12 +522,7 @@ function renderType(type: any, context: RenderContext): HTMLElement {
 		const args = type.typeArguments.map((arg: any) => {
 			return renderType(arg, context);
 		});
-		const container = document.createElement('span');
-		container.className = 'type-list type-arg';
-		for (let arg of args) {
-			container.appendChild(arg);
-		}
-		returnType.appendChild(container);
+		returnType.appendChild(h('span.type-list.type-arg', {}, args));
 	}
 
 	return returnType;
@@ -602,7 +563,7 @@ function getHeadingRenderer(slugify: Slugifier) {
 		content: Reflection | string,
 		context: RenderContext
 	) => {
-		const heading = document.createElement(`h${level}`);
+		const classes: string[] = [];
 
 		let type: string | undefined;
 		if (typeof content !== 'string') {
@@ -612,19 +573,19 @@ function getHeadingRenderer(slugify: Slugifier) {
 		}
 
 		if (type) {
-			heading.classList.add('is-type');
+			classes.push('is-type');
 		}
 
 		if (type === 'Method' || type === 'Function') {
-			heading.classList.add('is-type-callable');
+			classes.push('is-type-callable');
 		} else if (type === 'Property') {
-			heading.classList.add('is-type-property');
+			classes.push('is-type-property');
 		} else if (type === 'Constructor') {
-			heading.classList.add('is-type-constructor');
+			classes.push('is-type-constructor');
 		} else if (type === 'Class') {
-			heading.classList.add('is-type-class');
+			classes.push('is-type-class');
 		} else if (type === 'Interface') {
-			heading.classList.add('is-type-interface');
+			classes.push('is-type-interface');
 		}
 
 		const text =
@@ -632,8 +593,12 @@ function getHeadingRenderer(slugify: Slugifier) {
 				? content
 				: // Module names are surrounded by '"'
 					content.name.replace(/^"|"$/g, '');
-		heading.appendChild(document.createTextNode(text));
-		heading.id = slugify(text);
+		const className = classes.join(' ');
+		const heading = <HTMLElement>h(
+			`h${level}`,
+			{ className, id: slugify(text) },
+			text
+		);
 
 		let sourceLink: HTMLAnchorElement | undefined;
 		if (typeof content !== 'string' && content.sources) {
@@ -653,21 +618,16 @@ function getHeadingRenderer(slugify: Slugifier) {
 
 // Create a DOM table
 function createTable(headings: string[], rows: string[][]) {
-	const table = document.createElement('table');
-	table.className = 'table is-bordered';
-	const thead = document.createElement('thead');
-	table.appendChild(thead);
-	const tr = document.createElement('tr');
-	tr.innerHTML = `<th>${headings.join('</th><th>')}</th>`;
-	thead.appendChild(tr);
-	const tbody = document.createElement('tbody');
-	table.appendChild(tbody);
-	rows.forEach(row => {
-		const tr = document.createElement('tr');
-		tr.innerHTML = `<td>${row.join('</td><td>')}</td>`;
-		tbody.appendChild(tr);
-	});
-	return table;
+	return h('table.table.is-bordered', {}, [
+		h('thead', {}, [
+			h('tr', {}, [headings.map(heading => h('th', {}, heading))])
+		]),
+		h(
+			'tbody',
+			{},
+			rows.map(row => h('tr', {}, row.map(text => h('td', {}, text))))
+		)
+	]);
 }
 
 function hasComment(comment: Comment) {

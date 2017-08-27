@@ -5,6 +5,7 @@
 	"dependencies": {
 		"@types/browser-sync": "0.0.36",
 		"@types/highlight.js": "~9.1.9",
+		"@types/hyperscript": "0.0.3",
 		"@types/markdown-it": "0.0.2",
 		"@types/node": "~8.0.25",
 		"@types/promise-polyfill": "~6.0.0",
@@ -16,6 +17,7 @@
 		"bs-fullscreen-message": "~1.1.0",
 		"bulma": "~0.5.1",
 		"ejs": "~2.5.7",
+		"hyperscript": "~2.0.2",
 		"jstransformer-ejs": "0.0.3",
 		"metalsmith": "~2.3.0",
 		"metalsmith-assets": "~0.1.0",

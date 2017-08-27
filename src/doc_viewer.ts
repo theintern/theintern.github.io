@@ -3,6 +3,7 @@
  */
 
 import * as PromisePolyfill from 'promise-polyfill';
+import * as h from 'hyperscript';
 
 import {
 	Docs,
@@ -236,8 +237,7 @@ function loadDocset(setId: DocSetId) {
 							const html = renderMarkdown(text, {
 								info: { page: name }
 							});
-							const element = document.createElement('div');
-							element.innerHTML = html;
+							const element = h('div', { innerHTML: html });
 
 							const h1 = element.querySelector('h1')!;
 							const icons = addHeadingIcons(h1);
@@ -345,9 +345,7 @@ function loadDocset(setId: DocSetId) {
 
 		if (selector.children.length === 0) {
 			getProjects().forEach(name => {
-				const option = document.createElement('option');
-				option.value = name;
-				option.textContent = name;
+				const option = h('option', { value: name }, name);
 				selector.appendChild(option);
 			});
 		}
@@ -371,17 +369,19 @@ function loadDocset(setId: DocSetId) {
 			const latestVersion = getLatestVersion(docs.project).version;
 			const nextVersion = getNextVersion(docs.project).version;
 			versions.forEach(version => {
-				const option = document.createElement('option');
 				let text = `v${version}`;
 				if (version === latestVersion) {
 					text += ' (release)';
 				} else if (version === nextVersion) {
 					text += ' (dev)';
 				}
-				option.value = version;
-				option.selected = version === docs.version;
-				option.textContent = text;
-				selector.appendChild(option);
+				selector.appendChild(
+					h(
+						'option',
+						{ value: version, selected: version === docs.version },
+						text
+					)
+				);
 			});
 		} else {
 			viewer.classList.remove('multi-version');
@@ -402,8 +402,7 @@ function createMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
 	const pageNames = type === 'api' ? docs.apiPages! : docs.pages;
 	const cache = type === 'api' ? docs.apiCache! : docs.pageCache!;
 
-	const menu = document.createElement('ul');
-	menu.className = 'menu-list';
+	const menu = h('ul.menu-list');
 	if (type === 'api') {
 		docs.apiMenu = menu;
 	} else {
@@ -418,7 +417,7 @@ function createMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
 		} catch (error) {
 			root = {
 				level: 1,
-				element: document.createElement('li'),
+				element: h('li'),
 				children: []
 			};
 		}
@@ -468,7 +467,7 @@ function createMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
 	});
 
 	function createSubMenu(children: MenuNode[], pageName: string) {
-		const ul = document.createElement('ul');
+		const ul = h('ul');
 
 		children.forEach(child => {
 			const heading = child.element;

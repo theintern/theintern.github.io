@@ -1,3 +1,4 @@
+import * as h from 'hyperscript';
 import * as Mark from 'mark.js';
 
 import { DocType, getDocSet } from './docs';
@@ -42,19 +43,17 @@ export default function search(
 						page: name,
 						type: docType
 					});
-					searchResults.appendChild(link);
 
-					const submenu = document.createElement('ul');
-					link.appendChild(submenu);
-
-					matches.forEach(match => {
-						const link = createLinkItem(match.snippet, {
+					const submenu = h('ul', {}, matches.map(match => {
+						return createLinkItem(match.snippet, {
 							type: docType,
 							page: name,
 							section: match.section
 						});
-						submenu.appendChild(link);
-					});
+					}));
+
+					link.appendChild(submenu);
+					searchResults.appendChild(link);
 				}
 			})
 		);
