@@ -66,7 +66,11 @@ const stripAnsi = require('strip-ansi');
 
 		if (publish) {
 			console.log('Publishing...');
-			const { status } = spawnSync('git', ['diff-index', '--quiet', 'HEAD']);
+			const { status } = spawnSync(
+				'git',
+				['diff-index', '--quiet', 'HEAD'],
+				{ cwd: 'public' }
+			);
 			if (status !== 0) {
 				execSync('git add .', { cwd: 'public' });
 				execSync('git commit --all -m "Updated doc build"', {
@@ -201,10 +205,9 @@ function runMetalsmith(options?: { production?: boolean }) {
 		});
 	});
 
-	return build
-		.then(() => {
-			console.log('Metalsmith finished');
-		});
+	return build.then(() => {
+		console.log('Metalsmith finished');
+	});
 
 	function docsets() {
 		return (
