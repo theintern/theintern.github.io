@@ -8,11 +8,13 @@ import { ContainerReflection } from 'typedoc/dist/lib/models/reflections/contain
 import { Reflection } from 'typedoc/dist/lib/models/reflections/abstract';
 import { Type } from 'typedoc/dist/lib/models/types/abstract';
 import { StringLiteralType } from 'typedoc/dist/lib/models/types/string-literal';
+import { TypeParameterType } from 'typedoc/dist/lib/models/types/type-parameter';
 import { UnionType } from 'typedoc/dist/lib/models/types/union';
 import { ArrayType } from 'typedoc/dist/lib/models/types/array';
 import { ReflectionType } from 'typedoc/dist/lib/models/types/reflection';
 import { ReferenceType } from 'typedoc/dist/lib/models/types/reference';
 import { IntrinsicType } from 'typedoc/dist/lib/models/types/intrinsic';
+import { UnknownType } from 'typedoc/dist/lib/models/types/unknown';
 import * as h from 'hyperscript';
 
 import { DocSetId, DocPage, getDocSet } from './docs';
@@ -504,6 +506,14 @@ function typeToString(type: Type): string {
 		return str;
 	} else if (isIntrinsicType(type)) {
 		return type.name;
+	} else if (isTypeParameterType(type)) {
+		if (type.constraint) {
+			return `${type.name}<${typeToString(type.constraint)}>`;
+		} else {
+			return type.name;
+		}
+	} else if (isUnknownType(type)) {
+		return type.name;
 	}
 
 	return type.type;
@@ -549,6 +559,17 @@ function isReferenceType(type: Type): type is ReferenceType {
  */
 function isIntrinsicType(type: Type): type is IntrinsicType {
 	return type.type === 'intrinsic';
+}
+
+/**
+ * Indicate whether a value is a type parameter
+ */
+function isTypeParameterType(type: Type): type is TypeParameterType {
+	return type.type === 'typeParameter';
+}
+
+function isUnknownType(type: Type): type is UnknownType {
+	return type.type === 'unknown';
 }
 
 // Render a type to a DOM node
