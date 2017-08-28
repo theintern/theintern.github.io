@@ -18,14 +18,6 @@
 			}
 		}
 	}
-	// Don't display the search button at the end of the navbar (outside
-	// the brand) when the view is not in desktop mode
-	@media screen and (max-width: $desktop) {
-		.navbar-menu {
-			padding-top: 0;
-			padding-bottom: 0;
-		}
-	}
 }
 
 
@@ -39,6 +31,24 @@
 				margin-right: 0;
 			}
 		}
+
+		@media screen and (max-width: $desktop) {
+			.navbar-menu {
+				padding-bottom: 0;
+			}
+		}
+	}
+}
+
+.page-home {
+	@media screen and (max-width: $desktop) {
+		.navbar-menu {
+			padding-bottom: 0;
+		}
+	}
+
+	.navbar-burger {
+		height: auto;
 	}
 }
 
@@ -46,6 +56,13 @@
 	.site-nav .navbar-item[data-doc-type='docs'] {
 		background: $primary;
 		color: $light;
+	}
+
+	@media screen and (max-width: $desktop) {
+		.navbar-menu {
+			padding-top: 0;
+			padding-bottom: 0;
+		}
 	}
 }
 
