@@ -115,7 +115,8 @@ function runServer() {
 			{
 				match: ['site/**/*'],
 				fn: () => {
-					runMetalsmith();
+					// Don't clean when rebuilding while serving
+					runMetalsmith({ clean: false });
 				}
 			}
 		]
@@ -141,10 +142,10 @@ function runWebpack() {
 	});
 }
 
-function runMetalsmith(options?: { production?: boolean }) {
+function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 	console.log('Running Metalsmith...');
 
-	const { production = false } = options || {};
+	const { production = false, clean = true } = options || {};
 
 	const metalsmith = new Metalsmith(__dirname)
 		.metadata({
@@ -158,7 +159,7 @@ function runMetalsmith(options?: { production?: boolean }) {
 		})
 		.source('./site')
 		.destination('./public')
-		.clean(false)
+		.clean(clean)
 		.use(docsets())
 		.use(inPlace())
 		.use(
