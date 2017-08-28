@@ -44,10 +44,6 @@
 		}
 
 		.navbar-brand {
-			.project-selector {
-				padding-right: 0;
-			}
-
 			.github-button {
 				margin-left: auto;
 			}
@@ -202,10 +198,6 @@
 				text-overflow: ellipsis;
 				overflow: hidden;
 			}
-		}
-
-		.version-selector {
-			display: none;
 		}
 	}
 
@@ -408,11 +400,13 @@
 		}
 	}
 
-	.multi-version .menu {
-		.version-selector,
-		.version {
-			display: block;
-		}
+	.navbar .version-selector {
+		padding-left: 0;
+		display: none;
+	}
+
+	&.multi-version .navbar .version-selector {
+		display: flex;
 	}
 
 	.is-type::before {
