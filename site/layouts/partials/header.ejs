@@ -1,30 +1,25 @@
 <header class="header">
 	<div class="container">
-		<nav class="navbar">
+		<nav class="navbar site-nav">
 			<div class="navbar-brand">
 				<% var suffix = pageType === 'docs' ? '-docs' : '';  %>
 				<a href="/" class="navbar-item"><img src="/images/intern-logo<%- suffix %>.svg" class="site-logo" alt="The Intern"></a>
-				<% if (pageType !== 'docs') { %>
 				<div class="navbar-burger">
 					<span></span>
 					<span></span>
 					<span></span>
 				</div>
-				<% } %>
 			</div>
 			<div class="navbar-menu">
 				<div class="navbar-start"></div>
 				<div class="navbar-end">
-					<% if (pageType !== 'docs') { %>
-					<a class="navbar-item" href="/docs.html">Docs</a>
+					<a class="navbar-item" data-doc-type="docs" href="/docs.html">Docs</a>
 					<a class="navbar-item" href="https://github.com/theintern/intern" data-title="Github">Github</a>
-					<% } %>
 				</div>
 			</div>
 		</nav>
 	</div>
 
-	<% if (pageType !== 'docs') { %>
 	<script>
 	(function () {
 		var navBurger = document.querySelector('.header .navbar-burger');
@@ -34,6 +29,5 @@
 			navMenu.classList.toggle('is-active');
 		});
 	})();
-	<% } %>
 	</script>
 </header>

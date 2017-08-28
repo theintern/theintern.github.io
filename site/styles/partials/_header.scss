@@ -23,8 +23,19 @@
 
 /* Page specific */
 
+@media screen and (min-width: $desktop) and (max-width: 1068px) {
+	.page-home {
+		header {
+			.navbar {
+				margin-left: 0;
+				margin-right: 0;
+			}
+		}
+	}
+}
+
 .page-docs {
-	.navbar-item[data-title='Docs'] {
+	.site-nav .navbar-item[data-doc-type='docs'] {
 		background: $primary;
 		color: $light;
 	}
