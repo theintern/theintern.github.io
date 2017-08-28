@@ -267,6 +267,13 @@ function renderInterface(
 		renderComment(iface.comment, context);
 	}
 
+	if (iface.indexSignature) {
+		renderHeading(level + 1, 'Index signature', context);
+		// TypeDoc's typing is wrong -- this is always an array
+		const sig: SignatureReflection[] = <any>iface.indexSignature;
+		renderSignatures(sig, context);
+	}
+
 	if (iface.signatures) {
 		renderHeading(level + 1, 'Call signatures', context);
 		renderSignatures(iface.signatures, context);
@@ -483,22 +490,33 @@ function signatureToString(
 	signature: SignatureReflection,
 	isParameter = false
 ): string {
-	const name = signature.name === '__call' ? '' : signature.name;
-	let text = `${name}(`;
-	if (signature.parameters) {
-		const params = signature.parameters.map(param => {
-			const optional = param.flags.isOptional ? '?' : '';
-			return `${param.name}${optional}: ${typeToString(param.type)}`;
-		});
-		text += params.join(', ');
+	if (signature.name === '__index') {
+		const param = signature.parameters[0];
+		return `[${param.name}: ${typeToString(param.type)}]: ${typeToString(
+			signature.type
+		)}`;
+	} else {
+		let name = signature.name;
+		if (name === '__call') {
+			name = '';
+		}
+
+		let text = `${name}(`;
+		if (signature.parameters) {
+			const params = signature.parameters.map(param => {
+				const optional = param.flags.isOptional ? '?' : '';
+				return `${param.name}${optional}: ${typeToString(param.type)}`;
+			});
+			text += params.join(', ');
+		}
+
+		let returnType = typeToString(signature.type);
+
+		const sep = isParameter ? ' => ' : ': ';
+		text += `)${sep}${returnType}`;
+
+		return text;
 	}
-
-	let returnType = typeToString(signature.type);
-
-	const sep = isParameter ? ' => ' : ': ';
-	text += `)${sep}${returnType}`;
-
-	return text;
 }
 
 /**
