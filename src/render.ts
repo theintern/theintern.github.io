@@ -52,7 +52,7 @@ export function createLinkItem(
 				title: text,
 				className: classes.join(' ')
 			},
-			text
+			h('span', {}, text)
 		)
 	);
 }

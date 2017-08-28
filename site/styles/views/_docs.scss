@@ -199,8 +199,11 @@
 			a {
 				padding-top: 0.25em;
 				padding-bottom: 0.25em;
-				text-overflow: ellipsis;
-				overflow: hidden;
+
+				span {
+					text-overflow: ellipsis;
+					overflow: hidden;
+				}
 			}
 		}
 	}
