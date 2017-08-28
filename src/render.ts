@@ -2,7 +2,7 @@ import * as MarkdownIt from 'markdown-it';
 import * as hljs from 'highlight.js';
 import * as h from 'hyperscript';
 
-import { DocInfo, getDocSet, getProjectUrl } from './docs';
+import { DocInfo, DocSetInfo, DocType, getDocSet, getProjectUrl } from './docs';
 import { createHash } from './hash';
 
 export interface Slugifier {
@@ -277,4 +277,155 @@ export function renderMarkdown(
 	return markdown.render(text, context);
 }
 
+/**
+ * Create the sidebar menu for a docset
+ */
+export function renderMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
+	const docset = getDocSet(info)!;
+	const docs = docset.docs;
+	const pageNames = type === 'api' ? docs.apiPages! : docs.pages;
+	const cache = type === 'api' ? docs.apiCache! : docs.pageCache!;
+	const menu = h('ul.menu-list');
+
+	pageNames.forEach(pageName => {
+		const page = cache[pageName];
+		let root: MenuNode;
+		try {
+			root = createNode(page.element.querySelector('h1')!);
+		} catch (error) {
+			root = {
+				level: 1,
+				element: h('li'),
+				children: []
+			};
+		}
+
+		const headingTags = [];
+		for (let i = 2; i <= maxDepth; i++) {
+			headingTags.push(`h${i}`);
+		}
+
+		const headings = page.element.querySelectorAll(headingTags.join(','))!;
+		const stack: MenuNode[][] = <MenuNode[][]>[[root]];
+		let children: MenuNode[];
+
+		for (let i = 0; i < headings.length; i++) {
+			let heading = headings[i];
+			let newNode = createNode(heading);
+			let level = newNode.level;
+
+			if (level === stack[0][0].level) {
+				stack[0].unshift(newNode);
+			} else if (level > stack[0][0].level) {
+				stack.unshift([newNode]);
+			} else {
+				while (stack[0][0].level > level) {
+					children = stack.shift()!.reverse();
+					stack[0][0].children = children;
+				}
+				if (level === stack[0][0].level) {
+					stack[0].unshift(newNode);
+				} else {
+					stack.unshift([newNode]);
+				}
+			}
+		}
+
+		while (stack.length > 1) {
+			children = stack.shift()!.reverse();
+			stack[0][0].children = children;
+		}
+
+		const li = createLinkItem(page.title, { page: pageName, type });
+		if (root.children.length > 0) {
+			li.appendChild(createSubMenu(root.children, pageName));
+		}
+
+		menu.appendChild(li);
+	});
+
+	return menu;
+
+	function createSubMenu(children: MenuNode[], pageName: string) {
+		const ul = h('ul');
+
+		children.forEach(child => {
+			const heading = child.element;
+			const li = createLinkItem(heading, {
+				page: pageName,
+				section: heading.id,
+				type
+			});
+			if (child.children.length > 0) {
+				li.appendChild(createSubMenu(child.children, pageName));
+			}
+			ul.appendChild(li);
+		});
+
+		return ul;
+	}
+
+	function createNode(heading: Element) {
+		const level = parseInt(heading.tagName.slice(1), 10);
+		return { level, element: heading, children: <MenuNode[]>[] };
+	}
+}
+
+/**
+ * Render a doc page
+ */
+export function renderDocPage(text: string, docset: DocSetInfo) {
+	text = filterGhContent(text);
+	const html = renderMarkdown(text, {
+		info: { page: name }
+	});
+	const element = h('div', { innerHTML: html });
+
+	const h1 = element.querySelector('h1')!;
+	const icons = addHeadingIcons(h1);
+	const link = createGitHubLink(docset, name);
+	link.classList.add('edit-page');
+	icons.appendChild(link);
+	element.insertBefore(h1, element.firstChild);
+
+	return element;
+}
+
+/**
+ * Remove content that may be in the raw GH pages documents but shouldn't be
+ */
+function filterGhContent(text: string) {
+	// This would be simpler with regular expressions, but that makes IE10
+	// sad.
+	const markers = [
+		['<!-- vim-markdown-toc GFM -->', '<!-- vim-markdown-toc -->'],
+		['<!-- start-github-only -->', '<!-- end-github-only -->']
+	];
+	return markers.reduce((text, marker) => {
+		const chunks = [];
+		let start = 0;
+		let left = text.indexOf(marker[0]);
+		let right = 0;
+		while (left !== -1) {
+			chunks.push(text.slice(start, left));
+			right = text.indexOf(marker[1], left);
+			if (right === -1) {
+				break;
+			}
+			start = right + marker[1].length + 1;
+			left = text.indexOf(marker[0], start);
+		}
+		if (right !== -1) {
+			chunks.push(text.slice(start));
+		}
+		return chunks.join('');
+	}, text);
+}
+
 let markdown: MarkdownIt.MarkdownIt;
+
+interface MenuNode {
+	level: number;
+	element: Element;
+	children: MenuNode[];
+}

@@ -21,21 +21,10 @@ import {
 	getLatestVersion,
 	getNextVersion
 } from './docs';
-import { renderApiPages } from './api_render';
-import {
-	addHeadingIcons,
-	createGitHubLink,
-	createLinkItem,
-	renderMarkdown
-} from './render';
+import { renderApiPages } from './render_api';
+import { renderMenu, renderDocPage } from './render';
 import { createHash, parseHash } from './hash';
 import search from './search';
-
-interface MenuNode {
-	level: number;
-	element: Element;
-	children: MenuNode[];
-}
 
 const global = <any>window;
 if (!global.Promise) {
@@ -233,19 +222,8 @@ function loadDocset(setId: DocSetId) {
 					.then(response => response.text())
 					.then(text => {
 						return ready.then(() => {
-							text = filterGhContent(text);
-							const html = renderMarkdown(text, {
-								info: { page: name }
-							});
-							const element = h('div', { innerHTML: html });
-
-							const h1 = element.querySelector('h1')!;
-							const icons = addHeadingIcons(h1);
-							const link = createGitHubLink(docset, name);
-							link.classList.add('edit-page');
-							icons.appendChild(link);
-							element.insertBefore(h1, element.firstChild);
-
+							const element = renderDocPage(text, docset);
+							const h1 = element.querySelector('h1');
 							const title =
 								(h1 && h1.textContent) || docset.project;
 							cache[name] = { name, element, title };
@@ -257,20 +235,14 @@ function loadDocset(setId: DocSetId) {
 		load = Promise.all(loads).then(loadData => {
 			if (hasApi) {
 				const data = loadData[0];
-				renderApiPages(
-					{
-						project: docset.project,
-						version: docset.version
-					},
-					data
-				);
+				renderApiPages(docset, data);
 			}
 
 			// All pages need to have been loaded to create the docset menu
-			createMenu(docset, 'docs');
+			docs.menu = renderMenu(docset, 'docs');
 
 			if (hasApi) {
-				createMenu(docset, 'api', 4);
+				docs.apiMenu = renderMenu(docset, 'api', 4);
 			}
 		});
 	} else {
@@ -284,36 +256,6 @@ function loadDocset(setId: DocSetId) {
 		updateDocsetSelector();
 		return docset;
 	});
-
-	// Remove content that may be in the raw GH pages documents that
-	// shouldn't
-	function filterGhContent(text: string) {
-		// This would be simpler with regular expressions, but that makes IE10
-		// sad.
-		const markers = [
-			['<!-- vim-markdown-toc GFM -->', '<!-- vim-markdown-toc -->'],
-			['<!-- start-github-only -->', '<!-- end-github-only -->']
-		];
-		return markers.reduce((text, marker) => {
-			const chunks = [];
-			let start = 0;
-			let left = text.indexOf(marker[0]);
-			let right = 0;
-			while (left !== -1) {
-				chunks.push(text.slice(start, left));
-				right = text.indexOf(marker[1], left);
-				if (right === -1) {
-					break;
-				}
-				start = right + marker[1].length + 1;
-				left = text.indexOf(marker[0], start);
-			}
-			if (right !== -1) {
-				chunks.push(text.slice(start));
-			}
-			return chunks.join('');
-		}, text);
-	}
 
 	//  Update the links in doc navbar
 	function updateNavBarLinks() {
@@ -386,102 +328,6 @@ function loadDocset(setId: DocSetId) {
 		} else {
 			viewer.classList.remove('multi-version');
 		}
-	}
-}
-
-// Create the sidebar menu for a docset
-function createMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
-	const docset = getDocSet(info)!;
-	const docs = docset.docs;
-	const pageNames = type === 'api' ? docs.apiPages! : docs.pages;
-	const cache = type === 'api' ? docs.apiCache! : docs.pageCache!;
-
-	const menu = h('ul.menu-list');
-	if (type === 'api') {
-		docs.apiMenu = menu;
-	} else {
-		docs.menu = menu;
-	}
-
-	pageNames.forEach(pageName => {
-		const page = cache[pageName];
-		let root: MenuNode;
-		try {
-			root = createNode(page.element.querySelector('h1')!);
-		} catch (error) {
-			root = {
-				level: 1,
-				element: h('li'),
-				children: []
-			};
-		}
-
-		const headingTags = [];
-		for (let i = 2; i <= maxDepth; i++) {
-			headingTags.push(`h${i}`);
-		}
-
-		const headings = page.element.querySelectorAll(headingTags.join(','))!;
-		const stack: MenuNode[][] = <MenuNode[][]>[[root]];
-		let children: MenuNode[];
-
-		for (let i = 0; i < headings.length; i++) {
-			let heading = headings[i];
-			let newNode = createNode(heading);
-			let level = newNode.level;
-
-			if (level === stack[0][0].level) {
-				stack[0].unshift(newNode);
-			} else if (level > stack[0][0].level) {
-				stack.unshift([newNode]);
-			} else {
-				while (stack[0][0].level > level) {
-					children = stack.shift()!.reverse();
-					stack[0][0].children = children;
-				}
-				if (level === stack[0][0].level) {
-					stack[0].unshift(newNode);
-				} else {
-					stack.unshift([newNode]);
-				}
-			}
-		}
-
-		while (stack.length > 1) {
-			children = stack.shift()!.reverse();
-			stack[0][0].children = children;
-		}
-
-		const li = createLinkItem(page.title, { page: pageName, type });
-		if (root.children.length > 0) {
-			li.appendChild(createSubMenu(root.children, pageName));
-		}
-
-		menu.appendChild(li);
-	});
-
-	function createSubMenu(children: MenuNode[], pageName: string) {
-		const ul = h('ul');
-
-		children.forEach(child => {
-			const heading = child.element;
-			const li = createLinkItem(heading, {
-				page: pageName,
-				section: heading.id,
-				type
-			});
-			if (child.children.length > 0) {
-				li.appendChild(createSubMenu(child.children, pageName));
-			}
-			ul.appendChild(li);
-		});
-
-		return ul;
-	}
-
-	function createNode(heading: Element) {
-		const level = parseInt(heading.tagName.slice(1), 10);
-		return { level, element: heading, children: <MenuNode[]>[] };
 	}
 }
 
