@@ -60,6 +60,13 @@
 			align-items: center;
 			text-transform: none;
 
+			// Don't display the search button at the end of the navbar (outside
+			// the brand) when the view is not in desktop mode
+			@media screen and (min-width: $desktop) {
+				padding-top: 0;
+				padding-bottom: 0;
+			}
+
 			.container {
 				margin-right: 1rem;
 			}
