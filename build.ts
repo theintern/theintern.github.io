@@ -18,27 +18,25 @@ const stripAnsi = require('strip-ansi');
 (async () => {
 	let publish = false;
 	let serve = false;
+	let remote = 'origin';
 	let production = process.env.NODE_ENV === 'production';
 
 	process.argv.slice(2).forEach(arg => {
-		switch (arg) {
-			case 'serve':
-				serve = true;
-				break;
-			case 'publish':
-				publish = true;
-				production = true;
-				break;
-			case 'help':
-			case '-h':
-			case '--help':
-				printUsage();
-				process.exit(0);
-				break;
-			default:
-				console.error(`Unknown option "${arg}"\n`);
-				printUsage();
-				process.exit(1);
+		if (arg === 'serve') {
+			serve = true;
+		} else if (/^publish(?:=\w+)?$/.test(arg)) {
+			publish = true;
+			production = true;
+			if (arg.indexOf('=') !== -1) {
+				remote = arg.split('=')[1];
+			}
+		} else if (/\bhelp$/.test(arg) || arg === '-h') {
+			printUsage();
+			process.exit(0);
+		} else {
+			console.error(`Unknown option "${arg}"\n`);
+			printUsage();
+			process.exit(1);
 		}
 	});
 
@@ -75,9 +73,8 @@ const stripAnsi = require('strip-ansi');
 					cwd: 'public'
 				});
 				execSync('git fetch public master:master');
-				console.log(
-					"Published code is now in master. Don't forget to push!"
-				);
+				execSync(`git push ${remote} master`);
+				console.log('Published!');
 			} else {
 				console.log('Nothing to publish (no changes)');
 			}
