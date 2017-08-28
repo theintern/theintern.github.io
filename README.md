@@ -28,10 +28,15 @@ The site source lives in the `source` branch, while the actual published code is
 
 ```
 npm run publish
-git push origin master
 ```
 
-The `publish` script will clone this repo into the `public/` subdirectory and check out the `master` branch, build the site into it, commit the changes, and pull those changes back into this instance of the repo. The push command just pushes the updated `master` branch to GitHub, making the changes live.
+The `publish` script will clone this repo into the `public/` subdirectory and check out the `master` branch, build the site into it, commit the changes, and pull those changes back into this instance of the repo.
+
+If you're publishing to a remote other than `origin`, use the syntax `publish=remote`, like:
+
+```
+npm run publish=upstream
+```
 
 ## Credits
 
