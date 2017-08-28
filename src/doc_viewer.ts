@@ -386,12 +386,6 @@ function loadDocset(setId: DocSetId) {
 		} else {
 			viewer.classList.remove('multi-version');
 		}
-
-		// Update the gibhub link
-		const link = <HTMLAnchorElement>document.querySelector(
-			'.navbar-menu a[data-title="Github"]'
-		);
-		link.href = getDocVersionUrl(docs);
 	}
 }
 
@@ -661,7 +655,21 @@ function processHash() {
 
 			showMenu(hash.type);
 			showPage(hash.type, hash.page, hash.section);
+			updateGitHubButtons(docset);
 		});
+	}
+}
+
+/**
+ * Update the hrefs for the navbar GitHub buttons
+ */
+function updateGitHubButtons(docs: DocSetInfo) {
+	const links = <NodeListOf<HTMLAnchorElement>>document.querySelectorAll(
+		'.github-button'
+	);
+	const url = getDocVersionUrl(docs);
+	for (let i = 0; i < links.length; i++) {
+		links[i].href = url;
 	}
 }
 

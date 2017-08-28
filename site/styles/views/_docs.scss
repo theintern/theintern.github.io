@@ -38,8 +38,8 @@
 	.docs-nav {
 		background: $border;
 
-		// For consistency wiht the search button in navbar-brand
-		.search-button:hover {
+		// For consistency with the search button in navbar-brand
+		.navbar-item.is-hidden-desktop:hover {
 			background: $navbar-item-hover-background-color;
 		}
 
@@ -48,14 +48,8 @@
 				padding-right: 0;
 			}
 
-			.search-button {
+			.github-button {
 				margin-left: auto;
-
-				// Don't display the search button in the navbar-brand when the
-				// view is in desktop mode
-				@media screen and (min-width: $desktop) {
-					display: none;
-				}
 			}
 
 			// The search button is to the left of the burger, and will provide
