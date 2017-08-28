@@ -131,6 +131,10 @@
 				padding: 0 1rem;
 			}
 		}
+
+		@media screen and (max-width: $mobile) {
+			border-bottom: 1px solid $border;
+		}
 	}
 
 	.docs-content {
