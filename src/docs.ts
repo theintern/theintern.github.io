@@ -1,6 +1,9 @@
 import { parseHash } from './hash';
 
-export type DocType = 'api' | 'docs';
+export enum DocType {
+	api = 'api',
+	docs = 'docs'
+}
 
 export interface DocSet {
 	url: string;
@@ -86,7 +89,7 @@ export function getDocInfo() {
 	}
 
 	if (!data.type) {
-		data.type = 'docs';
+		data.type = DocType.docs;
 	}
 
 	if (!data.page) {

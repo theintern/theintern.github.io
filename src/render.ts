@@ -105,10 +105,7 @@ export function createSlugifier() {
 /**
  * Render markdown into HTML. Lazily initialize the markdown renderer.
  */
-export function renderMarkdown(
-	text: string,
-	context: { info?: Partial<DocInfo>; slugify?: Slugifier }
-) {
+export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 	if (!markdown) {
 		markdown = new MarkdownIt({
 			// Customize the syntax highlighting process
@@ -204,7 +201,7 @@ export function renderMarkdown(
 				tokens: any[],
 				idx: number,
 				options: any,
-				_env: any,
+				_env: RenderContext,
 				self: any
 			) => {
 				return self.renderToken(tokens, idx, options);
@@ -213,7 +210,7 @@ export function renderMarkdown(
 			tokens: any[],
 			idx: number,
 			options: any,
-			env: any,
+			env: RenderContext,
 			self: any
 		) => {
 			const hrefIdx = tokens[idx].attrIndex('href');
@@ -221,7 +218,7 @@ export function renderMarkdown(
 			const [file, hash] = href[1].split('#');
 			if (!file) {
 				// This is an in-page anchor link
-				href[1] = createHash({ page: env.page, section: hash });
+				href[1] = createHash({ page: env.info.page, section: hash });
 			} else if (!/\/\//.test(file)) {
 				// This is a link to a local markdown file. Make a hash
 				// link that's relative to the current page.
@@ -262,7 +259,7 @@ export function renderMarkdown(
 			tokens: any[],
 			idx: number,
 			_options: any,
-			env: any
+			env: RenderContext
 		) => {
 			const token = tokens[idx];
 			const content = tokens[idx + 1].content;
@@ -374,16 +371,20 @@ export function renderMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
 /**
  * Render a doc page
  */
-export function renderDocPage(text: string, docset: DocSetInfo) {
+export function renderDocPage(
+	text: string,
+	pageName: string,
+	docset: DocSetInfo
+) {
 	text = filterGhContent(text);
 	const html = renderMarkdown(text, {
-		info: { page: name }
+		info: { page: pageName, type: DocType.docs }
 	});
 	const element = h('div', { innerHTML: html });
 
 	const h1 = element.querySelector('h1')!;
 	const icons = addHeadingIcons(h1);
-	const link = createGitHubLink(docset, name);
+	const link = createGitHubLink(docset, pageName);
 	link.classList.add('edit-page');
 	icons.appendChild(link);
 	element.insertBefore(h1, element.firstChild);
@@ -428,4 +429,9 @@ interface MenuNode {
 	level: number;
 	element: Element;
 	children: MenuNode[];
+}
+
+interface RenderContext {
+	info: { page: string; type: DocType };
+	slugify: Slugifier;
 }

@@ -22,7 +22,7 @@ interface GenericReflection extends Reflection {
 	typeParameter: TypeParameterReflection[];
 }
 
-import { DocSetId, DocPage, getDocSet } from './docs';
+import { DocSetId, DocPage, DocType, getDocSet } from './docs';
 import { createHash } from './hash';
 import {
 	addHeadingIcons,
@@ -81,13 +81,13 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 		if (module === type) {
 			link.href = createHash({
 				page: pageIndex[module.id],
-				type: 'api'
+				type: DocType.api
 			});
 		} else {
 			link.href = createHash({
 				page: pageIndex[module.id],
 				section: slugIndex[type.id],
-				type: 'api'
+				type: DocType.api
 			});
 		}
 	}
@@ -446,7 +446,7 @@ function commentToHtml(comment: Comment, pageName: string) {
 	function renderText(text: string) {
 		// Fix jsdoc-style links
 		text = text.replace(/\[\[(.*?)]]/g, '[$1]($1)');
-		return renderMarkdown(text, { info: { page: pageName, type: 'api' } });
+		return renderMarkdown(text, { info: { page: pageName, type: DocType.api } });
 	}
 }
 

@@ -222,7 +222,7 @@ function loadDocset(setId: DocSetId) {
 					.then(response => response.text())
 					.then(text => {
 						return ready.then(() => {
-							const element = renderDocPage(text, docset);
+							const element = renderDocPage(text, name, docset);
 							const h1 = element.querySelector('h1');
 							const title =
 								(h1 && h1.textContent) || docset.project;
@@ -239,10 +239,10 @@ function loadDocset(setId: DocSetId) {
 			}
 
 			// All pages need to have been loaded to create the docset menu
-			docs.menu = renderMenu(docset, 'docs');
+			docs.menu = renderMenu(docset, DocType.docs);
 
 			if (hasApi) {
-				docs.apiMenu = renderMenu(docset, 'api', 4);
+				docs.apiMenu = renderMenu(docset, DocType.api, 4);
 			}
 		});
 	} else {
@@ -444,7 +444,7 @@ function highlightActiveSection() {
  * Install the current docset's docs menu in the menu container
  */
 function showMenu(type?: DocType) {
-	type = type || 'docs';
+	type = type || DocType.docs;
 	const docs = getDocSet()!.docs;
 	const menu = document.querySelector('.docs-menu .menu')!;
 	const menuList = menu.querySelector('.menu-list');
