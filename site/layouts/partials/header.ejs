@@ -1,24 +1,26 @@
 <header class="header">
-	<nav class="navbar">
-		<div class="navbar-brand">
-			<% var suffix = pageType === 'docs' ? '-docs' : '';  %>
-			<a href="/" class="navbar-item"><img src="/images/intern-logo<%- suffix %>.svg" class="site-logo" alt="The Intern"></a>
-			<div class="navbar-burger" data-target="intern-nav">
-				<span></span>
-				<span></span>
-				<span></span>
+	<div class="container">
+		<nav class="navbar">
+			<div class="navbar-brand">
+				<% var suffix = pageType === 'docs' ? '-docs' : '';  %>
+				<a href="/" class="navbar-item"><img src="/images/intern-logo<%- suffix %>.svg" class="site-logo" alt="The Intern"></a>
+				<div class="navbar-burger" data-target="intern-nav">
+					<span></span>
+					<span></span>
+					<span></span>
+				</div>
 			</div>
-		</div>
-		<div class="navbar-menu">
-			<div class="navbar-start"></div>
-			<div class="navbar-end">
-				<% if (pageType !== 'docs') { %>
-				<a class="navbar-item" href="/docs.html">Docs</a>
-				<% } %>
-				<a class="navbar-item" href="https://github.com/theintern/intern" data-title="Github">Github</a>
+			<div class="navbar-menu">
+				<div class="navbar-start"></div>
+				<div class="navbar-end">
+					<% if (pageType !== 'docs') { %>
+					<a class="navbar-item" href="/docs.html">Docs</a>
+					<% } %>
+					<a class="navbar-item" href="https://github.com/theintern/intern" data-title="Github">Github</a>
+				</div>
 			</div>
-		</div>
-	</nav>
+		</nav>
+	</div>
 
 	<script>
 	(function () {
