@@ -34,7 +34,7 @@ if (!global.Promise) {
 
 let viewer: HTMLElement;
 let content: HTMLElement;
-let errorModal: HTMLElement;
+let messageModal: HTMLElement;
 let ignoreScroll = false;
 let searchPanel: HTMLElement;
 let scrollState: {
@@ -66,7 +66,7 @@ const ready = new Promise(resolve => {
 ready.then(() => {
 	viewer = <HTMLElement>document.body;
 	content = <HTMLElement>document.querySelector('.docs-content');
-	errorModal = <HTMLElement>document.querySelector('.error-modal')!;
+	messageModal = <HTMLElement>document.querySelector('.message-modal')!;
 	searchPanel = <HTMLElement>document.querySelector('.search-panel')!;
 
 	// Handle updates to the project + version selects.
@@ -189,6 +189,10 @@ function loadDocSet(id: DocSetId) {
 	let cache = docSet.pageCache!;
 	let load: PromiseLike<any>;
 
+	// The message will be hidden in process hash, after the UI has been
+	// updated
+	showMessage('Loading...', 'Docs will arrive shortly.');
+
 	if (!cache) {
 		// The docset hasn't been loaded yet
 		cache = docSet.pageCache = <{
@@ -238,7 +242,7 @@ function loadDocSet(id: DocSetId) {
 		load = Promise.resolve();
 	}
 
-	return Promise.all([ready, load]);
+	return load;
 }
 
 /**
@@ -460,7 +464,6 @@ function processHash() {
 			try {
 				const pageId = getCurrentPageId();
 
-				hideErrorModal();
 				const { project, version, type, page, section } = pageId;
 				viewer.setAttribute('data-doc-type', type);
 
@@ -473,6 +476,7 @@ function processHash() {
 				updateGitHubButtons(pageId);
 				updateNavBarLinks(pageId);
 				updateDocsetSelector();
+				hideMessage();
 			} catch (error) {
 				// The current hash doesn't specify a valid page ID
 				try {
@@ -506,7 +510,7 @@ function processHash() {
 
 	function showError(error: Error) {
 		console.error(error);
-		showErrorModal(
+		showMessage(
 			'Oops...',
 			h('span', {}, [
 				'The URL hash ',
@@ -514,7 +518,8 @@ function processHash() {
 				" isn't valid. Click ",
 				h('a', { href: '#' }, 'here'),
 				' to open the default doc set.'
-			])
+			]),
+			'error'
 		);
 	}
 }
@@ -522,23 +527,28 @@ function processHash() {
 /**
  * Show a message in the error modal
  */
-function showErrorModal(heading: string, message: string | HTMLElement) {
-	errorModal.querySelector('.error-heading')!.textContent = heading;
-	const content = errorModal.querySelector('.error-message')!;
+function showMessage(
+	heading: string,
+	message: string | HTMLElement,
+	type = ''
+) {
+	messageModal.querySelector('.message-heading')!.textContent = heading;
+	const content = messageModal.querySelector('.message-content')!;
 	content.innerHTML = '';
 	if (typeof message === 'string') {
 		content.textContent = message;
 	} else {
 		content.appendChild(message);
 	}
-	errorModal.classList.add('is-active');
+	messageModal.classList.add('is-active');
+	messageModal.setAttribute('data-message-type', type);
 }
 
 /**
  * Show a message in the error modal
  */
-function hideErrorModal() {
-	errorModal.classList.remove('is-active');
+function hideMessage() {
+	messageModal.classList.remove('is-active');
 }
 
 /**
@@ -580,7 +590,7 @@ function updateHashFromContent() {
 	if (pageHash !== scrollState.pageHash) {
 		const content = <HTMLElement>document.querySelector('.docs-content')!;
 		const menu = document.querySelector('.docs-menu .menu-list');
-		const depth = <number>(<any>menu).menuDepth || 3;
+		const depth = (<number>(<any>menu).menuDepth) || 3;
 		const tags = <string[]>[];
 		for (let i = 1; i < depth; i++) {
 			tags.push(`h${i + 1}`);
