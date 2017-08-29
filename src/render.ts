@@ -289,7 +289,7 @@ export function renderMenu(id: DocSetId, type: DocType, maxDepth = 3) {
 	const docSet = getDocSet(id);
 	const pageNames = type === 'api' ? docSet.apiPages! : docSet.pages;
 	const cache = type === 'api' ? docSet.apiCache! : docSet.pageCache!;
-	const menu = h('ul.menu-list');
+	const menu = h('ul.menu-list', { menuDepth: maxDepth });
 
 	pageNames.forEach(pageName => {
 		const page = cache[pageName];

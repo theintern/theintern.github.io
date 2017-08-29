@@ -33,9 +33,14 @@ if (!global.Promise) {
 }
 
 let viewer: HTMLElement;
+let content: HTMLElement;
 let errorModal: HTMLElement;
 let ignoreScroll = false;
 let searchPanel: HTMLElement;
+let scrollState: {
+	pageHash: string;
+	headings: NodeListOf<Element>;
+} = Object.create(null);
 
 const searchDelay = 300;
 const menuHighlightDelay = 20;
@@ -60,6 +65,7 @@ const ready = new Promise(resolve => {
 
 ready.then(() => {
 	viewer = <HTMLElement>document.body;
+	content = <HTMLElement>document.querySelector('.docs-content');
 	errorModal = <HTMLElement>document.querySelector('.error-modal')!;
 	searchPanel = <HTMLElement>document.querySelector('.search-panel')!;
 
@@ -138,7 +144,6 @@ ready.then(() => {
 
 	// Update the url hash as the user scrolls
 	let menuTimer: number | undefined;
-	const content = <HTMLElement>document.querySelector('.docs-content')!;
 	content.addEventListener('scroll', () => {
 		const ignoring = ignoreScroll;
 		ignoreScroll = false;
@@ -165,12 +170,10 @@ ready.then(() => {
  * shown.
  */
 function loadDocSet(id: DocSetId) {
-	const container = document.querySelector('.docs-content')!;
-
 	if (
-		container &&
-		container.getAttribute('data-doc-project') === id.project &&
-		container.getAttribute('data-doc-version') === id.version
+		content &&
+		content.getAttribute('data-doc-project') === id.project &&
+		content.getAttribute('data-doc-version') === id.version
 	) {
 		// The docset is already visible, so don't do anything
 		return new Promise(resolve => {
@@ -571,33 +574,46 @@ function scrollIntoViewIfNessary(element: HTMLElement, container: HTMLElement) {
  * Update the location hash based on the currently visible doc contents.
  */
 function updateHashFromContent() {
-	const content = <HTMLElement>document.querySelector('.docs-content')!;
-	const elements = content.querySelectorAll('h1,h2,h3,h4')!;
+	const pageId = getCurrentPageId(false);
+	const pageHash = createHash(pageId);
+
+	if (pageHash !== scrollState.pageHash) {
+		const content = <HTMLElement>document.querySelector('.docs-content')!;
+		const menu = document.querySelector('.docs-menu .menu-list');
+		const depth = <number>(<any>menu).menuDepth || 3;
+		const tags = <string[]>[];
+		for (let i = 1; i < depth; i++) {
+			tags.push(`h${i + 1}`);
+		}
+		scrollState.pageHash = pageHash;
+		scrollState.headings = content.querySelectorAll(tags.join(','))!;
+	}
+
 	const viewportTop = content.offsetTop + content.scrollTop;
+	const { headings } = scrollState;
 
 	let above: Element | undefined;
 	let below: Element | undefined;
-	for (let i = 1; i < elements.length; i++) {
-		const element = <HTMLElement>elements[i];
-		const elementTop = getOffsetTop(element);
-		if (elementTop > viewportTop) {
-			below = elements[i];
-			above = elements[i - 1];
+	for (let i = 1; i < headings.length; i++) {
+		const heading = <HTMLElement>headings[i];
+		const headingTop = getOffsetTop(heading);
+		if (headingTop > viewportTop) {
+			below = headings[i];
+			above = headings[i - 1];
 			break;
 		}
 	}
 
 	if (!above) {
-		above = elements[elements.length - 1];
+		above = headings[headings.length - 1];
 	}
 
-	const docs = getCurrentPageId();
 	updateHash(
 		{
-			project: docs.project,
-			version: docs.version,
+			project: pageId.project,
+			version: pageId.version,
 			type: <DocType>viewer.getAttribute('data-doc-type')!,
-			page: docs.page,
+			page: pageId.page,
 			section: above.id
 		},
 		HashEvent.scroll
