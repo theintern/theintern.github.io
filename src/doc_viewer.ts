@@ -506,7 +506,7 @@ function processHash() {
 			}
 		});
 	} catch (error) {
-		if (!location.hash) {
+		if (!location.hash.slice(1)) {
 			// No hash was specified, load a default
 			setHash(createHash(getDefaultPageId(getDefaultDocSetId())));
 		} else {
