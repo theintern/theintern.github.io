@@ -160,7 +160,7 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 		.source('./site')
 		.destination('./public')
 		.clean(clean)
-		.use(docsets())
+		.use(docSets())
 		.use(inPlace())
 		.use(
 			layouts({
@@ -205,7 +205,7 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 		console.log('Metalsmith finished');
 	});
 
-	function docsets() {
+	function docSets() {
 		return (
 			files: { [key: string]: any },
 			metalsmith: any,
@@ -213,9 +213,9 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 		) => {
 			if (files['docs.json']) {
 				const data = files['docs.json'].contents.toString('utf8');
-				const docsets = JSON.parse(data);
-				metalsmith.metadata().docsets = docsets;
-				metalsmith.metadata().guideLink = `/docs.html#Intern/${docsets[
+				const docSets = JSON.parse(data);
+				metalsmith.metadata().docSets = docSets;
+				metalsmith.metadata().guideLink = `/docs.html#Intern/${docSets[
 					'Intern'
 				].latest}`;
 				delete files['docs.json'];

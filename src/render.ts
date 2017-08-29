@@ -2,7 +2,14 @@ import * as MarkdownIt from 'markdown-it';
 import * as hljs from 'highlight.js';
 import * as h from 'hyperscript';
 
-import { DocInfo, DocSetInfo, DocType, getDocSet, getProjectUrl } from './docs';
+import {
+	PageId,
+	DocSetId,
+	DocType,
+	getDocSet,
+	getCurrentDocSetId,
+	getProjectUrl
+} from './docs';
 import { createHash } from './hash';
 
 export interface Slugifier {
@@ -12,26 +19,19 @@ export interface Slugifier {
 /**
  * Create a link to a page's source on GitHub
  */
-export function createGitHubLink(
-	info: { project: string; version: string },
-	page: string
-) {
-	const docset = getDocSet(info)!;
-	const docsetUrl = getProjectUrl(info.project);
-	const dv = docset.docs;
+export function createGitHubLink(id: DocSetId, page: string) {
+	const docSet = getDocSet(id);
+	const url = getProjectUrl(id.project);
 	return h('a.source-link', {
 		title: 'View page source',
-		href: `${docsetUrl}/blob/${dv.branch}/${page}`
+		href: `${url}/blob/${docSet.branch}/${page}`
 	});
 }
 
 /**
  * Create a link item for a menu
  */
-export function createLinkItem(
-	content: Element | string,
-	info: Partial<DocInfo>
-) {
+export function createLinkItem(content: Element | string, id: PageId) {
 	let text: string;
 	let classes: string[] = [];
 	if (typeof content === 'string') {
@@ -48,7 +48,7 @@ export function createLinkItem(
 		h(
 			'a',
 			{
-				href: createHash(info),
+				href: createHash(id),
 				title: text,
 				className: classes.join(' ')
 			},
@@ -216,14 +216,20 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 			const hrefIdx = tokens[idx].attrIndex('href');
 			const href = tokens[idx].attrs[hrefIdx];
 			const [file, hash] = href[1].split('#');
+			const docSetId = getCurrentDocSetId();
+			const { page, type } = env.info;
 			if (!file) {
 				// This is an in-page anchor link
-				href[1] = createHash({ page: env.info.page, section: hash });
+				href[1] = createHash({
+					page,
+					type,
+					section: hash,
+					...docSetId
+				});
 			} else if (!/\/\//.test(file)) {
 				// This is a link to a local markdown file. Make a hash
 				// link that's relative to the current page.
 				if (env.info) {
-					const { page, type } = env.info;
 					const cleanFile = file.replace(/^\.\//, '');
 					let pageBase = '';
 					if (page.indexOf('/') !== -1) {
@@ -240,13 +246,15 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 						href[1] = createHash({
 							page: pageBase + mod,
 							section: member,
-							type
+							type,
+							...docSetId
 						});
 					} else {
 						href[1] = createHash({
 							page: pageBase + cleanFile,
 							section: hash,
-							type
+							type,
+							...docSetId
 						});
 					}
 				}
@@ -277,11 +285,10 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 /**
  * Create the sidebar menu for a docset
  */
-export function renderMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
-	const docset = getDocSet(info)!;
-	const docs = docset.docs;
-	const pageNames = type === 'api' ? docs.apiPages! : docs.pages;
-	const cache = type === 'api' ? docs.apiCache! : docs.pageCache!;
+export function renderMenu(id: DocSetId, type: DocType, maxDepth = 3) {
+	const docSet = getDocSet(id);
+	const pageNames = type === 'api' ? docSet.apiPages! : docSet.pages;
+	const cache = type === 'api' ? docSet.apiCache! : docSet.pageCache!;
 	const menu = h('ul.menu-list');
 
 	pageNames.forEach(pageName => {
@@ -333,49 +340,24 @@ export function renderMenu(info: DocSetInfo, type: DocType, maxDepth = 3) {
 			stack[0][0].children = children;
 		}
 
-		const li = createLinkItem(page.title, { page: pageName, type });
+		const { project, version } = id;
+		const pageId = { project, version, page: pageName, type };
+		const li = createLinkItem(page.title, pageId);
+
 		if (root.children.length > 0) {
-			li.appendChild(createSubMenu(root.children, pageName));
+			li.appendChild(renderSubMenu(root.children, pageId));
 		}
 
 		menu.appendChild(li);
 	});
 
 	return menu;
-
-	function createSubMenu(children: MenuNode[], pageName: string) {
-		const ul = h('ul');
-
-		children.forEach(child => {
-			const heading = child.element;
-			const li = createLinkItem(heading, {
-				page: pageName,
-				section: heading.id,
-				type
-			});
-			if (child.children.length > 0) {
-				li.appendChild(createSubMenu(child.children, pageName));
-			}
-			ul.appendChild(li);
-		});
-
-		return ul;
-	}
-
-	function createNode(heading: Element) {
-		const level = parseInt(heading.tagName.slice(1), 10);
-		return { level, element: heading, children: <MenuNode[]>[] };
-	}
 }
 
 /**
  * Render a doc page
  */
-export function renderDocPage(
-	text: string,
-	pageName: string,
-	docset: DocSetInfo
-) {
+export function renderDocPage(text: string, pageName: string, id: DocSetId) {
 	text = filterGhContent(text);
 	const html = renderMarkdown(text, {
 		info: { page: pageName, type: DocType.docs }
@@ -384,12 +366,41 @@ export function renderDocPage(
 
 	const h1 = element.querySelector('h1')!;
 	const icons = addHeadingIcons(h1);
-	const link = createGitHubLink(docset, pageName);
+	const link = createGitHubLink(id, pageName);
 	link.classList.add('edit-page');
 	icons.appendChild(link);
 	element.insertBefore(h1, element.firstChild);
 
 	return element;
+}
+
+/**
+ * Create a nested submenu
+ */
+function renderSubMenu(children: MenuNode[], pageId: PageId) {
+	const ul = h('ul');
+
+	children.forEach(child => {
+		const heading = child.element;
+		const li = createLinkItem(heading, {
+			...pageId,
+			section: heading.id
+		});
+		if (child.children.length > 0) {
+			li.appendChild(renderSubMenu(child.children, pageId));
+		}
+		ul.appendChild(li);
+	});
+
+	return ul;
+}
+
+/**
+ * Create a menu node
+ */
+function createNode(heading: Element) {
+	const level = parseInt(heading.tagName.slice(1), 10);
+	return { level, element: heading, children: <MenuNode[]>[] };
 }
 
 /**

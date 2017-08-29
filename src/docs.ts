@@ -5,20 +5,19 @@ export enum DocType {
 	docs = 'docs'
 }
 
-export interface DocSet {
+export interface ProjectDocs {
 	url: string;
 	latest: string;
 	next: string;
-	versions: { [version: string]: Docs };
+	versions: { [version: string]: DocSet };
 }
 
 /**
- * Details for a specific version of a docset. If a branch is specified but url
- * or docBase are not, they will be constructed using the standard GitHub URL
- * format.
+ * A specific doc set. If a branch is specified but url or docBase are not,
+ * they will be constructed using the standard GitHub URL format.
  */
-export interface Docs {
-	// The base URL for the docset
+export interface DocSet {
+	// The base URL for the doc set
 	url?: string;
 	// The base URL from which the pages should be loaded
 	docBase?: string;
@@ -27,7 +26,7 @@ export interface Docs {
 	// The path to an API data file
 	api?: string;
 
-	// The paths to  markdown pages that make up the docset, relative to
+	// The paths to  markdown pages that make up the doc set, relative to
 	// docBase
 	pages: string[];
 	// A cache of rendered documents
@@ -44,179 +43,253 @@ export interface Docs {
 	apiMenu?: Element;
 }
 
+/**
+ * A single doc page
+ */
 export interface DocPage {
 	name: string;
 	element: Element;
 	title: string;
 }
 
+/**
+ * An ID for a particular doc set
+ */
 export interface DocSetId {
 	project: string;
 	version: string;
 }
 
-export interface DocSetInfo {
-	project: string;
-	version: string;
-	docs: Docs;
-}
-
-export interface DocInfo {
-	project: string;
-	version: string;
+/**
+ * An ID for a specific page in a doc set
+ */
+export interface PageId extends DocSetId {
 	type: DocType;
 	page: string;
-	section: string;
+	section?: string;
 }
 
 /**
- * Get information about the currently displayed docset. If the location hash
- * does not identify a page, use default values.
+ * Get information about the currently displayed page.
+ *
+ * Returns a page ID if the current hash is valid, or throws.
  */
-export function getDocInfo() {
-	const data = parseHash();
+export function getCurrentPageId(includeSection = true) {
+	const docSetId = getCurrentDocSetId();
+	const { type, page, section } = parseHash();
 
-	if (!data.project) {
-		data.project = defaultDocs.project;
+	if (!type || !(type in DocType)) {
+		throw new Error(`Missing or invalid doc type: ${type}`);
 	}
 
-	if (!data.version) {
-		if (data.project === defaultDocs.project) {
-			data.version = defaultDocs.version;
-		} else {
-			data.version = docsets[data.project].latest;
-		}
+	if (!page) {
+		throw new Error('Missing page name');
 	}
 
-	if (!data.type) {
-		data.type = DocType.docs;
+	const docSet = getDocSet(docSetId);
+	const pageNames = type === DocType.api ? docSet.apiPages : docSet.pages;
+	if (!pageNames) {
+		throw new Error(`No pages of type "${type}"`);
 	}
 
-	if (!data.page) {
-		const docs = docsets[data.project].versions[data.version];
-		if (data.type === 'docs') {
-			data.page = docs.pages[0];
-		} else {
-			data.page = docs.apiPages ? docs.apiPages[0] : '';
-		}
+	if (pageNames.indexOf(page) === -1) {
+		throw new Error(`Invalid page: ${page}`);
 	}
 
-	return data;
+	const { project, version } = docSetId;
+	const id: PageId = { project, version, type, page };
+	if (includeSection) {
+		id.section = section;
+	}
+
+	return id;
 }
 
 /**
- * Get a docset. If a complete setId is provided, the corresponding docset
- * is returned. If only a project is specified, the latest version for that
- * project will be returned. If no docset ID is provided, the currently
- * active docset will be returned.
+ * Get the current doc set ID
  */
-export function getDocSet(setId?: DocSetId): DocSetInfo | undefined {
-	const docs = setId || getDocInfo();
-	const project = docsets[docs.project];
-	if (!project) {
-		return;
+export function getCurrentDocSetId() {
+	const { project, version } = parseHash();
+
+	if (!project || !docSets[project]) {
+		throw new Error(`Missing or invalid project: ${project}`);
 	}
 
-	if (!docs.version) {
-		docs.version = project.latest;
+	if (!version || !docSets[project].versions[version]) {
+		throw new Error(`Missing or invalid version: ${version}`);
 	}
 
+	return { project, version };
+}
+
+/**
+ * Get a doc set by id
+ */
+export function getDocSet(id: DocSetId) {
+	if (!isValidDocSetId(id)) {
+		throw new Error('getDocSet called with invalid ID');
+	}
+	const project = docSets[id.project];
+	return project.versions[id.version];
+}
+
+/**
+ * Return the ID of the default doc set
+ */
+export function getDefaultDocSetId() {
 	return {
-		project: docs.project,
-		version: docs.version!,
-		docs: project.versions[docs.version]
+		project: 'Intern',
+		version: docSets['Intern'].latest
 	};
 }
 
 /**
- * Get the project base URL for a given project version. If the docset
- * version structure contains a `url` field, it will be used. Otherwise, a
- * URL will be constructed using the docset version branch and standard
- * GitHub URL formats.
+ * Return the ID of the default page for a given doc set
  */
-export function getDocVersionUrl(info: { project: string; version: string }) {
-	const docset = docsets[info.project];
-	const dv = docset.versions[info.version];
-	if (dv.url) {
-		return dv.url;
-	}
-	return `${docset.url}/tree/${dv.branch}`;
+export function getDefaultPageId(docSetId: DocSetId) {
+	const docSet = getDocSet(docSetId);
+	const { project, version } = docSetId;
+	return { project, version, page: docSet.pages[0], type: DocType.docs };
 }
 
 /**
- * Get the doc base URL for a given project version. If the docset version
+ * Get the project base URL for a given project version. If the doc set
+ * version structure contains a `url` field, it will be used. Otherwise, a
+ * URL will be constructed using the doc set version branch and standard
+ * GitHub URL formats.
+ */
+export function getDocVersionUrl(id: DocSetId) {
+	if (!isValidDocSetId(id)) {
+		throw new Error('Invalid docSet');
+	}
+
+	const docSet = docSets[id.project];
+	const dv = docSet.versions[id.version];
+	if (dv.url) {
+		return dv.url;
+	}
+	return `${docSet.url}/tree/${dv.branch}`;
+}
+
+/**
+ * Get the doc base URL for a given project version. If the doc set version
  * structure contains a `docBase` field, it will be used. Otherwise, a URL
- * will be constructed using the docset version branch and standard GitHub
+ * will be constructed using the doc set version branch and standard GitHub
  * URL formats.
  */
-export function getDocBaseUrl(info: { project: string; version: string }) {
-	const docset = docsets[info.project];
-	const dv = docset.versions[info.version];
+export function getDocBaseUrl(id: DocSetId) {
+	if (!isValidDocSetId(id)) {
+		throw new Error('Invalid docSet');
+	}
+
+	const docSet = docSets[id.project];
+	const dv = docSet.versions[id.version];
 	if (dv.docBase) {
 		return dv.docBase;
 	}
-	const url = docset.url.replace(/\/\/github\./, '//raw.githubusercontent.');
 
+	const url = docSet.url.replace(/\/\/github\./, '//raw.githubusercontent.');
 	return `${url}/${dv.branch}/`;
 }
 
 /**
+ * Return true if a given doc set ID is valid. To be valid, it must
+ * specify a valid project and version
+ */
+export function isValidDocSetId(id: Partial<DocSetId>): id is DocSetId {
+	const { project, version } = id;
+
+	if (!project || !docSets[project]) {
+		return false;
+	}
+
+	if (!version || !docSets[project].versions[version]) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Return true if a given page ID is valid. To be valid it must
+ * specify a valid project, version, and type
+ */
+export function isValidPageId(id: Partial<PageId>): id is PageId {
+	if (!isValidDocSetId(id)) {
+		return false;
+	}
+
+	const { type, page } = <Partial<PageId>>id;
+
+	if (!type || !(type in DocType)) {
+		return false;
+	}
+
+	if (!page) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
  * Return the 'latest' version of a given project. This may be the highest
- * version number, or the version tagged as the 'latest' in the docset data.
+ * version number, or the version tagged as the 'latest' in the doc set data.
  */
 export function getLatestVersion(project: string) {
-	const docset = docsets[project];
-	let version = docset.latest;
+	const docSet = docSets[project];
+	let version = docSet.latest;
 	if (!version) {
-		const versions = Object.keys(docset.versions);
+		const versions = Object.keys(docSet.versions);
 		version = versions[versions.length - 1];
 	}
-	return { version, docs: docset.versions[version] };
+	return { version, docs: docSet.versions[version] };
 }
 
 /**
  * Return the 'next' version of a given project. This may be the version
  * directly after the 'latest' version, or the version tagged as 'next' in the
- * docset data.
+ * docSet data.
  */
 export function getNextVersion(project: string) {
-	const docset = docsets[project];
-	let version = docset.next;
+	const docSet = docSets[project];
+	let version = docSet.next;
 	if (!version) {
-		const versions = Object.keys(docset.versions);
+		const versions = Object.keys(docSet.versions);
 		const latest = getLatestVersion(project).version;
 		const idx = versions.indexOf(latest);
 		if (idx !== -1 && versions[idx + 1]) {
 			version = versions[idx + 1];
 		}
 	}
-	return { version, docs: docset.versions[version] };
+	return { version, docs: docSet.versions[version] };
 }
 
 /**
  * Return a list of available project names
  */
 export function getProjects() {
-	return Object.keys(docsets);
+	return Object.keys(docSets);
 }
 
 /**
  * Return a list of available versions for a given project
  */
 export function getVersions(project: string) {
-	return Object.keys(docsets[project].versions);
+	if (!docSets[project]) {
+		throw new Error(`Invalid project: ${project}`);
+	}
+	return Object.keys(docSets[project].versions);
 }
 
 /**
  * Return the base URL for a project
  */
 export function getProjectUrl(project: string) {
-	return docsets[project].url;
+	if (!docSets[project]) {
+		throw new Error(`Invalid project: ${project}`);
+	}
+	return docSets[project].url;
 }
 
-declare const docsets: { [name: string]: DocSet };
-
-const defaultDocs = {
-	project: 'Intern',
-	version: docsets['Intern'].latest
-};
+declare const docSets: { [name: string]: ProjectDocs };

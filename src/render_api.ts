@@ -36,10 +36,9 @@ import {
  * Render the API pages for a docset
  */
 export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
-	const docset = getDocSet(docSetId)!;
-	const docs = docset.docs;
-	const pages = (docs.apiPages = <string[]>[]);
-	const cache = (docs.apiCache = <{
+	const docSet = getDocSet(docSetId)!;
+	const pages = (docSet.apiPages = <string[]>[]);
+	const cache = (docSet.apiCache = <{
 		[key: string]: DocPage;
 	}>Object.create(null));
 	const modules = getExports(data)!;
@@ -81,13 +80,15 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 		if (module === type) {
 			link.href = createHash({
 				page: pageIndex[module.id],
-				type: DocType.api
+				type: DocType.api,
+				...docSetId
 			});
 		} else {
 			link.href = createHash({
 				page: pageIndex[module.id],
 				section: slugIndex[type.id],
-				type: DocType.api
+				type: DocType.api,
+				...docSetId
 			});
 		}
 	}
@@ -446,7 +447,9 @@ function commentToHtml(comment: Comment, pageName: string) {
 	function renderText(text: string) {
 		// Fix jsdoc-style links
 		text = text.replace(/\[\[(.*?)]]/g, '[$1]($1)');
-		return renderMarkdown(text, { info: { page: pageName, type: DocType.api } });
+		return renderMarkdown(text, {
+			info: { page: pageName, type: DocType.api }
+		});
 	}
 }
 

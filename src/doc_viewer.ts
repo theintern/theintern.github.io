@@ -6,16 +6,18 @@ import * as PromisePolyfill from 'promise-polyfill';
 import * as h from 'hyperscript';
 
 import {
-	Docs,
-	DocInfo,
+	DocSet,
+	PageId,
 	DocSetId,
-	DocSetInfo,
 	DocPage,
 	DocType,
 	getProjects,
 	getVersions,
+	getCurrentDocSetId,
+	getDefaultDocSetId,
 	getDocSet,
-	getDocInfo,
+	getCurrentPageId,
+	getDefaultPageId,
 	getDocBaseUrl,
 	getDocVersionUrl,
 	getLatestVersion,
@@ -23,7 +25,7 @@ import {
 } from './docs';
 import { renderApiPages } from './render_api';
 import { renderMenu, renderDocPage } from './render';
-import { createHash, parseHash } from './hash';
+import { createHash } from './hash';
 import search from './search';
 
 const global = <any>window;
@@ -47,14 +49,7 @@ window.addEventListener('hashchange', processHash);
 // If the base docs page is loaded without a hash, set a default hash to
 // get a docset to load.
 if (!location.hash) {
-	const docset = getDocSet()!;
-	setHash({
-		project: docset.project,
-		version: docset.version,
-		page: docset.docs.pages[0]
-	});
-} else {
-	processHash();
+	setHash(getDefaultPageId(getDefaultDocSetId()));
 }
 
 // Create a promise that resolves when the doc is ready (just for
@@ -75,24 +70,20 @@ ready.then(() => {
 		}
 
 		const select = <HTMLSelectElement>target;
-		const docs = getDocInfo();
+		const pageId = getCurrentPageId();
 
 		if (target.getAttribute('data-select-property') === 'project') {
 			// The project was changed
-			docs.project = select.value;
-			docs.version = getLatestVersion(select.value).version;
-			docs.page = getDocSet(docs)!.docs.pages[0];
+			pageId.project = select.value;
+			pageId.version = getLatestVersion(select.value).version;
+			pageId.page = getDocSet(pageId).pages[0];
 		} else {
 			// The version was changed
-			docs.version = select.value;
-			docs.page = getDocSet(docs)!.docs.pages[0];
+			pageId.version = select.value;
+			pageId.page = getDocSet(pageId).pages[0];
 		}
 
-		setHash({
-			project: docs.project,
-			version: docs.version,
-			page: docs.page
-		});
+		setHash(pageId);
 	});
 
 	// Open the search dropdown if the user clicks a search button
@@ -158,13 +149,15 @@ ready.then(() => {
 			updateHashFromContent();
 		}, menuHighlightDelay);
 	});
+
+	processHash();
 });
 
 /**
  * Set the location hash, optionally telling the router to ignore the hash
  * update.
  */
-function setHash(newHash: string | Partial<DocInfo>, ignoreUpdate = false) {
+function setHash(newHash: string | PageId, ignoreUpdate = false) {
 	let hash = typeof newHash === 'string' ? newHash : createHash(newHash);
 	if (ignoreUpdate && location.hash !== hash) {
 		skipPageLoad = true;
@@ -179,38 +172,39 @@ function setHash(newHash: string | Partial<DocInfo>, ignoreUpdate = false) {
  * finished loading, the given page, or the first page in the set, will be
  * shown.
  */
-function loadDocset(setId: DocSetId) {
-	const docset = getDocSet(setId)!;
+function loadDocSet(id: DocSetId) {
 	const container = document.querySelector('.docs-content')!;
 
 	if (
 		container &&
-		container.getAttribute('data-doc-project') === docset.project &&
-		container.getAttribute('data-doc-version') === docset.version
+		container.getAttribute('data-doc-project') === id.project &&
+		container.getAttribute('data-doc-version') === id.version
 	) {
 		// The docset is already visible, so don't do anything
-		return Promise.resolve(docset);
+		return new Promise(resolve => {
+			resolve(getDocSet(id));
+		});
 	}
 
-	const pageNames = docset.docs.pages;
-	const docBase = getDocBaseUrl(docset);
-	const hasApi = Boolean(docset.docs.api);
+	const docSet = getDocSet(id);
+	const docBase = getDocBaseUrl(id);
+	const pageNames = docSet.pages;
+	const hasApi = Boolean(docSet.api);
 
-	let cache = docset.docs.pageCache!;
+	let cache = docSet.pageCache!;
 	let load: PromiseLike<any>;
 
 	if (!cache) {
 		// The docset hasn't been loaded yet
-		cache = docset.docs.pageCache = <{
+		cache = docSet.pageCache = <{
 			[name: string]: DocPage;
 		}>Object.create(null);
 
 		const loads: PromiseLike<any>[] = [];
-		const docs = docset.docs;
 
 		if (hasApi) {
 			loads.push(
-				fetch(docBase + docs.api).then(response => {
+				fetch(docBase + docSet.api).then(response => {
 					return response.json();
 				})
 			);
@@ -222,10 +216,10 @@ function loadDocset(setId: DocSetId) {
 					.then(response => response.text())
 					.then(text => {
 						return ready.then(() => {
-							const element = renderDocPage(text, name, docset);
+							const element = renderDocPage(text, name, id);
 							const h1 = element.querySelector('h1');
 							const title =
-								(h1 && h1.textContent) || docset.project;
+								(h1 && h1.textContent) || id.project;
 							cache[name] = { name, element, title };
 						});
 					});
@@ -235,14 +229,14 @@ function loadDocset(setId: DocSetId) {
 		load = Promise.all(loads).then(loadData => {
 			if (hasApi) {
 				const data = loadData[0];
-				renderApiPages(docset, data);
+				renderApiPages(id, data);
 			}
 
 			// All pages need to have been loaded to create the docset menu
-			docs.menu = renderMenu(docset, DocType.docs);
+			docSet.menu = renderMenu(id, DocType.docs);
 
 			if (hasApi) {
-				docs.apiMenu = renderMenu(docset, DocType.api, 4);
+				docSet.apiMenu = renderMenu(id, DocType.api, 4);
 			}
 		});
 	} else {
@@ -252,82 +246,88 @@ function loadDocset(setId: DocSetId) {
 
 	// When both the docset and the page are ready, update the UI
 	return Promise.all([ready, load]).then(() => {
-		updateNavBarLinks();
+		updateNavBarLinks(id);
 		updateDocsetSelector();
-		return docset;
+		return docSet;
 	});
+}
 
-	//  Update the links in doc navbar
-	function updateNavBarLinks() {
-		const navbar = <HTMLElement>document.querySelector(
-			'.docs-nav .navbar-start'
-		);
+/**
+ * Update the links in doc navbar
+ */
+function updateNavBarLinks(id: DocSetId) {
+	const docSet = getDocSet(id);
+	const navbar = <HTMLElement>document.querySelector(
+		'.docs-nav .navbar-start'
+	);
 
-		navbar.classList[docset.docs.api ? 'add' : 'remove']('has-api');
-		navbar.classList[docset.docs.pages ? 'add' : 'remove']('has-docs');
+	navbar.classList[docSet.api ? 'add' : 'remove']('has-api');
+	navbar.classList[docSet.pages ? 'add' : 'remove']('has-docs');
 
-		['docs', 'api'].forEach((type: DocType) => {
-			const link = <HTMLLinkElement>navbar.querySelector(
-				`.navbar-item[data-doc-type="${type}"]`
-			)!;
-			link.href = createHash({
-				project: docset.project,
-				version: docset.version,
-				type
-			});
+	const docTypes = <DocType[]>Object.keys(DocType).filter(type => !Number(type));
+	for (let type of docTypes) {
+		const link = <HTMLLinkElement>navbar.querySelector(
+			`.navbar-item[data-doc-type="${type}"]`
+		)!;
+		link.href = createHash({
+			project: id.project,
+			version: id.version,
+			type
+		});
+	}
+}
+
+/**
+ * Select the currently active project in the project selector.
+ */
+function updateDocsetSelector() {
+	const pageId = getCurrentPageId();
+	const selector = document.querySelector(
+		'select[data-select-property="project"]'
+	)!;
+
+	if (selector.children.length === 0) {
+		getProjects().forEach(name => {
+			const option = h('option', { value: name }, name);
+			selector.appendChild(option);
 		});
 	}
 
-	// Select the currently active project in the project selector.
-	function updateDocsetSelector() {
-		const docs = getDocInfo();
+	const option = <HTMLOptionElement>selector.querySelector(
+		`option[value="${getCurrentPageId().project}"]`
+	);
+	if (option) {
+		option.selected = true;
+	}
+
+	const versions = getVersions(pageId.project);
+	// If more than one version is available, show the version selector
+	if (versions.length > 1) {
+		viewer.classList.add('multi-version');
+
 		const selector = document.querySelector(
-			'select[data-select-property="project"]'
+			'select[data-select-property="version"]'
 		)!;
-
-		if (selector.children.length === 0) {
-			getProjects().forEach(name => {
-				const option = h('option', { value: name }, name);
-				selector.appendChild(option);
-			});
-		}
-
-		const option = <HTMLOptionElement>selector.querySelector(
-			`option[value="${getDocInfo().project}"]`
-		);
-		if (option) {
-			option.selected = true;
-		}
-
-		const versions = getVersions(docs.project);
-		// If more than one version is available, show the version selector
-		if (versions.length > 1) {
-			viewer.classList.add('multi-version');
-
-			const selector = document.querySelector(
-				'select[data-select-property="version"]'
-			)!;
-			selector.innerHTML = '';
-			const latestVersion = getLatestVersion(docs.project).version;
-			const nextVersion = getNextVersion(docs.project).version;
-			versions.forEach(version => {
-				let text = `v${version}`;
-				if (version === latestVersion) {
-					text += ' (release)';
-				} else if (version === nextVersion) {
-					text += ' (dev)';
-				}
-				selector.appendChild(
-					h(
-						'option',
-						{ value: version, selected: version === docs.version },
-						text
-					)
-				);
-			});
-		} else {
-			viewer.classList.remove('multi-version');
-		}
+		selector.innerHTML = '';
+		const latestVersion = getLatestVersion(pageId.project).version;
+		const nextVersion = getNextVersion(pageId.project).version;
+		versions.forEach(version => {
+			let text = `v${version}`;
+			if (version === latestVersion) {
+				text += ' (release)';
+			} else if (version === nextVersion) {
+				text += ' (dev)';
+			}
+			selector.appendChild(
+				h(
+					'option',
+					{ value: version, selected: version === pageId.version },
+					text
+				)
+			);
+		});
+	} else {
+		viewer.classList.remove('multi-version');
 	}
 }
 
@@ -335,8 +335,8 @@ function loadDocset(setId: DocSetId) {
  * Show a page in the currently loaded docset
  */
 function showPage(type: DocType, name: string, section?: string) {
-	const docset = getDocSet()!.docs;
-	const page = getPage(docset, type, name);
+	const docSet = getDocSet(getCurrentDocSetId());
+	const page = getPage(docSet, type, name);
 	const content = <HTMLElement>document.body.querySelector('.docs-content')!;
 	if (content.children.length > 0) {
 		content.removeChild(content.children[0]);
@@ -366,14 +366,14 @@ function showPage(type: DocType, name: string, section?: string) {
 }
 
 /**
- * Get a page from a docset
+ * Get a rendered page from a doc set
  */
-function getPage(docs: Docs, type: DocType, name?: string) {
+function getPage(docSet: DocSet, type: DocType, name?: string) {
 	if (!name) {
-		const pageNames = type === 'docs' ? docs.pages : docs.apiPages!;
+		const pageNames = type === DocType.api ? docSet.apiPages! : docSet.pages;
 		name = pageNames[0];
 	}
-	return type === 'docs' ? docs.pageCache![name] : docs.apiCache![name];
+	return type === DocType.api ? docSet.apiCache![name] : docSet.pageCache![name];
 }
 
 /**
@@ -386,13 +386,8 @@ function highlightActivePage() {
 		active.classList.remove('is-active-page');
 	}
 
-	const docs = getDocInfo();
-	const currentPage = createHash({
-		project: docs.project,
-		version: docs.version,
-		type: docs.type,
-		page: docs.page
-	});
+	const pageId = getCurrentPageId(false);
+	const currentPage = createHash(pageId);
 
 	const pageLink = menu.querySelector(`li > a[href="${currentPage}"]`)!;
 	if (pageLink) {
@@ -419,16 +414,20 @@ function highlightActiveSection() {
 		`li > a[href="${currentSection}"]`
 	)!;
 	if (!link) {
-		const docs = getDocInfo();
-		const currentPage = createHash({
-			project: docs.project,
-			version: docs.version,
-			type: docs.type,
-			page: docs.page
-		});
-		link = <HTMLElement>menu.querySelector(
-			`li > a[href="${currentPage}"]`
-		)!;
+		try {
+			const docs = getCurrentPageId();
+			const currentPage = createHash({
+				project: docs.project,
+				version: docs.version,
+				type: docs.type,
+				page: docs.page
+			});
+			link = <HTMLElement>menu.querySelector(
+				`li > a[href="${currentPage}"]`
+			)!;
+		} catch (error) {
+			// ignore
+		}
 	}
 
 	if (link) {
@@ -445,13 +444,13 @@ function highlightActiveSection() {
  */
 function showMenu(type?: DocType) {
 	type = type || DocType.docs;
-	const docs = getDocSet()!.docs;
+	const docSet = getDocSet(getCurrentDocSetId());
 	const menu = document.querySelector('.docs-menu .menu')!;
 	const menuList = menu.querySelector('.menu-list');
 	if (menuList) {
 		menu.removeChild(menuList);
 	}
-	const docMenu = type === 'docs' ? docs.menu! : docs.apiMenu!;
+	const docMenu = type === DocType.api ? docSet.apiMenu! : docSet.menu!;
 	menu.appendChild(docMenu);
 }
 
@@ -474,42 +473,39 @@ function processHash() {
 		return;
 	}
 
-	const hash = parseHash();
-	const docset = getDocSet(hash)!;
-
-	// The hash encodes our state -- ensure it points to a valid docset
-	if (!hash.version) {
-		const parts: Partial<DocInfo> = {
-			project: docset.project,
-			version: docset.version,
-			type: hash.type
-		};
-		if (hash.page) {
-			parts.page = hash.page;
-		}
-		if (hash.section) {
-			parts.section = hash.section;
-		}
-		setHash(parts);
-	} else {
-		loadDocset(hash).then(() => {
-			viewer.setAttribute('data-doc-type', hash.type);
+	try {
+		const pageId = getCurrentPageId();
+		loadDocSet(pageId).then(() => {
+			const { project, version, type, page, section } = pageId;
+			viewer.setAttribute('data-doc-type', type);
 
 			const container = document.querySelector('.docs-content')!;
-			container.setAttribute('data-doc-project', docset.project);
-			container.setAttribute('data-doc-version', docset.version);
+			container.setAttribute('data-doc-project', project);
+			container.setAttribute('data-doc-version', version);
 
-			showMenu(hash.type);
-			showPage(hash.type, hash.page, hash.section);
-			updateGitHubButtons(docset);
+			showMenu(type);
+			showPage(type, page, section);
+			updateGitHubButtons(pageId);
 		});
+	} catch (error) {
+		if (!location.hash) {
+			// No hash was specified, load a default
+			setHash(createHash(getDefaultPageId(getDefaultDocSetId())));
+		} else {
+			try {
+				// If a valid docset was specified, show the default page
+				const docSetId = getCurrentDocSetId();
+				setHash(createHash(getDefaultPageId(docSetId)));
+			} catch (error) {
+			}
+		}
 	}
 }
 
 /**
  * Update the hrefs for the navbar GitHub buttons
  */
-function updateGitHubButtons(docs: DocSetInfo) {
+function updateGitHubButtons(docs: DocSetId) {
 	const links = <NodeListOf<HTMLAnchorElement>>document.querySelectorAll(
 		'.github-button'
 	);
@@ -559,7 +555,7 @@ function updateHashFromContent() {
 		above = elements[elements.length - 1];
 	}
 
-	const docs = getDocInfo();
+	const docs = getCurrentPageId();
 	setHash(
 		{
 			project: docs.project,

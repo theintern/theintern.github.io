@@ -1,7 +1,7 @@
 import * as h from 'hyperscript';
 import * as Mark from 'mark.js';
 
-import { DocType, getDocSet } from './docs';
+import { DocType, getDocSet, getCurrentDocSetId } from './docs';
 import { createLinkItem } from './render';
 
 const maxSnippetLength = 60;
@@ -29,7 +29,8 @@ export default function search(
 		return;
 	}
 
-	const docs = getDocSet()!.docs;
+	const docSetId = getCurrentDocSetId();
+	const docs = getDocSet(docSetId);
 	const pages = docType === 'api' ? docs.apiPages! : docs.pages;
 	const cache = docType === 'api' ? docs.apiCache! : docs.pageCache!;
 	const finders: PromiseLike<any>[] = [];
@@ -41,14 +42,16 @@ export default function search(
 				if (matches.length > 0) {
 					const link = createLinkItem(page.title, {
 						page: name,
-						type: docType
+						type: docType,
+						...docSetId
 					});
 
 					const submenu = h('ul', {}, matches.map(match => {
 						return createLinkItem(match.snippet, {
 							type: docType,
 							page: name,
-							section: match.section
+							section: match.section,
+							...docSetId
 						});
 					}));
 

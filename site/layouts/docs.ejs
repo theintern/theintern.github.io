@@ -7,7 +7,7 @@
 		<script src="//unpkg.com/markdown-it@8.3.2/dist/markdown-it.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.0/mark.min.js"></script>
 
-		<script>var docsets = <%- JSON.stringify(docsets) %>;</script>
+		<script>var docSets = <%- JSON.stringify(docSets) %>;</script>
 		<script src="doc_viewer.js" async defer></script>
 	</head>
 	<body class="page-docs page-secondary no-script">
@@ -97,8 +97,8 @@
 					<p>This document viewer uses JavaScript to load and render pages from the various Intern project repositories. Please enable JavaScript if you’d like to use it, or visit our project repositories on GitHub:
 					</p>
 					<ul>
-						<% Object.keys(docsets).forEach(name => { %>
-						<li><a href="<%- docsets[name].url %>"><%- name %></a></li>
+						<% Object.keys(docSets).forEach(name => { %>
+						<li><a href="<%- docSets[name].url %>"><%- name %></a></li>
 						<% }) %>
 					</ul>
 				</noscript>
