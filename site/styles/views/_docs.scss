@@ -71,7 +71,7 @@
 				padding-bottom: 0;
 			}
 
-			.container {
+			.legend-column {
 				margin-right: 1rem;
 			}
 
@@ -470,9 +470,11 @@
 		.heading-icons {
 			flex-grow: 1;
 			display: flex;
+			flex-direction: row;
 
 			> span:first-child {
 				flex-grow: 1;
+				display: inline-block;
 			}
 			> span:last-child {
 				flex-grow: 0;
@@ -480,6 +482,7 @@
 
 			a {
 				display: flex;
+				align-items: center;
 			}
 
 			.source-link::before {
