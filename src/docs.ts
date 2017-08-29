@@ -146,10 +146,11 @@ export function getDefaultDocSetId() {
 /**
  * Return the ID of the default page for a given doc set
  */
-export function getDefaultPageId(docSetId: DocSetId) {
+export function getDefaultPageId(docSetId: DocSetId, type = DocType.docs) {
 	const docSet = getDocSet(docSetId);
 	const { project, version } = docSetId;
-	return { project, version, page: docSet.pages[0], type: DocType.docs };
+	const page = type === DocType.api ? docSet.apiPages![0] : docSet.pages[0];
+	return { project, version, page, type };
 }
 
 /**

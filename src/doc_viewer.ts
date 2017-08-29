@@ -25,7 +25,7 @@ import {
 } from './docs';
 import { renderApiPages } from './render_api';
 import { renderMenu, renderDocPage } from './render';
-import { createHash } from './hash';
+import { createHash, parseHash } from './hash';
 import search from './search';
 
 const global = <any>window;
@@ -79,10 +79,12 @@ ready.then(() => {
 			pageId.project = select.value;
 			pageId.version = getLatestVersion(select.value).version;
 			pageId.page = getDocSet(pageId).pages[0];
+			pageId.type = DocType.docs;
 		} else {
 			// The version was changed
 			pageId.version = select.value;
 			pageId.page = getDocSet(pageId).pages[0];
+			pageId.type = DocType.docs;
 		}
 
 		setHash(pageId);
@@ -245,12 +247,7 @@ function loadDocSet(id: DocSetId) {
 		load = Promise.resolve();
 	}
 
-	// When both the docset and the page are ready, update the UI
-	return Promise.all([ready, load]).then(() => {
-		updateNavBarLinks(id);
-		updateDocsetSelector();
-		return docSet;
-	});
+	return Promise.all([ready, load]);
 }
 
 /**
@@ -480,42 +477,55 @@ function processHash() {
 	}
 
 	try {
-		const pageId = getCurrentPageId();
-		loadDocSet(pageId).then(() => {
-			hideErrorModal();
-			const { project, version, type, page, section } = pageId;
-			viewer.setAttribute('data-doc-type', type);
+		const docSetId = getCurrentDocSetId();
+		loadDocSet(docSetId).then(() => {
+			try {
+				const pageId = getCurrentPageId();
 
-			const container = document.querySelector('.docs-content')!;
-			container.setAttribute('data-doc-project', project);
-			container.setAttribute('data-doc-version', version);
+				hideErrorModal();
+				const { project, version, type, page, section } = pageId;
+				viewer.setAttribute('data-doc-type', type);
 
-			showMenu(type);
-			showPage(type, page, section);
-			updateGitHubButtons(pageId);
+				const container = document.querySelector('.docs-content')!;
+				container.setAttribute('data-doc-project', project);
+				container.setAttribute('data-doc-version', version);
+
+				showMenu(type);
+				showPage(type, page, section);
+				updateGitHubButtons(pageId);
+				updateNavBarLinks(pageId);
+				updateDocsetSelector();
+			} catch (error) {
+				try {
+					// If a valid docset was specified, show the default page
+					const { type } = parseHash();
+					setHash(createHash(getDefaultPageId(docSetId, type || DocType.docs)));
+				} catch (error) {
+					showError(error);
+				}
+			}
 		});
 	} catch (error) {
 		if (!location.hash) {
 			// No hash was specified, load a default
 			setHash(createHash(getDefaultPageId(getDefaultDocSetId())));
 		} else {
-			try {
-				// If a valid docset was specified, show the default page
-				const docSetId = getCurrentDocSetId();
-				setHash(createHash(getDefaultPageId(docSetId)));
-			} catch (error) {
-				showErrorModal(
-					'Oops...',
-					h('span', {}, [
-						'The URL hash ',
-						h('code', {}, location.hash),
-						" isn't valid. Click ",
-						h('a', { href: '#' }, 'here'),
-						' to open the default doc set.'
-					])
-				);
-			}
+			showError(error);
 		}
+	}
+
+	function showError(error: Error) {
+		console.error(error);
+		showErrorModal(
+			'Oops...',
+			h('span', {}, [
+				'The URL hash ',
+				h('code', {}, location.hash),
+				" isn't valid. Click ",
+				h('a', { href: '#' }, 'here'),
+				' to open the default doc set.'
+			])
+		);
 	}
 }
 
