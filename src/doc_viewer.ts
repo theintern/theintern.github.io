@@ -7,7 +7,6 @@ import * as h from 'hyperscript';
 
 import {
 	DocSet,
-	PageId,
 	DocSetId,
 	DocPage,
 	DocType,
@@ -25,7 +24,7 @@ import {
 } from './docs';
 import { renderApiPages } from './render_api';
 import { renderMenu, renderDocPage } from './render';
-import { createHash, parseHash } from './hash';
+import { createHash, parseHash, updateHash, HashEvent } from './hash';
 import search from './search';
 
 const global = <any>window;
@@ -35,7 +34,6 @@ if (!global.Promise) {
 
 let viewer: HTMLElement;
 let errorModal: HTMLElement;
-let skipPageLoad = false;
 let ignoreScroll = false;
 let searchPanel: HTMLElement;
 
@@ -50,7 +48,8 @@ window.addEventListener('hashchange', processHash);
 // If the base docs page is loaded without a hash, set a default hash to
 // get a docset to load.
 if (!location.hash) {
-	setHash(getDefaultPageId(getDefaultDocSetId()));
+	updateHash(getDefaultPageId(getDefaultDocSetId()));
+	processHash();
 }
 
 // Create a promise that resolves when the doc is ready (just for
@@ -87,7 +86,8 @@ ready.then(() => {
 			pageId.type = DocType.docs;
 		}
 
-		setHash(pageId);
+		updateHash(pageId);
+		processHash();
 	});
 
 	// Open the search dropdown if the user clicks a search button
@@ -156,18 +156,6 @@ ready.then(() => {
 
 	processHash();
 });
-
-/**
- * Set the location hash, optionally telling the router to ignore the hash
- * update.
- */
-function setHash(newHash: string | PageId, ignoreUpdate = false) {
-	let hash = typeof newHash === 'string' ? newHash : createHash(newHash);
-	if (ignoreUpdate && location.hash !== hash) {
-		skipPageLoad = true;
-	}
-	location.hash = hash;
-}
 
 /**
  * Load a docset.
@@ -459,22 +447,9 @@ function showMenu(type?: DocType) {
 
 /**
  * Process the current URL hash value.
- *
- * The has has the following format:
- *
- *     <project>/<version>/<page>/<section>
  */
 function processHash() {
-	const ignoring = skipPageLoad;
-	skipPageLoad = false;
-
-	// Always try to update the menu highlight, even if we're skipping the
-	// rest of the page load
 	highlightActiveSection();
-
-	if (ignoring) {
-		return;
-	}
 
 	try {
 		const docSetId = getCurrentDocSetId();
@@ -496,20 +471,32 @@ function processHash() {
 				updateNavBarLinks(pageId);
 				updateDocsetSelector();
 			} catch (error) {
+				// The current hash doesn't specify a valid page ID
 				try {
-					// If a valid docset was specified, show the default page
 					const { type } = parseHash();
-					setHash(createHash(getDefaultPageId(docSetId, type || DocType.docs)));
+					updateHash(
+						createHash(
+							getDefaultPageId(docSetId, type || DocType.docs)
+						),
+						HashEvent.rename
+					);
+					processHash();
 				} catch (error) {
 					showError(error);
 				}
 			}
 		});
 	} catch (error) {
+		// The current hash doesn't identify a valid doc set
 		if (!location.hash.slice(1)) {
-			// No hash was specified, load a default
-			setHash(createHash(getDefaultPageId(getDefaultDocSetId())));
+			// No hash was specified -- load a default
+			updateHash(
+				createHash(getDefaultPageId(getDefaultDocSetId())),
+				HashEvent.rename
+			);
+			processHash();
 		} else {
+			// An invalid hash was specified -- show an error
 			showError(error);
 		}
 	}
@@ -605,7 +592,7 @@ function updateHashFromContent() {
 	}
 
 	const docs = getCurrentPageId();
-	setHash(
+	updateHash(
 		{
 			project: docs.project,
 			version: docs.version,
@@ -613,8 +600,10 @@ function updateHashFromContent() {
 			page: docs.page,
 			section: above.id
 		},
-		true
+		HashEvent.scroll
 	);
+
+	highlightActiveSection();
 
 	function getOffsetTop(element: HTMLElement) {
 		let top = element.offsetTop;

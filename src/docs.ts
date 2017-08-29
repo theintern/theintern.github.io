@@ -149,6 +149,9 @@ export function getDefaultDocSetId() {
 export function getDefaultPageId(docSetId: DocSetId, type = DocType.docs) {
 	const docSet = getDocSet(docSetId);
 	const { project, version } = docSetId;
+	if (!type || !(type in DocType)) {
+		throw new Error(`Invalid doc type: ${type}`);
+	}
 	const page = type === DocType.api ? docSet.apiPages![0] : docSet.pages[0];
 	return { project, version, page, type };
 }
