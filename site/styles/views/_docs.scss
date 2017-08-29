@@ -13,6 +13,10 @@
 
 	.docs-layout {
 		position: relative;
+
+		.error-modal {
+			position: absolute;
+		}
 	}
 
 	@include tablet {

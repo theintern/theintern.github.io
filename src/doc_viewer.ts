@@ -34,6 +34,7 @@ if (!global.Promise) {
 }
 
 let viewer: HTMLElement;
+let errorModal: HTMLElement;
 let skipPageLoad = false;
 let ignoreScroll = false;
 let searchPanel: HTMLElement;
@@ -60,6 +61,7 @@ const ready = new Promise(resolve => {
 
 ready.then(() => {
 	viewer = <HTMLElement>document.body;
+	errorModal = <HTMLElement>document.querySelector('.error-modal')!;
 	searchPanel = <HTMLElement>document.querySelector('.search-panel')!;
 
 	// Handle updates to the project + version selects.
@@ -218,8 +220,7 @@ function loadDocSet(id: DocSetId) {
 						return ready.then(() => {
 							const element = renderDocPage(text, name, id);
 							const h1 = element.querySelector('h1');
-							const title =
-								(h1 && h1.textContent) || id.project;
+							const title = (h1 && h1.textContent) || id.project;
 							cache[name] = { name, element, title };
 						});
 					});
@@ -264,7 +265,9 @@ function updateNavBarLinks(id: DocSetId) {
 	navbar.classList[docSet.api ? 'add' : 'remove']('has-api');
 	navbar.classList[docSet.pages ? 'add' : 'remove']('has-docs');
 
-	const docTypes = <DocType[]>Object.keys(DocType).filter(type => !Number(type));
+	const docTypes = <DocType[]>Object.keys(DocType).filter(
+		type => !Number(type)
+	);
 	for (let type of docTypes) {
 		const link = <HTMLLinkElement>navbar.querySelector(
 			`.navbar-item[data-doc-type="${type}"]`
@@ -370,10 +373,13 @@ function showPage(type: DocType, name: string, section?: string) {
  */
 function getPage(docSet: DocSet, type: DocType, name?: string) {
 	if (!name) {
-		const pageNames = type === DocType.api ? docSet.apiPages! : docSet.pages;
+		const pageNames =
+			type === DocType.api ? docSet.apiPages! : docSet.pages;
 		name = pageNames[0];
 	}
-	return type === DocType.api ? docSet.apiCache![name] : docSet.pageCache![name];
+	return type === DocType.api
+		? docSet.apiCache![name]
+		: docSet.pageCache![name];
 }
 
 /**
@@ -476,6 +482,7 @@ function processHash() {
 	try {
 		const pageId = getCurrentPageId();
 		loadDocSet(pageId).then(() => {
+			hideErrorModal();
 			const { project, version, type, page, section } = pageId;
 			viewer.setAttribute('data-doc-type', type);
 
@@ -497,9 +504,41 @@ function processHash() {
 				const docSetId = getCurrentDocSetId();
 				setHash(createHash(getDefaultPageId(docSetId)));
 			} catch (error) {
+				showErrorModal(
+					'Oops...',
+					h('span', {}, [
+						'The URL hash ',
+						h('code', {}, location.hash),
+						" isn't valid. Click ",
+						h('a', { href: '#' }, 'here'),
+						' to open the default doc set.'
+					])
+				);
 			}
 		}
 	}
+}
+
+/**
+ * Show a message in the error modal
+ */
+function showErrorModal(heading: string, message: string | HTMLElement) {
+	errorModal.querySelector('.error-heading')!.textContent = heading;
+	const content = errorModal.querySelector('.error-message')!;
+	content.innerHTML = '';
+	if (typeof message === 'string') {
+		content.textContent = message;
+	} else {
+		content.appendChild(message);
+	}
+	errorModal.classList.add('is-active');
+}
+
+/**
+ * Show a message in the error modal
+ */
+function hideErrorModal() {
+	errorModal.classList.remove('is-active');
 }
 
 /**
