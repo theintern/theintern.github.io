@@ -213,7 +213,11 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 		) => {
 			if (files['docs.json']) {
 				const data = files['docs.json'].contents.toString('utf8');
-				metalsmith.metadata().docsets = JSON.parse(data);
+				const docsets = JSON.parse(data);
+				metalsmith.metadata().docsets = docsets;
+				metalsmith.metadata().guideLink = `/docs.html#Intern/${docsets[
+					'Intern'
+				].latest}`;
 				delete files['docs.json'];
 			}
 			done();
