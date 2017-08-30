@@ -22,7 +22,7 @@
 		}
 	}
 
-	.browserstack-logo img {
+	.browserstack-logo svg {
 		height: 24px;
 		width: 105px;
 		display: block;
@@ -34,10 +34,6 @@
 		.container {
 			max-width: 100%;
 			width: 100%;
-			.intern-logo,
-			.browserstack-logo {
-				display: none;
-			}
 		}
 	}
 }

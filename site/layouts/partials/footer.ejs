@@ -2,9 +2,12 @@
 	<div class="container">
 		<div class="level">
 			<div class="level-left">
+				<% if (pageType !== 'docs') { %>
 				<div class="level-item intern-logo">
 					<img src="/images/intern-logo.svg" alt="Intern logo" inline>
 				</div>
+				<% } %>
+
 				<div class="level-item">
 					<span class="copyright">
 						&copy; 2017 <a href="https://www.sitepen.com">SitePen, Inc.</a>
@@ -17,14 +20,17 @@
 					<span><a href="https://github.com/theintern/intern/blob/master/LICENSE">New BSD</a> licensed.</span>
 				</div>
 			</div>
+
+			<% if (pageType !== 'docs') { %>
 			<div class="level-right">
 				<div class="level-item">
 					<span>Tested on</span>
 				</div>
 				<div class="level-item browserstack-logo">
-					<a href="https://browserstack.com" alt="BrowserStack"><img src="/images/browserstack-logo.svg" alt="BrowserStack logo"></a>
+					<a href="https://browserstack.com" alt="BrowserStack"><img src="/images/browserstack-logo.svg" alt="BrowserStack logo" inline></a>
 				</div>
 			</div>
+			<% } %>
 		</div>
 	</div>
 </footer>
