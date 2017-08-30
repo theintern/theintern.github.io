@@ -1,5 +1,6 @@
 .page-home {
 	padding-top: 3vw;
+
 	.hero {
 		border-bottom: 1px solid $border;
 		padding-top: 5vw;
@@ -15,9 +16,12 @@
 			margin-bottom: 1.5rem;
 		}
 	}
+
 	.features {
 		border-bottom: 1px solid $border;
+
 	}
+
 	.who {
 		border-bottom: 1px solid $border;
 		.column {
@@ -28,6 +32,7 @@
 			}
 		}
 	}
+
 	.workwith {
 		.underline {
 			display: inline-block;
@@ -35,6 +40,7 @@
 			width: 6rem;
 		}
 	}
+
 	.docs {
 		.viewGuide {
 			background: url("/images/icon-docs.svg") no-repeat 50% 50%, radial-gradient(30% 45%, rgba(#A2EDFD, 0.4) 51%, rgba(188, 235, 240, 0.00) 98%) no-repeat;
@@ -46,6 +52,7 @@
 			justify-content: center;
 		}
 	}
+
 	.need-help {
 		.button {
 			min-width: 150px;
@@ -65,7 +72,7 @@
 		overflow: hidden;
 
 		&.is-active {
-			max-height: 120rem;
+			max-height: 220rem;
 		}
 
 		table {
