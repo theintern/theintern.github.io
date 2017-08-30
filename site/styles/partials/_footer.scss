@@ -6,12 +6,17 @@
 	padding: 1rem;
 
 	.intern-logo svg {
-		width: 30px;
-		height: 30px;
+		@include intern-logo-size(30px);
 
 		g {
 			fill: $logo-grey;
 		}
+	}
+
+	.browserstack-logo svg {
+		height: 24px;
+		margin-left: 0.4rem;
+		display: block;
 	}
 }
 
@@ -20,7 +25,8 @@
 		.container {
 			max-width: 100%;
 			width: 100%;
-			.intern-logo {
+			.intern-logo,
+			.browserstack-logo {
 				display: none;
 			}
 		}
