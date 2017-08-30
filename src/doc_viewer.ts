@@ -479,8 +479,7 @@ function processHash() {
 				updateGitHubButtons(pageId);
 				updateNavBarLinks(pageId);
 				updateDocsetSelector();
-
-				setTimeout(hideMessage, 500);
+				hideMessage();
 			} catch (error) {
 				// The current hash doesn't specify a valid page ID
 				try {
