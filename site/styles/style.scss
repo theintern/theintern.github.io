@@ -9,6 +9,7 @@ $code: #C94169;
 $family-monospace: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,Courier,'Source Code Pro',monospace;
 $modal-background-background-color: $light;
 
+@import "global/fonts";
 @import "../../node_modules/bulma/bulma";
 @import "global/variables";
 @import "global/mixins";
