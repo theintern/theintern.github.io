@@ -178,17 +178,29 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 				token.content = token.content
 					.replace(warning, '')
 					.replace(/^\s*/, '');
-				return '<blockquote class="warning"><div><i class="fa fa-warning" aria-hidden="true"></i></div>';
+				return (
+					'<blockquote class="warning"><div>' +
+					'<span class="fa fa-warning" aria-hidden="true">' +
+					'</span></div>'
+				);
 			} else if (token.content.indexOf(info) === 0) {
 				token.content = token.content
 					.replace(info, '')
 					.replace(/^\s*/, '');
-				return '<blockquote class="info"><div><i class="fa fa-lightbulb-o" aria-hidden="true"></i></div>';
+				return (
+					'<blockquote class="info"><div>' +
+					'<span class="fa fa-lightbulb-o" aria-hidden="true">' +
+					'</span></div>'
+				);
 			} else if (token.content.indexOf(deprecated) === 0) {
 				token.content = token.content
 					.replace(deprecated, '')
 					.replace(/^\s*/, '');
-				return '<blockquote class="deprecated"><div><i class="fa fa-thumbs-o-down" aria-hidden="true"></i></div>';
+				return (
+					'<blockquote class="deprecated"><div>' +
+					'<span class="fa fa-thumbs-o-down" aria-hidden="true">' +
+					'</span></div>'
+				);
 			}
 
 			return '<blockquote>';

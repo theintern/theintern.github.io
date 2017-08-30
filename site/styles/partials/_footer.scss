@@ -4,6 +4,15 @@
 	color: $secondary;
 	font-size: $size-7;
 	padding: 1rem;
+
+	.intern-logo svg {
+		width: 30px;
+		height: 30px;
+
+		g {
+			fill: $logo-grey;
+		}
+	}
 }
 
 .page-secondary {
@@ -11,7 +20,7 @@
 		.container {
 			max-width: 100%;
 			width: 100%;
-			img {
+			.intern-logo {
 				display: none;
 			}
 		}

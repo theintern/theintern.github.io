@@ -18,13 +18,13 @@
 		"bulma": "~0.5.1",
 		"ejs": "~2.5.7",
 		"hyperscript": "~2.0.2",
+		"inline-source": "~5.2.4",
 		"jstransformer-ejs": "0.0.3",
 		"metalsmith": "~2.3.0",
 		"metalsmith-assets": "~0.1.0",
 		"metalsmith-autoprefixer": "~1.1.2",
 		"metalsmith-browser-sync": "~1.1.1",
 		"metalsmith-in-place": "~3.0.1",
-		"metalsmith-inline-source": "~1.0.6",
 		"metalsmith-layouts": "~1.8.1",
 		"metalsmith-sass": "~1.4.0",
 		"nodemon": "~1.11.0",
@@ -44,5 +44,10 @@
 		"start": "nodemon --exec ts-node build.ts serve",
 		"build": "ts-node build.ts",
 		"publish": "NODE_ENV=production ts-node build.ts publish"
-	}
+	},
+    "prettier": {
+        "singleQuote": true,
+        "tabWidth": 4,
+        "useTabs": true
+    }
 }

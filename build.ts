@@ -12,7 +12,7 @@ const sass: any = require('metalsmith-sass');
 const autoprefixer: any = require('metalsmith-autoprefixer');
 const assets: any = require('metalsmith-assets');
 const inPlace: any = require('metalsmith-in-place');
-const inlineSource: any = require('metalsmith-inline-source');
+const inlineSource: any = require('inline-source');
 const stripAnsi = require('strip-ansi');
 
 (async () => {
@@ -180,7 +180,7 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 		)
 		.use(autoprefixer())
 		.use(
-			inlineSource({
+			inlineSources({
 				rootpath: './site/assets'
 			})
 		)
@@ -243,6 +243,23 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 					}
 				}
 			}
+			done();
+		};
+	}
+
+	function inlineSources(options: any) {
+		return (
+			files: { [key: string]: any },
+			_metalsmith: any,
+			done: () => void
+		) => {
+			const htmlFileNames = Object.keys(files).filter(path => /\.html$/.test(path));
+			htmlFileNames.forEach(path => {
+				const file = files[path];
+				file.contents = Buffer.from(
+					inlineSource.sync(file.contents.toString(), options)
+				);
+			});
 			done();
 		};
 	}

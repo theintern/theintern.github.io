@@ -191,7 +191,11 @@ function loadDocSet(id: DocSetId) {
 
 	// The message will be hidden in process hash, after the UI has been
 	// updated
-	showMessage('Loading...', 'Docs will arrive shortly.');
+	showMessage(
+		'',
+		h('img.fa-spin.intern-logo', { src: '/images/intern-logo.svg' }),
+		'loading'
+	);
 
 	if (!cache) {
 		// The docset hasn't been loaded yet
@@ -356,7 +360,6 @@ function showPage(type: DocType, name: string, section?: string) {
 		}
 	} else {
 		content.scrollTop = 0;
-		content.scrollIntoView();
 	}
 }
 
@@ -476,7 +479,8 @@ function processHash() {
 				updateGitHubButtons(pageId);
 				updateNavBarLinks(pageId);
 				updateDocsetSelector();
-				hideMessage();
+
+				setTimeout(hideMessage, 500);
 			} catch (error) {
 				// The current hash doesn't specify a valid page ID
 				try {
@@ -529,7 +533,7 @@ function processHash() {
  */
 function showMessage(
 	heading: string,
-	message: string | HTMLElement,
+	message: string | Element,
 	type = ''
 ) {
 	messageModal.querySelector('.message-heading')!.textContent = heading;

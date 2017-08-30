@@ -13,9 +13,30 @@
 
 	.docs-layout {
 		position: relative;
+		flex-grow: 1;
 
 		.message-modal {
 			position: absolute;
+			max-height: calc(100vh - #{2*$navbar-height});
+
+			.modal-content {
+				width: 80%;
+				max-width: 640px;
+				padding: 2rem;
+				margin: 0;
+
+				.intern-logo {
+					margin: 0 auto;
+					display: block;
+					@include intern-logo-size(70px);
+				}
+			}
+
+			&[data-message-type="loading"] {
+				.message-heading {
+					display: none;
+				}
+			}
 		}
 	}
 
@@ -548,4 +569,32 @@
 
 .coming-soon {
 	max-width: 300px;
+}
+
+.spinner {
+	> div {
+		width: 18px;
+		height: 18px;
+		margin: 0 4px;
+		background-color: $border;
+		border-radius: 100%;
+		display: inline-block;
+		animation: spinner-bouncedelay 1.4s infinite ease-in-out both;
+	}
+
+	.bounce1 {
+		animation-delay: -0.32s;
+	}
+
+	.bounce2 {
+		animation-delay: -0.16s;
+	}
+
+	@keyframes spinner-bouncedelay {
+		0%, 80%, 100% { 
+			transform: scale(0);
+		} 40% { 
+			transform: scale(1.0);
+		}
+	}
 }

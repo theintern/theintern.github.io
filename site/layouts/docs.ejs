@@ -32,8 +32,8 @@
 							</div>
 						</div>
 					</div>
-					<a class="navbar-item is-hidden-desktop github-button" title="GitHub" ><i class="fa fa-github"></i></a>
-					<a class="navbar-item is-hidden-desktop search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><i class="fa fa-search"></i></a>
+					<a class="navbar-item is-hidden-desktop github-button" title="GitHub" ><span class="fa fa-github"></span></a>
+					<a class="navbar-item is-hidden-desktop search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><span class="fa fa-search"></span></a>
 					<div class="navbar-burger" data-target="docs-nav-menu">
 						<span></span>
 						<span></span>
@@ -60,17 +60,29 @@
 						</div>
 					</div>
 				</div>
-				<a class="navbar-item is-hidden-touch github-button" title="GitHub" ><i class="fa fa-github"></i></a>
-				<a class="navbar-item is-hidden-touch search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><i class="fa fa-search"></i></a>
+				<a class="navbar-item is-hidden-touch github-button" title="GitHub" ><span class="fa fa-github"></span></a>
+				<a class="navbar-item is-hidden-touch search-button" title="Search" aria-haspopup="true" aria-controls="search-panel"><span class="fa fa-search"></span></a>
 			</nav>
 		</header>
 
 		<div class="columns docs-layout">
-			<div class="modal message-modal">
+			<div class="modal message-modal is-active">
 				<div class="modal-background"></div>
 				<div class="modal-content">
-					<h1 class="message-heading"></h1>
-					<div class="message-content"></div>
+					<h1 class="message-heading">
+						<noscript>It looks like you’ve disabled JavaScript.</noscript>
+					</h1>
+					<div class="message-content">
+						<noscript>
+							<p>This document viewer uses JavaScript to load and render pages from the various Intern project repositories. Please enable JavaScript if you’d like to use it, or visit our project repositories on GitHub:
+							</p>
+							<ul>
+								<% Object.keys(docSets).forEach(name => { %>
+								<li><a href="<%- docSets[name].url %>"><%- name %></a></li>
+								<% }) %>
+							</ul>
+						</noscript>
+					</div>
 				</div>
 			</div>
 
@@ -81,7 +93,7 @@
 					</div>
 					<div class="control">
 						<a class="button is-small" title="Clear search results">
-							<span class="icon is-small"><i class="fa fa-close"></i></span>
+							<span class="icon is-small"><span class="fa fa-close"></span></span>
 						</a>
 					</div>
 				</div>
@@ -99,17 +111,6 @@
 			</div>
 			<div class="column is-9 docs-column docs-content">
 				<%- contents %>
-				<noscript>
-					<h2>Oops, it looks like you’ve disabled JavaScript.</h2>
-
-					<p>This document viewer uses JavaScript to load and render pages from the various Intern project repositories. Please enable JavaScript if you’d like to use it, or visit our project repositories on GitHub:
-					</p>
-					<ul>
-						<% Object.keys(docSets).forEach(name => { %>
-						<li><a href="<%- docSets[name].url %>"><%- name %></a></li>
-						<% }) %>
-					</ul>
-				</noscript>
 			</div>
 		</div>
 

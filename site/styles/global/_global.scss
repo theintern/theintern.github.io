@@ -1,3 +1,8 @@
+@mixin intern-logo-size($height) {
+	height: $height;
+	width: $height;
+}
+
 .container {
 	@include widescreen {
 		max-width: 1152px;

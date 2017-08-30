@@ -5,6 +5,7 @@
 		font-weight: 500;
 		text-transform: uppercase;
 	}
+
 	.navbar-brand {
 		.navbar-item {
 			+tablet {
@@ -18,8 +19,12 @@
 			}
 		}
 	}
-}
 
+	.site-logo {
+		text-transform: none;
+		line-height: normal;
+	}
+}
 
 /* Page specific */
 
@@ -50,6 +55,31 @@
 	.navbar-burger {
 		height: auto;
 	}
+
+	.site-logo {
+		> div {
+			div:first-child {
+				font-size: 38px;
+				margin-bottom: 0;
+				line-height: 38px;
+			}
+			div:last-child {
+				font-size: 18px;
+				line-height: 18px;
+			}
+		}
+
+		color: $grey-darker;
+
+		svg {
+			@include intern-logo-size(60px);
+			margin-right: 0.75rem;
+
+			g {
+				fill: $primary;
+			}
+		}
+	}
 }
 
 .page-docs {
@@ -62,6 +92,30 @@
 		.navbar-menu {
 			padding-top: 0;
 			padding-bottom: 0;
+		}
+	}
+
+	.site-logo {
+		font-size: 24px;
+		color: $logo-grey;
+
+		> div {
+			div:last-child {
+				display: none;
+			}
+		}
+
+		&:hover {
+			color: $logo-grey;
+		}
+		
+		svg {
+			@include intern-logo-size(33px);
+			margin-right: 0.5rem;
+
+			g {
+				fill: $logo-grey;
+			}
 		}
 	}
 }
