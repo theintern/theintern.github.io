@@ -18,7 +18,6 @@ const stripAnsi = require('strip-ansi');
 (async () => {
 	let publish = false;
 	let serve = false;
-	let remote = 'origin';
 	let production = process.env.NODE_ENV === 'production';
 
 	process.argv.slice(2).forEach(arg => {
@@ -27,9 +26,6 @@ const stripAnsi = require('strip-ansi');
 		} else if (/^publish(?:=\w+)?$/.test(arg)) {
 			publish = true;
 			production = true;
-			if (arg.indexOf('=') !== -1) {
-				remote = arg.split('=')[1];
-			}
 		} else if (/\bhelp$/.test(arg) || arg === '-h') {
 			printUsage();
 			process.exit(0);
@@ -73,8 +69,7 @@ const stripAnsi = require('strip-ansi');
 					cwd: 'public'
 				});
 				execSync('git fetch public master:master');
-				execSync(`git push ${remote} master`);
-				console.log('Published!');
+				console.log("Published! Don't forget to push master!");
 			} else {
 				console.log('Nothing to publish (no changes)');
 			}
@@ -253,7 +248,9 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 			_metalsmith: any,
 			done: () => void
 		) => {
-			const htmlFileNames = Object.keys(files).filter(path => /\.html$/.test(path));
+			const htmlFileNames = Object.keys(files).filter(path =>
+				/\.html$/.test(path)
+			);
 			htmlFileNames.forEach(path => {
 				const file = files[path];
 				file.contents = Buffer.from(

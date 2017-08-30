@@ -80,7 +80,7 @@ npm run build production
 
 ## Publishing
 
-The site source lives in the `source` branch, while the actual published code is in master. To publish an updated version of the site (assuming this copy of the repo was cloned directly from GitHub):
+The site source lives in the `source` branch, while the actual published code is in master. To publish an updated version of the site:
 
 ```
 npm run publish
@@ -88,10 +88,10 @@ npm run publish
 
 The `publish` script will clone this repo into the `public/` subdirectory and check out the `master` branch, build the site into it, commit the changes, and pull those changes back into this instance of the repo.
 
-If you're publishing to a remote other than `origin`, use the syntax `publish=remote`, like:
+After publish is finished, you'll still need to push the master branch:
 
 ```
-npm run publish=upstream
+git push origin master
 ```
 
 ## Credits
