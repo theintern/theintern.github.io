@@ -186,7 +186,7 @@ function loadDocSet(id: DocSetId): Promise<DocSet> {
 		[name: string]: DocPage;
 	}>Object.create(null));
 
-	return fetch(`${docBase}/README.md`)
+	return fetch(`${docBase}README.md`)
 		.then(response => response.text())
 		.then(readme => {
 			renderPage(readme, 'README.md', id);
