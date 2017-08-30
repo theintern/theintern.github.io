@@ -4,6 +4,15 @@
 	color: $secondary;
 	font-size: $size-7;
 	padding: 1rem;
+	line-height: normal;
+
+	@media screen and (max-width: $mobile) {
+		.level-left, .level-right {
+			.level-item {
+				margin-right: 0;
+			}
+		}
+	}
 
 	.intern-logo svg {
 		@include intern-logo-size(30px);
