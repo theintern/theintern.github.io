@@ -176,12 +176,13 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 		.use(autoprefixer())
 		.use(
 			inlineSources({
-				rootpath: './site/assets'
+				rootpath: './assets'
 			})
 		)
 		.use(
 			assets({
-				source: './site/assets'
+				source: './assets',
+				destination: '.'
 			})
 		)
 		.use(copyCheck());
