@@ -226,22 +226,25 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 			self: any
 		) => {
 			const hrefIdx = tokens[idx].attrIndex('href');
-			const href = tokens[idx].attrs[hrefIdx];
-			const [file, hash] = href[1].split('#');
+			const hrefToken = tokens[idx].attrs[hrefIdx];
+			const [file, hash] = hrefToken[1].split('#');
 			const docSetId = getCurrentDocSetId();
 			const { page, type } = env.info;
+
 			if (!file) {
 				// This is an in-page anchor link
-				href[1] = createHash({
+				hrefToken[1] = createHash({
 					page,
 					type,
 					section: hash,
 					...docSetId
 				});
 			} else if (!/\/\//.test(file)) {
-				// This is a link to a local markdown file. Make a hash
-				// link that's relative to the current page.
-				if (env.info) {
+				// This is a link to a local file.
+
+				if (/\.md^/.test(file)) {
+					// This is a link to a markdown file -- make a
+					// page-relative link
 					const cleanFile = file.replace(/^\.\//, '');
 					let pageBase = '';
 					if (page.indexOf('/') !== -1) {
@@ -255,21 +258,26 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 						!/\.md$/.test(cleanFile)
 					) {
 						const [mod, member] = cleanFile.split('.');
-						href[1] = createHash({
+						hrefToken[1] = createHash({
 							page: pageBase + mod,
 							section: member,
 							type,
 							...docSetId
 						});
 					} else {
-						href[1] = createHash({
+						hrefToken[1] = createHash({
 							page: pageBase + cleanFile,
 							section: hash,
 							type,
 							...docSetId
 						});
 					}
+				} else {
+					// This is a link to some other local resource -- make a
+					// repo link
+					hrefToken[1] = createGitHubLink(docSetId, file);
 				}
+
 			}
 			return defaultLinkRender(tokens, idx, options, env, self);
 		};
@@ -288,8 +296,9 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 		};
 	}
 
-	context = context || Object.create(null);
-	context.slugify = context.slugify || createSlugifier();
+	if (!context.slugify) {
+		context.slugify = context.slugify || createSlugifier();
+	}
 
 	return markdown.render(text, context);
 }
