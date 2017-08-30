@@ -154,6 +154,7 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 		})
 		.source('./site')
 		.destination('./public')
+		.ignore('layouts')
 		.clean(clean)
 		.use(docSets())
 		.use(inPlace())
