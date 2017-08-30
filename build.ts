@@ -1,6 +1,6 @@
 import { execSync, spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import * as webpack from 'webpack';
 import webpackConfig from './webpack.config';
 import * as WebpackMiddleware from 'webpack-dev-middleware';
@@ -14,6 +14,8 @@ const assets: any = require('metalsmith-assets');
 const inPlace: any = require('metalsmith-in-place');
 const inlineSource: any = require('inline-source');
 const stripAnsi = require('strip-ansi');
+const publishDir = 'publish';
+const publicDir = 'public';
 
 (async () => {
 	let publish = false;
@@ -48,30 +50,30 @@ const stripAnsi = require('strip-ansi');
 		await runServer();
 	} else {
 		if (publish) {
-			if (existsSync('public')) {
-				console.log('Removing existing public dir');
-				execSync('rm -r public');
+			if (existsSync(publishDir)) {
+				console.log(`Removing existing publish dir ${publishDir}`);
+				execSync(`rm -r ${publishDir}`);
 			}
 
 			console.log('Creating a clone of the master branch');
-			execSync('git clone -q . public');
-			execSync('git checkout -q master', { cwd: 'public' });
+			execSync(`git clone -q . ${publishDir}`);
+			execSync('git checkout -q master', { cwd: publishDir });
 		}
 
-		await runMetalsmith({ production });
-		await runWebpack();
+		await runMetalsmith({ production, destination: publishDir });
+		await runWebpack({ destination: publishDir });
 
 		if (publish) {
 			console.log('Publishing...');
 			const { status } = spawnSync('git', ['diff', '--quiet', 'HEAD'], {
-				cwd: 'public'
+				cwd: publishDir
 			});
 			if (status !== 0) {
-				execSync('git add .', { cwd: 'public' });
+				execSync('git add .', { cwd: publishDir });
 				execSync('git commit --all -m "Updated doc build"', {
-					cwd: 'public'
+					cwd: publishDir
 				});
-				execSync('git fetch public master:master');
+				execSync(`git fetch ${publishDir} master:master`);
 				if (remote) {
 					execSync(`git push ${remote} master`);
 					console.log('Published!');
@@ -107,7 +109,7 @@ function runServer() {
 	});
 
 	browserSync.init({
-		server: { baseDir: 'public' },
+		server: { baseDir: publicDir },
 		open: false,
 		notify: false,
 		logFileChanges: true,
@@ -116,7 +118,7 @@ function runServer() {
 		files: [
 			'public/**/*',
 			{
-				match: ['site/**/*'],
+				match: ['site/**/*', 'assets/**/*'],
 				fn: () => {
 					// Don't clean when rebuilding while serving
 					runMetalsmith({ clean: false });
@@ -128,8 +130,12 @@ function runServer() {
 	runMetalsmith();
 }
 
-function runWebpack() {
+function runWebpack(options?: { destination?: string }) {
 	console.log('Running webpack...');
+
+	const { destination = publicDir } = options || {};
+	webpackConfig.output!.path = resolve(destination);
+
 	return new Promise((resolve, reject) => {
 		webpack(webpackConfig, (err: Error, stats: webpack.Stats) => {
 			if (err) {
@@ -145,10 +151,15 @@ function runWebpack() {
 	});
 }
 
-function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
+function runMetalsmith(options?: {
+	production?: boolean;
+	clean?: boolean;
+	destination?: string;
+}) {
 	console.log('Running Metalsmith...');
 
-	const { production = false, clean = true } = options || {};
+	const { production = false, clean = true, destination = publicDir } =
+		options || {};
 
 	const metalsmith = new Metalsmith(__dirname)
 		.metadata({
@@ -160,8 +171,8 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 			bodyClass: '',
 			production: production
 		})
-		.source('./site')
-		.destination('./public')
+		.source('site')
+		.destination(destination)
 		.ignore('layouts')
 		.clean(clean)
 		.use(docSets())

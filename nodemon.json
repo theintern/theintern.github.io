@@ -5,6 +5,7 @@
         "./node_modules/",
         "./src/",
         "./public/",
+        "./publish/",
         "./types/"
     ]
 }
