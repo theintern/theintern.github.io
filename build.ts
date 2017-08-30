@@ -273,8 +273,8 @@ function runMetalsmith(options?: { production?: boolean; clean?: boolean }) {
 }
 
 function printUsage() {
-	console.log('usage: build [serve | publish] [production]');
-	console.log('  serve      - start a dev server');
-	console.log('  publish    - build and publish the site');
-	console.log('  production - build in production mode');
+	console.log('usage: build [serve | publish [remote=xyz]]');
+	console.log('  serve   - start a dev server');
+	console.log('  publish - build and publish the site');
+	console.log('  remote  - git remote to push to when publishing');
 }
