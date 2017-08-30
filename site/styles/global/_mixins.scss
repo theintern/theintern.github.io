@@ -1,4 +1,4 @@
-@mixin fluid($properties, $min-value, $max-value, $min-vw: $mobile, $max-vw: $desktop) {
+@mixin fluid($properties, $min-value, $max-value, $min-vw: $tablet, $max-vw: $desktop) {
 	@each $property in $properties {
 		#{$property}: $min-value;
 	}

@@ -1,10 +1,9 @@
 html,
 body {
 	@include fluid(font-size, 14px, 16px);
-	font-family: $body-font;
 	font-weight: 400;
 	line-height: 1.45;
-	color: $body-text;
+	color: $text;
 }
 
 .title {
@@ -104,4 +103,8 @@ dd {
 
 h1, h2, h3, h4, h5, h6, h7 {
 	margin-top: 1.25rem;
+}
+
+th {
+	font-family: $title-font;
 }

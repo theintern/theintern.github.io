@@ -1,12 +1,9 @@
-$mobile: 768px;
-
 // Typography
-$body-font: 'Source Sans Pro', sans-serif;
-$body-text: #333;
-$title-font: 'Zilla Slab', serif;
-
+$family-serif: 'Zilla Slab', serif;
+$title-font: $family-serif;
 $code-font-size: 0.8rem;
 
+// Colors
 $info-highlight: #368CF8;
 $warning-highlight: #EA565E;
 $deprecated-highlight: $grey-darker;

@@ -159,7 +159,7 @@
 			}
 		}
 
-		@media screen and (max-width: $mobile) {
+		@media screen and (max-width: $tablet) {
 			border-bottom: 1px solid $border;
 		}
 	}
@@ -207,7 +207,7 @@
 			}
 
 			// For desktop views, 
-			@media screen and (min-width: $mobile) {
+			@media screen and (min-width: $tablet) {
 				ul  {
 					font-size: 90%;
 				}
@@ -302,14 +302,14 @@
 		}
 
 		// When search is active in mobile mode, hide the doc menu
-		@media screen and (max-width: $mobile) {
+		@media screen and (max-width: $tablet) {
 			.docs-menu {
 				display: none;
 			}
 		}
 	}
 
-	@media screen and (max-width: $mobile) {
+	@media screen and (max-width: $tablet) {
 		.search-panel {
 			position: static;
 			width: auto;
