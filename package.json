@@ -44,10 +44,5 @@
 		"start": "nodemon --exec ts-node build.ts serve",
 		"build": "ts-node build.ts",
 		"publish": "NODE_ENV=production ts-node build.ts publish"
-	},
-    "prettier": {
-        "singleQuote": true,
-        "tabWidth": 4,
-        "useTabs": true
-    }
+	}
 }
