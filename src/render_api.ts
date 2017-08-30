@@ -357,9 +357,12 @@ function renderSignatures(
 		);
 	}
 
-	const parameters = signatures.reduce((params, sig) => {
-		return params.concat(sig.parameters || []);
-	}, <ParameterReflection[]>[]);
+	const parameters = signatures.reduce(
+		(params, sig) => {
+			return params.concat(sig.parameters || []);
+		},
+		<ParameterReflection[]>[]
+	);
 	if (parameters.length > 0) {
 		renderParameterTable(parameters, context);
 	}

@@ -53,7 +53,7 @@ window.addEventListener('hashchange', processHash);
 // If the base docs page is loaded without a hash, set a default hash to
 // get a docset to load.
 if (!location.hash) {
-	updateHash(getDefaultPageId(getDefaultDocSetId()));
+	updateHash({ ...getDefaultDocSetId(), type: DocType.docs });
 	processHash();
 }
 
@@ -83,12 +83,12 @@ ready.then(() => {
 			// The project was changed
 			pageId.project = select.value;
 			pageId.version = getLatestVersion(select.value).version;
-			pageId.page = getDocSet(pageId).pages[0];
+			pageId.page = 'README.md';
 			pageId.type = DocType.docs;
 		} else {
 			// The version was changed
 			pageId.version = select.value;
-			pageId.page = getDocSet(pageId).pages[0];
+			pageId.page = 'README.md';
 			pageId.type = DocType.docs;
 		}
 
@@ -169,25 +169,13 @@ ready.then(() => {
  * finished loading, the given page, or the first page in the set, will be
  * shown.
  */
-function loadDocSet(id: DocSetId) {
-	if (
-		content &&
-		content.getAttribute('data-doc-project') === id.project &&
-		content.getAttribute('data-doc-version') === id.version
-	) {
-		// The docset is already visible, so don't do anything
-		return new Promise(resolve => {
-			resolve(getDocSet(id));
-		});
-	}
-
+function loadDocSet(id: DocSetId): Promise<DocSet> {
 	const docSet = getDocSet(id);
-	const docBase = getDocBaseUrl(id);
-	const pageNames = docSet.pages;
-	const hasApi = Boolean(docSet.api);
 
-	let cache = docSet.pageCache!;
-	let load: PromiseLike<any>;
+	if (docSet.ready) {
+		// The docset is already visible, so don't do anything
+		return Promise.resolve(docSet);
+	}
 
 	// The message will be hidden in process hash, after the UI has been
 	// updated
@@ -197,56 +185,69 @@ function loadDocSet(id: DocSetId) {
 		'loading'
 	);
 
-	if (!cache) {
-		// The docset hasn't been loaded yet
-		cache = docSet.pageCache = <{
-			[name: string]: DocPage;
-		}>Object.create(null);
+	const docBase = getDocBaseUrl(id);
+	const cache = (docSet.pageCache = <{
+		[name: string]: DocPage;
+	}>Object.create(null));
 
-		const loads: PromiseLike<any>[] = [];
+	return fetch(`${docBase}/README.md`)
+		.then(response => response.text())
+		.then(readme => {
+			renderPage(readme, 'README.md', id);
+			const matcher = /^<!--\s+doc-viewer-config\s/m;
+			if (matcher.test(readme)) {
+				const result = matcher.exec(readme)!;
+				const index = result.index;
+				const start = readme.indexOf('{', index);
+				const end = readme.indexOf('-->', index);
+				const data = readme.slice(start, end).trim();
+				return <DocSet>JSON.parse(data);
+			}
+			return null;
+		})
+		.then(config => {
+			if (config) {
+				Object.keys(config).forEach((key: keyof DocSet) => {
+					docSet[key] = config[key];
+				});
+			}
 
-		if (hasApi) {
-			loads.push(
-				fetch(docBase + docSet.api).then(response => {
-					return response.json();
+			const pageNames = (docSet.pages = ['README.md'].concat(
+				docSet.pages || []
+			));
+
+			docSet.ready = Promise.all(
+				pageNames.filter(name => name !== 'README.md').map(name => {
+					return fetch(docBase + name)
+						.then(response => response.text())
+						.then(text => renderPage(text, name, id));
 				})
-			);
-		}
+			).then(() => {
+				docSet.menu = renderMenu(id, DocType.docs);
+			});
 
-		loads.push(
-			...pageNames.map(name => {
-				return fetch(docBase + name)
-					.then(response => response.text())
-					.then(text => {
-						return ready.then(() => {
-							const element = renderDocPage(text, name, id);
-							const h1 = element.querySelector('h1');
-							const title = (h1 && h1.textContent) || id.project;
-							cache[name] = { name, element, title };
-						});
+			if (docSet.api) {
+				docSet.apiReady = fetch(docBase + docSet.api)
+					.then(response => {
+						return response.json();
+					})
+					.then(data => {
+						renderApiPages(id, data);
+						docSet.apiMenu = renderMenu(id, DocType.api, 4);
 					});
-			})
-		);
-
-		load = Promise.all(loads).then(loadData => {
-			if (hasApi) {
-				const data = loadData[0];
-				renderApiPages(id, data);
 			}
 
-			// All pages need to have been loaded to create the docset menu
-			docSet.menu = renderMenu(id, DocType.docs);
-
-			if (hasApi) {
-				docSet.apiMenu = renderMenu(id, DocType.api, 4);
-			}
+			return docSet;
 		});
-	} else {
-		// The docset is already loaded
-		load = Promise.resolve();
-	}
 
-	return load;
+	function renderPage(text: string, name: string, id: DocSetId) {
+		return ready.then(() => {
+			const element = renderDocPage(text, name, id);
+			const h1 = element.querySelector('h1');
+			const title = (h1 && h1.textContent) || id.project;
+			cache[name] = { name, element, title };
+		});
+	}
 }
 
 /**
@@ -433,10 +434,9 @@ function highlightActiveSection() {
 
 	if (link) {
 		link.classList.add('is-active');
-		scrollIntoViewIfNessary(
-			link,
-			<HTMLElement>document.querySelector('.docs-menu')!
-		);
+		scrollIntoViewIfNessary(link, <HTMLElement>document.querySelector(
+			'.docs-menu'
+		)!);
 	}
 }
 
@@ -463,27 +463,37 @@ function processHash() {
 
 	try {
 		const docSetId = getCurrentDocSetId();
-		loadDocSet(docSetId).then(() => {
-			try {
-				const pageId = getCurrentPageId();
+		loadDocSet(docSetId).then(docSet => {
+			const { type } = parseHash();
+			const ready =
+				type === DocType.api ? docSet.apiReady! : docSet.ready!;
+			ready
+				.then(() => {
+					const pageId = getCurrentPageId();
+					const { project, version, type, page, section } = pageId;
 
-				const { project, version, type, page, section } = pageId;
-				viewer.setAttribute('data-doc-type', type);
+					viewer.setAttribute('data-doc-type', type);
 
-				const container = document.querySelector('.docs-content')!;
-				container.setAttribute('data-doc-project', project);
-				container.setAttribute('data-doc-version', version);
+					const container = document.querySelector('.docs-content')!;
+					container.setAttribute('data-doc-project', project);
+					container.setAttribute('data-doc-version', version);
 
-				showMenu(type);
-				showPage(type, page, section);
-				updateGitHubButtons(pageId);
-				updateNavBarLinks(pageId);
-				updateDocsetSelector();
-				hideMessage();
-			} catch (error) {
-				// The current hash doesn't specify a valid page ID
-				try {
-					const { type } = parseHash();
+					showMenu(type);
+					showPage(type, page, section);
+					updateGitHubButtons(pageId);
+					updateNavBarLinks(pageId);
+					updateDocsetSelector();
+					hideMessage();
+				})
+				.catch(error => {
+					// The current hash doesn't specify a valid page ID
+					const { type, page } = parseHash();
+					if (page) {
+						// The URL contains a page, and it is invalid
+						throw error;
+					}
+
+					// The URL doesn't contain a page
 					updateHash(
 						createHash(
 							getDefaultPageId(docSetId, type || DocType.docs)
@@ -491,17 +501,17 @@ function processHash() {
 						HashEvent.rename
 					);
 					processHash();
-				} catch (error) {
+				})
+				.catch(error => {
 					showError(error);
-				}
-			}
+				});
 		});
 	} catch (error) {
 		// The current hash doesn't identify a valid doc set
 		if (!location.hash.slice(1)) {
 			// No hash was specified -- load a default
 			updateHash(
-				createHash(getDefaultPageId(getDefaultDocSetId())),
+				createHash({ ...getDefaultDocSetId(), type: DocType.docs }),
 				HashEvent.rename
 			);
 			processHash();
@@ -530,11 +540,7 @@ function processHash() {
 /**
  * Show a message in the error modal
  */
-function showMessage(
-	heading: string,
-	message: string | Element,
-	type = ''
-) {
+function showMessage(heading: string, message: string | Element, type = '') {
 	messageModal.querySelector('.message-heading')!.textContent = heading;
 	const content = messageModal.querySelector('.message-content')!;
 	content.innerHTML = '';
@@ -593,7 +599,7 @@ function updateHashFromContent() {
 	if (pageHash !== scrollState.pageHash) {
 		const content = <HTMLElement>document.querySelector('.docs-content')!;
 		const menu = document.querySelector('.docs-menu .menu-list');
-		const depth = (<number>(<any>menu).menuDepth) || 3;
+		const depth = <number>(<any>menu).menuDepth || 3;
 		const tags = <string[]>[];
 		for (let i = 1; i < depth; i++) {
 			tags.push(`h${i + 1}`);

@@ -5,43 +5,10 @@
 		"next": "4",
 		"versions": {
 			"3": {
-                "branch": "3.4",
-				"pages": [
-					"README.md",
-					"docs/fundamentals.md",
-					"docs/getting-started.md",
-					"docs/configuration.md",
-					"docs/interfaces.md",
-					"docs/unit-testing.md",
-					"docs/benchmark-testing.md",
-					"docs/functional-testing.md",
-					"docs/webdriver-server.md",
-					"docs/running.md",
-					"docs/reporters.md",
-					"docs/ci.md",
-					"docs/customisation.md",
-					"docs/internals.md",
-					"docs/community.md",
-					"docs/faq.md"
-				]
+                "branch": "3.4"
 			},
 			"4": {
-                "api": "docs/api.json",
-                "branch": "master",
-				"pages": [
-					"README.md",
-					"docs/getting_started.md",
-					"docs/how_to.md",
-					"docs/concepts.md",
-					"docs/architecture.md",
-					"docs/configuration.md",
-					"docs/writing_tests.md",
-					"docs/running.md",
-					"docs/ci.md",
-					"docs/extending.md",
-					"docs/api.md",
-					"docs/developing.md"
-				]
+                "branch": "master"
 			}
 		}
 	},
@@ -52,12 +19,10 @@
 		"next": "4",
 		"versions": {
 			"3": {
-                "branch": "intern-3",
-				"pages": ["README.md"]
+                "branch": "intern-3"
 			},
 			"4": {
-                "branch": "master",
-				"pages": ["README.md"]
+                "branch": "master"
 			}
 		}
 	},
@@ -68,13 +33,10 @@
 		"next": "2",
 		"versions": {
 			"1": {
-                "branch": "1.7",
-				"pages": ["README.md"]
+                "branch": "1.7"
 			},
 			"2": {
-                "api": "docs/api.json",
-                "branch": "master",
-				"pages": ["README.md"]
+                "branch": "master"
 			}
 		}
 	},
@@ -85,13 +47,11 @@
 		"next": "2",
 		"versions": {
 			"1": {
-                "branch": "1.6",
-				"pages": ["README.md"]
+                "branch": "1.6"
 			},
 			"2": {
                 "api": "docs/api.json",
-                "branch": "master",
-				"pages": ["README.md"]
+                "branch": "master"
 			}
 		}
 	},
@@ -101,8 +61,7 @@
 		"latest": "1",
 		"versions": {
 			"1": {
-                "branch": "master",
-				"pages": ["README.md"]
+                "branch": "master"
 			}
 		}
     },
@@ -112,8 +71,7 @@
 		"latest": "1",
 		"versions": {
 			"1": {
-                "branch": "master",
-				"pages": ["README.md"]
+                "branch": "master"
 			}
 		}
     },
@@ -123,8 +81,7 @@
 		"latest": "1",
 		"versions": {
 			"1": {
-                "branch": "master",
-				"pages": ["README.md"]
+                "branch": "master"
 			}
 		}
     }

@@ -31,16 +31,19 @@ export interface DocSet {
 	pages: string[];
 	// A cache of rendered documents
 	pageCache?: { [name: string]: DocPage };
+	// The rendered menu element
+	menu?: Element;
+	// A promise that resolves when the pages and menu have been rendered
+	ready?: Promise<void>;
 
 	// The IDs of generated API pages
 	apiPages?: string[];
 	// A cache of rendered api doc pages
 	apiCache?: { [name: string]: DocPage };
-
-	// The rendered menu element
-	menu?: Element;
 	// The rendered api menu element
 	apiMenu?: Element;
+	// A promise that resolves when the API pages and menu have been rendered
+	apiReady?: Promise<void>;
 }
 
 /**

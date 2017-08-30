@@ -35,7 +35,10 @@ export function parseHash() {
  * By default this function replaces the current URL. Set `push` to true to
  * push the new URL onto the stack instead.
  */
-export function updateHash(newHash: string | PageId, event = HashEvent.nav) {
+export function updateHash(
+	newHash: string | PageId | (DocSetId & { type: DocType }),
+	event = HashEvent.nav
+) {
 	let hash = typeof newHash === 'string' ? newHash : createHash(newHash);
 	if (location.hash === hash) {
 		return;

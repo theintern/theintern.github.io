@@ -46,14 +46,18 @@ export default function search(
 						...docSetId
 					});
 
-					const submenu = h('ul', {}, matches.map(match => {
-						return createLinkItem(match.snippet, {
-							type: docType,
-							page: name,
-							section: match.section,
-							...docSetId
-						});
-					}));
+					const submenu = h(
+						'ul',
+						{},
+						matches.map(match => {
+							return createLinkItem(match.snippet, {
+								type: docType,
+								page: name,
+								section: match.section,
+								...docSetId
+							});
+						})
+					);
 
 					link.appendChild(submenu);
 					searchResults.appendChild(link);
