@@ -385,53 +385,8 @@
 		}
 	}
 
-	.docset-selector {
-		margin-bottom: 0.5rem;
-		box-shadow: none;
-		border-color: $border;
-
-		.card-header {
-			cursor: pointer;
-			box-shadow: none;
-
-			padding-left: 0.25rem;
-			padding-right: 0.25rem;
-		}
-
-		@media screen and (max-width: $mobile) {
-			.card-header {
-				// These offset the negative padding from .columns
-				padding-left: 0.75rem;
-				padding-right: 0.75rem;
-			}
-		}
-
-		.card-header-title {
-			font-weight: normal;
-
-			.version {
-				display: none;
-
-				&::before {
-					content: 'v';
-					margin-left: 0.4em;
-				}
-			}
-		}
-
-		.card-content {
-			max-height: 0;
-			border-bottom: solid 1px $border;
-			transition: max-height 0.25s ease;
-			transition: padding 0.25s ease;
-			padding: 0;
-			overflow: auto;
-		}
-
-		&.is-active .card-content {
-			max-height: 7rem;
-			padding: 0 0 0.5em 0;
-		}
+	.navbar select {
+		text-transform: none;
 	}
 
 	.navbar .version-selector {
