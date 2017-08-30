@@ -77,22 +77,18 @@ ready.then(() => {
 		}
 
 		const select = <HTMLSelectElement>target;
-		const pageId = getCurrentPageId();
+		const docSetId = getCurrentDocSetId();
 
 		if (target.getAttribute('data-select-property') === 'project') {
 			// The project was changed
-			pageId.project = select.value;
-			pageId.version = getLatestVersion(select.value).version;
-			pageId.page = 'README.md';
-			pageId.type = DocType.docs;
+			docSetId.project = select.value;
+			docSetId.version = getLatestVersion(select.value).version;
 		} else {
 			// The version was changed
-			pageId.version = select.value;
-			pageId.page = 'README.md';
-			pageId.type = DocType.docs;
+			docSetId.version = select.value;
 		}
 
-		updateHash(pageId);
+		updateHash({ ...docSetId, type: DocType.docs, page: 'README.md' });
 		processHash();
 	});
 
