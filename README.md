@@ -86,12 +86,16 @@ The site source lives in the `source` branch, while the actual published code is
 npm run publish
 ```
 
-The `publish` script will clone this repo into the `public/` subdirectory and check out the `master` branch, build the site into it, commit the changes, and pull those changes back into this instance of the repo.
-
-After publish is finished, you'll still need to push the master branch:
+The `publish` script will clone this repo into the `public/` subdirectory and check out the `master` branch, build the site into it, commit the changes, and pull those changes back into this instance of the repo, then push the changes to origin:master. If you'd like to publish to a branch other than origin, do
 
 ```
-git push origin master
+npm run publish remote=my_remote
+```
+
+If you'd like to skip the push step, do
+
+```
+npm run publish remote=
 ```
 
 ## Credits

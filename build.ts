@@ -18,14 +18,17 @@ const stripAnsi = require('strip-ansi');
 (async () => {
 	let publish = false;
 	let serve = false;
+	let remote = 'origin';
 	let production = process.env.NODE_ENV === 'production';
 
 	process.argv.slice(2).forEach(arg => {
 		if (arg === 'serve') {
 			serve = true;
-		} else if (/^publish(?:=\w+)?$/.test(arg)) {
+		} else if (/^publish=?/.test(arg)) {
 			publish = true;
 			production = true;
+		} else if (/^remote=/.test(arg)) {
+			remote = arg.split('=')[1];
 		} else if (/\bhelp$/.test(arg) || arg === '-h') {
 			printUsage();
 			process.exit(0);
@@ -69,7 +72,12 @@ const stripAnsi = require('strip-ansi');
 					cwd: 'public'
 				});
 				execSync('git fetch public master:master');
-				console.log("Published! Don't forget to push master!");
+				if (remote) {
+					execSync(`git push ${remote} master`);
+					console.log('Published!');
+				} else {
+					console.log('Master was updated, but nothing was pushed.');
+				}
 			} else {
 				console.log('Nothing to publish (no changes)');
 			}
