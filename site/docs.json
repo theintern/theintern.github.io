@@ -27,6 +27,20 @@
 		}
 	},
 
+    "Intern examples": {
+		"url": "https://github.com/theintern/intern-examples",
+		"latest": "1",
+		"next": "2",
+		"versions": {
+			"1": {
+                "branch": "master"
+			},
+			"2": {
+                "branch": "intern-4"
+			}
+		}
+    },
+
 	"Leadfoot": {
 		"url": "https://github.com/theintern/leadfoot",
 		"latest": "1",
