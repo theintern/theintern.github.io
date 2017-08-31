@@ -441,6 +441,11 @@
 		content: '\f292';
 	}
 
+	code .tag {
+		font-family: $family-sans-serif;
+		margin-right: 0.5em;
+	}
+
 	.has-heading-icons {
 		display: flex;
 		align-items: center;

@@ -181,28 +181,36 @@ function renderModule(
 		renderGlobals(global, level, context);
 	}
 
-	const classes = exports.filter(ex => ex.kindString === 'Class');
+	const classes = exports
+		.filter(ex => ex.kindString === 'Class')
+		.sort(nameSorter);
 	if (classes.length > 0) {
 		classes.forEach(cls => {
 			renderClass(cls, level + 1, context);
 		});
 	}
 
-	const interfaces = exports.filter(ex => ex.kindString === 'Interface');
+	const interfaces = exports
+		.filter(ex => ex.kindString === 'Interface')
+		.sort(nameSorter);
 	if (interfaces.length > 0) {
 		interfaces.forEach(iface => {
 			renderInterface(iface, level + 1, context);
 		});
 	}
 
-	const functions = exports.filter(ex => ex.kindString === 'Function');
+	const functions = exports
+		.filter(ex => ex.kindString === 'Function')
+		.sort(nameSorter);
 	if (functions.length > 0) {
 		functions.forEach(func => {
 			renderFunction(func, level + 1, context);
 		});
 	}
 
-	const constants = exports.filter(ex => ex.kindString === 'Object literal');
+	const constants = exports
+		.filter(ex => ex.kindString === 'Object literal')
+		.sort(nameSorter);
 	if (constants.length > 0) {
 		constants.forEach(constant => {
 			renderLiteral(constant, level + 1, context);
@@ -221,7 +229,7 @@ function renderGlobals(
 	const { renderHeading } = context;
 	renderHeading(level, 'Globals', context);
 
-	for (let child of global.children) {
+	for (let child of global.children.slice().sort(nameSorter)) {
 		renderProperty(child, level + 1, context);
 	}
 }
@@ -261,13 +269,23 @@ function renderClass(
 
 	const exports = getExports(cls);
 
-	const properties = exports.filter(ex => ex.kindString === 'Property');
+	const properties = exports
+		.filter(
+			ex => ex.kindString === 'Property' || ex.kindString === 'Accessor'
+		)
+		.sort(nameSorter);
 	properties.forEach(property => {
 		renderProperty(property, level + 1, context);
 	});
-	const methods = exports.filter(
-		ex => ex.kindString === 'Method' || ex.kindString === 'Constructor'
-	);
+
+	const constructors = exports.filter(ex => ex.kindString === 'Constructor');
+	constructors.forEach(ctor => {
+		renderMethod(ctor, level + 1, context);
+	});
+
+	const methods = exports
+		.filter(ex => ex.kindString === 'Method')
+		.sort(nameSorter);
 	methods.forEach(method => {
 		renderMethod(method, level + 1, context);
 	});
@@ -362,14 +380,21 @@ function renderInterface(
 
 	const exports = getExports(iface);
 
-	const properties = exports.filter(ex => ex.kindString === 'Property');
+	const properties = exports
+		.filter(ex => ex.kindString === 'Property')
+		.sort(nameSorter);
 	properties.forEach(property => {
 		renderProperty(property, level + 1, context);
 	});
 
-	const methods = exports.filter(
-		ex => ex.kindString === 'Method' || ex.kindString === 'Constructor'
-	);
+	const constructors = exports.filter(ex => ex.kindString === 'Constructor');
+	constructors.forEach(ctor => {
+		renderMethod(ctor, level + 1, context);
+	});
+
+	const methods = exports
+		.filter(ex => ex.kindString === 'Method')
+		.sort(nameSorter);
 	methods.forEach(method => {
 		renderMethod(method, level + 1, context);
 	});
@@ -391,16 +416,53 @@ function renderProperty(
 		renderParent([property.inheritedFrom], Relationship.Inherited, context);
 	}
 
-	const text = `${property.name}: ${typeToString(property.type!)}`;
-	renderCode(text, page);
+	let typeString: string | undefined;
+	let access = { canRead: false, canWrite: false };
+	let comment: Comment | undefined;
 
-	if (hasComment(property.comment)) {
+	if (property.kindString === 'Accessor') {
+		if (property.getSignature) {
+			access.canRead = true;
+			const sig = (<any>property.getSignature)[0];
+			typeString = typeToString(sig.type);
+			comment = sig.comment;
+		}
+		if (property.setSignature) {
+			access.canWrite = true;
+			const sig = (<any>property.setSignature)[0];
+			if (!typeString) {
+				typeString = typeToString(
+					sig.parameters[0].type
+				);
+			}
+			if (sig.comment && !comment) {
+				comment = sig.comment;
+			}
+		}
+	} else {
+		access.canRead = true;
+		access.canWrite = true;
+		comment = property.comment;
+		typeString = typeToString(property.type);
+	}
+
+	const text = `${property.name}: ${typeString}`;
+	const codeP = renderCode(text);
+	if (!access.canRead) {
+		const code = codeP.childNodes[0];
+		const tag = h('span.tag', {}, 'write only');
+		code.insertBefore(tag, code.firstChild);
+	} else if (!access.canWrite) {
+		const code = codeP.childNodes[0];
+		const tag = h('span.tag', {}, 'read only');
+		code.insertBefore(tag, code.firstChild);
+	}
+
+	page.element.appendChild(codeP);
+
+	if (comment && hasComment(comment)) {
 		page.element.appendChild(
-			renderComment(
-				property.comment,
-				getContainingModule(property),
-				context
-			)
+			renderComment(comment, getContainingModule(property), context)
 		);
 	}
 }
@@ -516,7 +578,7 @@ function renderLiteral(
 		});
 		let type = typeToString(value.type!);
 		const text = `${value.name}: ${type} = {\n\t${parts.join(',\n\t')}\n}`;
-		renderCode(text, page);
+		page.element.appendChild(renderCode(text));
 	}
 }
 
@@ -586,14 +648,12 @@ function renderText(text: string, pageName: string) {
 /**
  * Render a syntax-highlighted block of code
  */
-function renderCode(text: string, page: DocPage, language = 'typescript') {
+function renderCode(text: string, language = 'typescript') {
 	const html = hljs
 		.highlight(language, text, true)
 		.value.replace(/\n/g, '<br>')
 		.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
-	page.element.appendChild(
-		h('p', {}, [h(`code.hljs.lang-${language}`, { innerHTML: html })])
-	);
+	return h('p', {}, [h(`code.hljs.lang-${language}`, { innerHTML: html })]);
 }
 
 /**
@@ -862,7 +922,7 @@ function getHeadingRenderer(slugify: Slugifier) {
 
 		if (type === 'Method' || type === 'Function') {
 			classes.push('is-type-callable');
-		} else if (type === 'Property') {
+		} else if (type === 'Property' || type === 'Accessor') {
 			classes.push('is-type-property');
 		} else if (type === 'Constructor') {
 			classes.push('is-type-constructor');
@@ -953,6 +1013,19 @@ function createApiIndex(data: ProjectReflection) {
 			});
 		}
 	}
+}
+
+/**
+ * Sorter function for sorting API reflections
+ */
+function nameSorter(a: Reflection, b: Reflection) {
+	if (a.name < b.name) {
+		return -1;
+	}
+	if (a.name > b.name) {
+		return 1;
+	}
+	return 0;
 }
 
 type ApiIndex = { [key: number]: DeclarationReflection };
