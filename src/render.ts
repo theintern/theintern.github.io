@@ -240,45 +240,32 @@ export function renderMarkdown(text: string, context: Partial<RenderContext>) {
 					...docSetId
 				});
 			} else if (!/\/\//.test(file)) {
-				// This is a link to a local file.
+				// Ignore api: links; these will be fixed up by the API
+				// renderer later
+				if (type !== 'api' || file.indexOf('api:') !== 0) {
+					if (/\.md$/.test(file)) {
+						// This is a link to a markdown file -- make a
+						// page-relative link
+						const cleanFile = file.replace(/^\.\//, '');
+						let pageBase = '';
+						if (page.indexOf('/') !== -1) {
+							pageBase = page.slice(0, page.lastIndexOf('/') + 1);
+						}
 
-				if (/\.md^/.test(file)) {
-					// This is a link to a markdown file -- make a
-					// page-relative link
-					const cleanFile = file.replace(/^\.\//, '');
-					let pageBase = '';
-					if (page.indexOf('/') !== -1) {
-						pageBase = page.slice(0, page.lastIndexOf('/') + 1);
-					}
-
-					// API links may be to things like 'Class.member'.
-					if (
-						type === 'api' &&
-						/\w+\.\w+/.test(cleanFile) &&
-						!/\.md$/.test(cleanFile)
-					) {
-						const [mod, member] = cleanFile.split('.');
-						hrefToken[1] = createHash({
-							page: pageBase + mod,
-							section: member,
-							type,
-							...docSetId
-						});
-					} else {
 						hrefToken[1] = createHash({
 							page: pageBase + cleanFile,
 							section: hash,
 							type,
 							...docSetId
 						});
+					} else {
+						// This is a link to some other local resource -- make a
+						// repo link
+						hrefToken[1] = createGitHubLink(docSetId, file);
 					}
-				} else {
-					// This is a link to some other local resource -- make a
-					// repo link
-					hrefToken[1] = createGitHubLink(docSetId, file);
 				}
-
 			}
+
 			return defaultLinkRender(tokens, idx, options, env, self);
 		};
 

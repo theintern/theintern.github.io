@@ -46,6 +46,7 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 	const slugIndex: SlugIndex = {};
 	const pageIndex: { [id: number]: string } = {};
 	const linksToResolve: { link: HTMLAnchorElement; id: number }[] = [];
+	const nameRefs: NameRefs = Object.create(null);
 
 	modules
 		.filter(module => {
@@ -67,14 +68,19 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 				apiIndex,
 				slugIndex,
 				docSetId,
-				linksToResolve
+				linksToResolve,
+				nameRefs
 			};
 
 			renderModule(module, 1, context);
 		});
 
+	// Fixup other links
 	for (let { link, id } of linksToResolve) {
 		const type = apiIndex[id];
+		if (id === -1) {
+			continue;
+		}
 		const module = findModule(id, apiIndex);
 
 		if (module === type) {
@@ -94,18 +100,78 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 	}
 }
 
-// Render a module page
+/**
+ * Get the module containing a given reflection
+ */
+function getContainingModule(reflection: Reflection) {
+	while (reflection && reflection.kindString !== 'External module') {
+		reflection = reflection.parent;
+	}
+	return <ContainerReflection>reflection;
+}
+
+/**
+ * Return the reflection ID corresponding to a given name.
+ */
+function getReflectionIdForName(
+	name: string,
+	context: RenderContext,
+	_module: ContainerReflection
+) {
+	const { nameRefs } = context;
+	if (!(name in nameRefs)) {
+		const reflection = findReflectionByName(name, context.api);
+		nameRefs[name] = reflection ? reflection.id : -1;
+	}
+	return nameRefs[name];
+}
+
+/**
+ * Recursively find a reflection in the API by dot-separated name
+ */
+function findReflectionByName(
+	name: string,
+	reflection: Reflection
+): Reflection | undefined {
+	let head = name;
+	let dot = head.indexOf('.');
+	if (dot !== -1) {
+		head = head.slice(0, dot);
+	}
+
+	if (isContainerReflection(reflection)) {
+		for (let child of reflection.children) {
+			const childName = child.name.replace(/^"|"$/g, '');
+			if (childName === head) {
+				if (head !== name) {
+					const tail = name.slice(dot + 1);
+					return findReflectionByName(tail, child);
+				} else {
+					return child;
+				}
+			}
+		}
+	}
+
+	return;
+}
+
+/**
+ * Render a module page
+ */
 function renderModule(
 	module: ContainerReflection,
 	level: number,
 	context: RenderContext
 ) {
-	const { renderHeading, slugIndex } = context;
+	const { renderHeading, slugIndex, page } = context;
 	const heading = renderHeading(level, module, context);
 	slugIndex[module.id] = heading.id;
 
 	if (hasComment(module.comment)) {
-		renderComment(module.comment, context);
+		page.element.appendChild(
+			renderComment(module.comment, module, context)
+		);
 	}
 
 	const exports = getExports(module);
@@ -168,7 +234,7 @@ function renderClass(
 	level: number,
 	context: RenderContext
 ) {
-	const { renderHeading, slugIndex } = context;
+	const { renderHeading, slugIndex, page } = context;
 	const heading = renderHeading(level, cls, context);
 	slugIndex[cls.id] = heading.id;
 
@@ -188,7 +254,9 @@ function renderClass(
 	}
 
 	if (hasComment(cls.comment)) {
-		renderComment(cls.comment, context);
+		page.element.appendChild(
+			renderComment(cls.comment, getContainingModule(cls), context)
+		);
 	}
 
 	const exports = getExports(cls);
@@ -205,8 +273,18 @@ function renderClass(
 	});
 }
 
+/**
+ * Indicate whetehr a reflection is a GenericReflection
+ */
 function isGenericReflection(type: Reflection): type is GenericReflection {
 	return (<any>type).typeParameter != null;
+}
+
+/**
+ * Indicate whetehr a reflection is a ContainerReflection
+ */
+function isContainerReflection(type: Reflection): type is ContainerReflection {
+	return (<any>type).children != null;
 }
 
 /**
@@ -256,7 +334,7 @@ function renderInterface(
 	level: number,
 	context: RenderContext
 ) {
-	const { renderHeading, slugIndex } = context;
+	const { renderHeading, slugIndex, page } = context;
 	const heading = renderHeading(level, iface, context);
 	slugIndex[iface.id] = heading.id;
 
@@ -265,19 +343,21 @@ function renderInterface(
 	}
 
 	if (hasComment(iface.comment)) {
-		renderComment(iface.comment, context);
+		page.element.appendChild(
+			renderComment(iface.comment, getContainingModule(iface), context)
+		);
 	}
 
 	if (iface.indexSignature) {
 		renderHeading(level + 1, 'Index signature', context);
 		// TypeDoc's typing is wrong -- this is always an array
 		const sig: SignatureReflection[] = <any>iface.indexSignature;
-		renderSignatures(sig, context);
+		renderSignatures(sig, iface, context);
 	}
 
 	if (iface.signatures) {
 		renderHeading(level + 1, 'Call signatures', context);
-		renderSignatures(iface.signatures, context);
+		renderSignatures(iface.signatures, iface, context);
 	}
 
 	const exports = getExports(iface);
@@ -315,7 +395,13 @@ function renderProperty(
 	renderCode(text, page);
 
 	if (hasComment(property.comment)) {
-		renderComment(property.comment, context);
+		page.element.appendChild(
+			renderComment(
+				property.comment,
+				getContainingModule(property),
+				context
+			)
+		);
 	}
 }
 
@@ -327,15 +413,21 @@ function renderFunction(
 	level: number,
 	context: RenderContext
 ) {
-	const { renderHeading, slugIndex } = context;
+	const { renderHeading, slugIndex, page } = context;
 	const heading = renderHeading(level, func, context);
 	slugIndex[func.id] = heading.id;
 
-	renderSignatures(func.signatures!, context);
+	renderSignatures(func.signatures!, func, context);
 
 	for (let signature of func.signatures!) {
 		if (hasComment(signature.comment)) {
-			renderComment(signature.comment, context);
+			page.element.appendChild(
+				renderComment(
+					signature.comment,
+					getContainingModule(func),
+					context
+				)
+			);
 			break;
 		}
 	}
@@ -346,6 +438,7 @@ function renderFunction(
  */
 function renderSignatures(
 	signatures: SignatureReflection[],
+	parent: ContainerReflection,
 	context: RenderContext
 ) {
 	const { page } = context;
@@ -364,7 +457,7 @@ function renderSignatures(
 		<ParameterReflection[]>[]
 	);
 	if (parameters.length > 0) {
-		renderParameterTable(parameters, context);
+		renderParameterTable(parameters, parent, context);
 	}
 }
 
@@ -373,6 +466,7 @@ function renderSignatures(
  */
 function renderParameterTable(
 	parameters: ParameterReflection[],
+	parent: ContainerReflection,
 	context: RenderContext
 ) {
 	const { page } = context;
@@ -382,9 +476,14 @@ function renderParameterTable(
 
 	if (params.length > 0) {
 		const rows = params.map(param => {
-			const comment =
-				hasComment(param.comment) &&
-				commentToHtml(param.comment, page.name);
+			let comment: Element | undefined;
+			if (hasComment(param.comment)) {
+				comment = renderComment(
+					param.comment,
+					getContainingModule(parent),
+					context
+				);
+			}
 			return [param.name, comment || '', param.defaultValue || ''];
 		});
 
@@ -424,11 +523,25 @@ function renderLiteral(
 /**
  * Render a declaration comment
  */
-function renderComment(comment: Comment, context: RenderContext) {
-	const { page } = context;
-	page.element.appendChild(
-		h('p', { innerHTML: commentToHtml(comment, page.name) })
-	);
+function renderComment(
+	comment: Comment,
+	module: ContainerReflection,
+	context: RenderContext
+) {
+	const { page, linksToResolve } = context;
+	const element = h('p', { innerHTML: commentToHtml(comment, page.name) });
+
+	const links = <NodeListOf<HTMLAnchorElement>>element.querySelectorAll('a');
+	for (let i = 0; i < links.length; i++) {
+		if (links[i].href.indexOf('api:') === 0) {
+			const link = links[i];
+			const name = link.href.slice('api:'.length);
+			const id = getReflectionIdForName(name, context, module);
+			linksToResolve.push({ link, id });
+		}
+	}
+
+	return element;
 }
 
 /**
@@ -438,22 +551,36 @@ function commentToHtml(comment: Comment, pageName: string) {
 	let parts: string[] = [];
 
 	if (comment.shortText) {
-		parts.push(renderText(comment.shortText));
+		parts.push(renderText(comment.shortText, pageName));
 	}
 
 	if (comment.text) {
-		parts.push(renderText(comment.text));
+		parts.push(renderText(comment.text, pageName));
 	}
 
 	return parts.join('');
+}
 
-	function renderText(text: string) {
-		// Fix jsdoc-style links
-		text = text.replace(/\[\[(.*?)]]/g, '[$1]($1)');
-		return renderMarkdown(text, {
-			info: { page: pageName, type: DocType.api }
-		});
-	}
+/**
+ * Render comment text
+ */
+function renderText(text: string, pageName: string) {
+	// Fix jsdoc-style links
+	text = text.replace(/\[\[(.*?)(?:\|(.*?))?]]/g, (_match, p1, p2) => {
+		let name = p2 || p1;
+		// If the target name is dotted or slashed (e.g., Executor.Config) and
+		// the user didn't provide a name, use the last element in the list as
+		// the link text
+		if (!p2 && (p1.indexOf('.') !== -1 || p1.indexOf('/') !== -1)) {
+			const lastDot = p1.lastIndexOf('.');
+			const lastSlash = p1.lastIndexOf('/');
+			name = p1.slice(Math.max(lastDot, lastSlash) + 1);
+		}
+		return `[${name}](api:${p1})`;
+	});
+	return renderMarkdown(text, {
+		info: { page: pageName, type: DocType.api }
+	});
 }
 
 /**
@@ -776,7 +903,7 @@ function getHeadingRenderer(slugify: Slugifier) {
 }
 
 // Create a DOM table
-function createTable(headings: string[], rows: string[][]) {
+function createTable(headings: string[], rows: (string | Element)[][]) {
 	return h('table.table.is-bordered', {}, [
 		h('thead', {}, [
 			h('tr', {}, [headings.map(heading => h('th', {}, heading))])
@@ -785,7 +912,17 @@ function createTable(headings: string[], rows: string[][]) {
 			'tbody',
 			{},
 			rows.map(row =>
-				h('tr', {}, row.map(html => h('td', { innerHTML: html })))
+				h(
+					'tr',
+					{},
+					row.map(content => {
+						if (typeof content === 'string') {
+							return h('td', { innerHTML: content });
+						} else {
+							return h('td', {}, content);
+						}
+					})
+				)
 			)
 		)
 	]);
@@ -829,6 +966,10 @@ interface HeadingRenderer {
 	): HTMLElement;
 }
 
+interface NameRefs {
+	[key: string]: number;
+}
+
 interface RenderContext {
 	page: DocPage;
 	renderHeading: HeadingRenderer;
@@ -837,6 +978,7 @@ interface RenderContext {
 	api: ProjectReflection;
 	docSetId: DocSetId;
 	linksToResolve: { link: HTMLAnchorElement; id: number }[];
+	nameRefs: NameRefs;
 }
 
 enum Relationship {
