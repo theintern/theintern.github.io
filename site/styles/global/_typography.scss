@@ -31,7 +31,7 @@ body {
 code:not(.hljs) {
 	border-radius: 3px;
 	font-size: $code-font-size;
-	padding: 0.2em;
+	padding: 0.1rem 0.3rem 0.2rem 0.3rem;
 	white-space: nowrap;
 }
 
@@ -47,8 +47,11 @@ ul li {
 	padding-bottom: 0.25em;
 }
 
-li p {
-	margin-bottom: 0;
+li {
+	p,
+	pre {
+		margin-bottom: 0.5rem;
+	}
 }
 
 li ul,

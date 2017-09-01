@@ -170,11 +170,17 @@
 		padding-right: 5vw;
 		padding-bottom: 1.5rem;
 
-		>h1 {
+		> h1 {
 			border-bottom: 1px solid $border;
 			padding-bottom: 1.5rem;
 			margin-bottom: 2rem;
 		}
+
+		ul,
+		ol {
+			padding-left: $gap/2;
+		}
+
 		ul ul,
 		ol ul,
 		code {
