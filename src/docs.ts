@@ -250,7 +250,7 @@ export function getLatestVersion(project: string) {
 		const versions = Object.keys(docSet.versions);
 		version = versions[versions.length - 1];
 	}
-	return { version, docs: docSet.versions[version] };
+	return version;
 }
 
 /**
@@ -263,13 +263,13 @@ export function getNextVersion(project: string) {
 	let version = docSet.next;
 	if (!version) {
 		const versions = Object.keys(docSet.versions);
-		const latest = getLatestVersion(project).version;
+		const latest = getLatestVersion(project);
 		const idx = versions.indexOf(latest);
 		if (idx !== -1 && versions[idx + 1]) {
 			version = versions[idx + 1];
 		}
 	}
-	return { version, docs: docSet.versions[version] };
+	return version;
 }
 
 /**

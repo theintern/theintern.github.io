@@ -82,7 +82,7 @@ ready.then(() => {
 		if (target.getAttribute('data-select-property') === 'project') {
 			// The project was changed
 			docSetId.project = select.value;
-			docSetId.version = getLatestVersion(select.value).version;
+			docSetId.version = getLatestVersion(select.value);
 		} else {
 			// The version was changed
 			docSetId.version = select.value;
@@ -306,8 +306,8 @@ function updateDocsetSelector() {
 			'select[data-select-property="version"]'
 		)!;
 		selector.innerHTML = '';
-		const latestVersion = getLatestVersion(pageId.project).version;
-		const nextVersion = getNextVersion(pageId.project).version;
+		const latestVersion = getLatestVersion(pageId.project);
+		const nextVersion = getNextVersion(pageId.project);
 		for (const version of versions) {
 			let text = `v${version}`;
 			if (version === latestVersion) {
@@ -519,8 +519,18 @@ function processHash() {
 			);
 			processHash();
 		} else {
-			// An invalid hash was specified -- show an error
-			showError(error);
+			const { project } = parseHash();
+			if (getProjects().indexOf(project) !== -1) {
+				const version = getLatestVersion(project);
+				updateHash(
+					createHash({ project, version, type: DocType.docs }),
+					HashEvent.rename
+				);
+				processHash();
+			} else {
+				// An invalid hash was specified -- show an error
+				showError(error);
+			}
 		}
 	}
 
