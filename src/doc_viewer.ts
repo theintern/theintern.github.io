@@ -505,6 +505,9 @@ function processHash() {
 					const newHash = createHash({ ...docSetId, type });
 					showError(error, newHash);
 				});
+		}).catch(error => {
+			const newHash = createHash({ ...docSetId, type: DocType.docs });
+			showError(error, newHash);
 		});
 	} catch (error) {
 		// The current hash doesn't identify a valid doc set
