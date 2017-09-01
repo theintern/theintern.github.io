@@ -499,7 +499,10 @@ function processHash() {
 					processHash();
 				})
 				.catch(error => {
-					showError(error);
+					let { type } = parseHash();
+					type = type in DocType ? type : DocType.docs;
+					const newHash = createHash({ ...docSetId, type });
+					showError(error, newHash);
 				});
 		});
 	} catch (error) {
@@ -517,7 +520,7 @@ function processHash() {
 		}
 	}
 
-	function showError(error: Error) {
+	function showError(error: Error, newHash?: string) {
 		console.error(error);
 		showMessage(
 			'Oops...',
@@ -525,7 +528,7 @@ function processHash() {
 				'The URL hash ',
 				h('code', {}, location.hash),
 				" isn't valid. Click ",
-				h('a', { href: '#' }, 'here'),
+				h('a', { href: `${newHash || '#'}` }, 'here'),
 				' to open the default doc set.'
 			]),
 			'error'
