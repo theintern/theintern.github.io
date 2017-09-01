@@ -432,7 +432,7 @@ function filterGhContent(text: string) {
 			if (right === -1) {
 				break;
 			}
-			start = right + marker[1].length + 1;
+			start = right + marker[1].length;
 			left = text.indexOf(marker[0], start);
 		}
 		if (right !== -1) {
