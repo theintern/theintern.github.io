@@ -203,9 +203,10 @@ function loadDocSet(id: DocSetId): Promise<DocSet> {
 		})
 		.then(config => {
 			if (config) {
-				Object.keys(config).forEach((key: keyof DocSet) => {
-					docSet[key] = config[key];
-				});
+				for (const key of Object.keys(config)) {
+					const prop = <keyof DocSet>key;
+					docSet[prop] = config[prop];
+				}
 			}
 
 			const pageNames = (docSet.pages = ['README.md'].concat(
@@ -261,7 +262,7 @@ function updateNavBarLinks(id: DocSetId) {
 	const docTypes = <DocType[]>Object.keys(DocType).filter(
 		type => !Number(type)
 	);
-	for (let type of docTypes) {
+	for (const type of docTypes) {
 		const link = <HTMLLinkElement>navbar.querySelector(
 			`.navbar-item[data-doc-type="${type}"]`
 		)!;
@@ -283,10 +284,10 @@ function updateDocsetSelector() {
 	)!;
 
 	if (selector.children.length === 0) {
-		getProjects().forEach(name => {
+		for (let name of getProjects()) {
 			const option = h('option', { value: name }, name);
 			selector.appendChild(option);
-		});
+		}
 	}
 
 	const option = <HTMLOptionElement>selector.querySelector(
@@ -307,7 +308,7 @@ function updateDocsetSelector() {
 		selector.innerHTML = '';
 		const latestVersion = getLatestVersion(pageId.project).version;
 		const nextVersion = getNextVersion(pageId.project).version;
-		versions.forEach(version => {
+		for (const version of versions) {
 			let text = `v${version}`;
 			if (version === latestVersion) {
 				text += ' (release)';
@@ -321,7 +322,7 @@ function updateDocsetSelector() {
 					text
 				)
 			);
-		});
+		}
 	} else {
 		viewer.classList.remove('multi-version');
 	}

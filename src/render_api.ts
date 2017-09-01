@@ -48,35 +48,35 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 	const linksToResolve: { link: HTMLAnchorElement; id: number }[] = [];
 	const nameRefs: NameRefs = Object.create(null);
 
-	modules
-		.filter(module => {
+	for (const module of modules) {
+		if (getExports(module).length === 0 && !hasComment(module)) {
 			// Only show modules that have exports
-			return getExports(module).length > 0;
-		})
-		.forEach(module => {
-			const renderHeading = getHeadingRenderer(createSlugifier());
-			const name = module.name.replace(/^"/, '').replace(/"$/, '');
-			pages.push(name);
-			pageIndex[module.id] = name;
+			continue;
+		}
 
-			const element = h('div');
-			const page = (cache[name] = { name, title: name, element });
-			const context: RenderContext = {
-				page,
-				renderHeading,
-				api: data,
-				apiIndex,
-				slugIndex,
-				docSetId,
-				linksToResolve,
-				nameRefs
-			};
+		const renderHeading = getHeadingRenderer(createSlugifier());
+		const name = module.name.replace(/^"/, '').replace(/"$/, '');
+		pages.push(name);
+		pageIndex[module.id] = name;
 
-			renderModule(module, 1, context);
-		});
+		const element = h('div');
+		const page = (cache[name] = { name, title: name, element });
+		const context: RenderContext = {
+			page,
+			renderHeading,
+			api: data,
+			apiIndex,
+			slugIndex,
+			docSetId,
+			linksToResolve,
+			nameRefs
+		};
+
+		renderModule(module, 1, context);
+	}
 
 	// Fixup other links
-	for (let { link, id } of linksToResolve) {
+	for (const { link, id } of linksToResolve) {
 		const type = apiIndex[id];
 		if (id === -1) {
 			continue;
@@ -140,7 +140,7 @@ function findReflectionByName(
 	}
 
 	if (isContainerReflection(reflection)) {
-		for (let child of reflection.children) {
+		for (const child of reflection.children) {
 			const childName = child.name.replace(/^"|"$/g, '');
 			if (childName === head) {
 				if (head !== name) {
@@ -168,7 +168,7 @@ function renderModule(
 	const heading = renderHeading(level, module, context);
 	slugIndex[module.id] = heading.id;
 
-	if (hasComment(module.comment)) {
+	if (hasComment(module)) {
 		page.element.appendChild(
 			renderComment(module.comment, module, context)
 		);
@@ -178,59 +178,38 @@ function renderModule(
 
 	const global = exports.filter(ex => ex.name === '__global')[0];
 	if (global) {
-		renderGlobals(global, level + 1, context);
+		renderHeading(level, 'Globals', context);
+		for (const child of global.children.slice().sort(nameSorter)) {
+			renderProperty(child, level + 1, context);
+		}
 	}
 
 	const classes = exports
 		.filter(ex => ex.kindString === 'Class')
 		.sort(nameSorter);
-	if (classes.length > 0) {
-		classes.forEach(cls => {
-			renderClass(cls, level + 1, context);
-		});
+	for (const cls of classes) {
+		renderClass(cls, level + 1, context);
 	}
 
 	const interfaces = exports
 		.filter(ex => ex.kindString === 'Interface')
 		.sort(nameSorter);
-	if (interfaces.length > 0) {
-		interfaces.forEach(iface => {
-			renderInterface(iface, level + 1, context);
-		});
+	for (const iface of interfaces) {
+		renderInterface(iface, level + 1, context);
 	}
 
 	const functions = exports
 		.filter(ex => ex.kindString === 'Function')
 		.sort(nameSorter);
-	if (functions.length > 0) {
-		functions.forEach(func => {
-			renderFunction(func, level + 1, context);
-		});
+	for (const func of functions) {
+		renderFunction(func, level + 1, context);
 	}
 
 	const constants = exports
 		.filter(ex => ex.kindString === 'Object literal')
 		.sort(nameSorter);
-	if (constants.length > 0) {
-		constants.forEach(constant => {
-			renderLiteral(constant, level + 1, context);
-		});
-	}
-}
-
-/**
- * Render global variables
- */
-function renderGlobals(
-	global: DeclarationReflection,
-	level: number,
-	context: RenderContext
-) {
-	const { renderHeading } = context;
-	renderHeading(level, 'Globals', context);
-
-	for (let child of global.children.slice().sort(nameSorter)) {
-		renderProperty(child, level + 1, context);
+	for (const constant of constants) {
+		renderLiteral(constant, level + 1, context);
 	}
 }
 
@@ -261,7 +240,7 @@ function renderClass(
 		);
 	}
 
-	if (hasComment(cls.comment)) {
+	if (hasComment(cls)) {
 		page.element.appendChild(
 			renderComment(cls.comment, getContainingModule(cls), context)
 		);
@@ -274,21 +253,21 @@ function renderClass(
 			ex => ex.kindString === 'Property' || ex.kindString === 'Accessor'
 		)
 		.sort(nameSorter);
-	properties.forEach(property => {
+	for (const property of properties) {
 		renderProperty(property, level + 1, context);
-	});
+	}
 
 	const constructors = exports.filter(ex => ex.kindString === 'Constructor');
-	constructors.forEach(ctor => {
+	for (const ctor of constructors) {
 		renderMethod(ctor, level + 1, context);
-	});
+	}
 
 	const methods = exports
 		.filter(ex => ex.kindString === 'Method')
 		.sort(nameSorter);
-	methods.forEach(method => {
+	for (const method of methods) {
 		renderMethod(method, level + 1, context);
-	});
+	}
 }
 
 /**
@@ -335,7 +314,7 @@ function renderParent(
 	relationship: Relationship,
 	context: RenderContext
 ) {
-	for (let type of types) {
+	for (const type of types) {
 		const p = h('p.api-metadata', {}, [
 			h('span.api-label', {}, `${relationship}: `)
 		]);
@@ -360,7 +339,7 @@ function renderInterface(
 		renderParent(iface.extendedTypes, Relationship.Extends, context);
 	}
 
-	if (hasComment(iface.comment)) {
+	if (hasComment(iface)) {
 		page.element.appendChild(
 			renderComment(iface.comment, getContainingModule(iface), context)
 		);
@@ -383,21 +362,21 @@ function renderInterface(
 	const properties = exports
 		.filter(ex => ex.kindString === 'Property')
 		.sort(nameSorter);
-	properties.forEach(property => {
+	for (const property of properties) {
 		renderProperty(property, level + 1, context);
-	});
+	}
 
 	const constructors = exports.filter(ex => ex.kindString === 'Constructor');
-	constructors.forEach(ctor => {
+	for (const ctor of constructors) {
 		renderMethod(ctor, level + 1, context);
-	});
+	}
 
 	const methods = exports
 		.filter(ex => ex.kindString === 'Method')
 		.sort(nameSorter);
-	methods.forEach(method => {
+	for (const method of methods) {
 		renderMethod(method, level + 1, context);
-	});
+	}
 }
 
 /**
@@ -425,17 +404,17 @@ function renderProperty(
 			access.canRead = true;
 			const sig = (<any>property.getSignature)[0];
 			typeString = typeToString(sig.type);
-			comment = sig.comment;
+			if (hasComment(sig)) {
+				comment = sig.comment;
+			}
 		}
 		if (property.setSignature) {
 			access.canWrite = true;
 			const sig = (<any>property.setSignature)[0];
 			if (!typeString) {
-				typeString = typeToString(
-					sig.parameters[0].type
-				);
+				typeString = typeToString(sig.parameters[0].type);
 			}
-			if (sig.comment && !comment) {
+			if (!comment && hasComment(sig)) {
 				comment = sig.comment;
 			}
 		}
@@ -460,7 +439,7 @@ function renderProperty(
 
 	page.element.appendChild(codeP);
 
-	if (comment && hasComment(comment)) {
+	if (comment) {
 		page.element.appendChild(
 			renderComment(comment, getContainingModule(property), context)
 		);
@@ -481,8 +460,8 @@ function renderFunction(
 
 	renderSignatures(func.signatures!, func, context);
 
-	for (let signature of func.signatures!) {
-		if (hasComment(signature.comment)) {
+	for (const signature of func.signatures!) {
+		if (hasComment(signature)) {
 			page.element.appendChild(
 				renderComment(
 					signature.comment,
@@ -504,7 +483,7 @@ function renderSignatures(
 	context: RenderContext
 ) {
 	const { page } = context;
-	for (let sig of signatures) {
+	for (const sig of signatures) {
 		const html = hljs.highlight('typescript', signatureToString(sig), true)
 			.value;
 		page.element.appendChild(
@@ -533,13 +512,13 @@ function renderParameterTable(
 ) {
 	const { page } = context;
 	const params = parameters.filter(param => {
-		return hasComment(param.comment) || param.defaultValue;
+		return hasComment(param) || param.defaultValue;
 	});
 
 	if (params.length > 0) {
 		const rows = params.map(param => {
 			let comment: Element | undefined;
-			if (hasComment(param.comment)) {
+			if (hasComment(param)) {
 				comment = renderComment(
 					param.comment,
 					getContainingModule(parent),
@@ -988,7 +967,11 @@ function createTable(headings: string[], rows: (string | Element)[][]) {
 	]);
 }
 
-function hasComment(comment: Comment) {
+/**
+ * Indicate whether a reflection has a comment element wiht content
+ */
+function hasComment(reflection: Reflection) {
+	const comment = reflection.comment;
 	return comment && (comment.text || comment.shortText);
 }
 
@@ -998,19 +981,19 @@ function hasComment(comment: Comment) {
  */
 function createApiIndex(data: ProjectReflection) {
 	const index: ApiIndex = {};
-	data.children.forEach(child => {
+	for (const child of data.children) {
 		child.parent = data;
 		walkTree(child);
-	});
+	}
 	return index;
 
 	function walkTree(data: DeclarationReflection) {
 		index[data.id] = data;
 		if (data.children) {
-			data.children.forEach(child => {
+			for (const child of data.children) {
 				child.parent = data;
 				walkTree(child);
-			});
+			}
 		}
 	}
 }

@@ -299,7 +299,7 @@ export function renderMenu(id: DocSetId, type: DocType, maxDepth = 3) {
 	const cache = type === 'api' ? docSet.apiCache! : docSet.pageCache!;
 	const menu = h('ul.menu-list', { menuDepth: maxDepth });
 
-	pageNames.forEach(pageName => {
+	for (let pageName of pageNames) {
 		const page = cache[pageName];
 		let root: MenuNode;
 		try {
@@ -357,7 +357,7 @@ export function renderMenu(id: DocSetId, type: DocType, maxDepth = 3) {
 		}
 
 		menu.appendChild(li);
-	});
+	}
 
 	return menu;
 }
@@ -388,7 +388,7 @@ export function renderDocPage(text: string, pageName: string, id: DocSetId) {
 function renderSubMenu(children: MenuNode[], pageId: PageId) {
 	const ul = h('ul');
 
-	children.forEach(child => {
+	for (let child of children) {
 		const heading = child.element;
 		const li = createLinkItem(heading, {
 			...pageId,
@@ -398,7 +398,7 @@ function renderSubMenu(children: MenuNode[], pageId: PageId) {
 			li.appendChild(renderSubMenu(child.children, pageId));
 		}
 		ul.appendChild(li);
-	});
+	}
 
 	return ul;
 }
