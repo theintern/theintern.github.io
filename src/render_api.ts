@@ -178,7 +178,7 @@ function renderModule(
 
 	const global = exports.filter(ex => ex.name === '__global')[0];
 	if (global) {
-		renderGlobals(global, level, context);
+		renderGlobals(global, level + 1, context);
 	}
 
 	const classes = exports
