@@ -209,7 +209,7 @@ function renderModule(
 		.filter(ex => ex.kindString === 'Object literal')
 		.sort(nameSorter);
 	for (const constant of constants) {
-		renderLiteral(constant, level + 1, context);
+		renderValue(constant, level + 1, context);
 	}
 }
 
@@ -539,7 +539,7 @@ function renderParameterTable(
 /**
  * Render a literal value
  */
-function renderLiteral(
+function renderValue(
 	value: DeclarationReflection,
 	level: number,
 	context: RenderContext
@@ -547,6 +547,12 @@ function renderLiteral(
 	const { page, renderHeading, slugIndex } = context;
 	const heading = renderHeading(level, value, context);
 	slugIndex[value.id] = heading.id;
+
+	if (hasComment(value)) {
+		page.element.appendChild(
+			renderComment(value.comment, value, context)
+		);
+	}
 
 	if (value.kindString === 'Object literal') {
 		const parts = value.children.map(child => {
