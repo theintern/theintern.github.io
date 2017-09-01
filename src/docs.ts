@@ -118,11 +118,18 @@ export function getCurrentDocSetId() {
 		throw new Error(`Missing or invalid project: ${project}`);
 	}
 
-	if (!version || !docSets[project].versions[version]) {
-		throw new Error(`Missing or invalid version: ${version}`);
+	if (!version) {
+		throw new Error(`Missing version`);
 	}
 
-	return { project, version };
+	const projectDocs = docSets[project];
+
+	let realVersion = resolveVersion({ project, version });
+	if (!projectDocs.versions[realVersion]) {
+		throw new Error(`Invalid version: ${version}`);
+	}
+
+	return { project, version: realVersion };
 }
 
 /**
@@ -133,7 +140,8 @@ export function getDocSet(id: DocSetId) {
 		throw new Error('getDocSet called with invalid ID');
 	}
 	const project = docSets[id.project];
-	return project.versions[id.version];
+	let version = resolveVersion(id);
+	return project.versions[version];
 }
 
 /**
@@ -170,12 +178,13 @@ export function getDocVersionUrl(id: DocSetId) {
 		throw new Error('Invalid docSet');
 	}
 
-	const docSet = docSets[id.project];
-	const dv = docSet.versions[id.version];
+	const projectDocs = docSets[id.project];
+	const version = resolveVersion(id);
+	const dv = projectDocs.versions[version];
 	if (dv.url) {
 		return dv.url;
 	}
-	return `${docSet.url}/tree/${dv.branch}`;
+	return `${projectDocs.url}/tree/${dv.branch}`;
 }
 
 /**
@@ -189,13 +198,17 @@ export function getDocBaseUrl(id: DocSetId) {
 		throw new Error('Invalid docSet');
 	}
 
-	const docSet = docSets[id.project];
-	const dv = docSet.versions[id.version];
+	const projectDocs = docSets[id.project];
+	const version = resolveVersion(id);
+	const dv = projectDocs.versions[version];
 	if (dv.docBase) {
 		return dv.docBase;
 	}
 
-	const url = docSet.url.replace(/\/\/github\./, '//raw.githubusercontent.');
+	const url = projectDocs.url.replace(
+		/\/\/github\./,
+		'//raw.githubusercontent.'
+	);
 	return `${url}/${dv.branch}/`;
 }
 
@@ -210,7 +223,12 @@ export function isValidDocSetId(id: Partial<DocSetId>): id is DocSetId {
 		return false;
 	}
 
-	if (!version || !docSets[project].versions[version]) {
+	if (!version) {
+		return false;
+	}
+
+	const realVersion = resolveVersion({ project, version });
+	if (!docSets[project].versions[realVersion]) {
 		return false;
 	}
 
@@ -297,6 +315,19 @@ export function getProjectUrl(project: string) {
 		throw new Error(`Invalid project: ${project}`);
 	}
 	return docSets[project].url;
+}
+
+/**
+ * Resolve a version for a project
+ */
+function resolveVersion(id: DocSetId) {
+	if (id.version === 'latest') {
+		return getLatestVersion(id.project);
+	}
+	if (id.version === 'next') {
+		return getNextVersion(id.project);
+	}
+	return id.version;
 }
 
 declare const docSets: { [name: string]: ProjectDocs };
