@@ -7,6 +7,7 @@ export enum DocType {
 
 export interface ProjectDocs {
 	url: string;
+	logo?: string;
 	latest: string;
 	next: string;
 	versions: { [version: string]: DocSet };
@@ -305,6 +306,16 @@ export function getVersions(project: string) {
 		throw new Error(`Invalid project: ${project}`);
 	}
 	return Object.keys(docSets[project].versions);
+}
+
+/**
+ * Return a logo image URL for a project
+ */
+export function getProjectLogo(project: string) {
+	if (!docSets[project]) {
+		throw new Error(`Invalid project: ${project}`);
+	}
+	return docSets[project].logo;
 }
 
 /**

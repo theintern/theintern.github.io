@@ -20,7 +20,8 @@ import {
 	getDocBaseUrl,
 	getDocVersionUrl,
 	getLatestVersion,
-	getNextVersion
+	getNextVersion,
+	getProjectLogo
 } from './docs';
 import { renderApiPages } from './render_api';
 import { renderMenu, renderDocPage } from './render';
@@ -177,7 +178,7 @@ function loadDocSet(id: DocSetId): Promise<DocSet> {
 	// updated
 	showMessage(
 		'',
-		h('img.fa-spin.intern-logo', { src: '/images/intern-logo.svg' }),
+		'',
 		'loading'
 	);
 
@@ -189,7 +190,9 @@ function loadDocSet(id: DocSetId): Promise<DocSet> {
 	return fetch(`${docBase}README.md`)
 		.then(response => response.text())
 		.then(readme => {
-			renderPage(readme, 'README.md', id);
+			const logo = getProjectLogo(id.project);
+			renderPage(readme, 'README.md', id, logo);
+
 			const matcher = /^<!--\s+doc-viewer-config\s/m;
 			if (matcher.test(readme)) {
 				const result = matcher.exec(readme)!;
@@ -237,11 +240,15 @@ function loadDocSet(id: DocSetId): Promise<DocSet> {
 			return docSet;
 		});
 
-	function renderPage(text: string, name: string, id: DocSetId) {
+	function renderPage(text: string, name: string, id: DocSetId, logo?: string) {
 		return ready.then(() => {
 			const element = renderDocPage(text, name, id);
 			const h1 = element.querySelector('h1');
 			const title = (h1 && h1.textContent) || id.project;
+			if (logo && h1) {
+				const logoImg = h('img.logo', { src: logo });
+				h1.insertBefore(logoImg, h1.firstChild);
+			}
 			cache[name] = { name, element, title };
 		});
 	}
