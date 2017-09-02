@@ -729,7 +729,16 @@ function signatureToString(
 			name = '';
 		}
 
-		let text = `${name}(`;
+		let text = `${name}`;
+
+		if (isGenericReflection(signature)) {
+			const typeParams = signature.typeParameter
+				.map(param => typeParameterToString(param))
+				.join(', ');
+			text += `<${typeParams}>`;
+		}
+
+		text += '(';
 		if (signature.parameters) {
 			const params = signature.parameters.map(param => {
 				const optional = param.flags.isOptional ? '?' : '';
@@ -738,10 +747,12 @@ function signatureToString(
 			text += params.join(', ');
 		}
 
-		let returnType = typeToString(signature.type);
+		text += `)`;
 
-		const sep = isParameter ? ' => ' : ': ';
-		text += `)${sep}${returnType}`;
+		if (signature.kindString !== 'Constructor signature') {
+			const sep = isParameter ? ' => ' : ': ';
+			text += `${sep}${typeToString(signature.type)}`;
+		}
 
 		return text;
 	}
