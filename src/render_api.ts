@@ -655,6 +655,11 @@ function commentToHtml(comment: Comment, pageName: string) {
 		parts.push(renderText(comment.text, pageName));
 	}
 
+	if (comment.returns) {
+		const returns = comment.returns[0].toLowerCase() + comment.returns.slice(1);
+		parts.push(renderText(`Returns ${returns}`, pageName));
+	}
+
 	return parts.join('');
 }
 
