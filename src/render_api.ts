@@ -29,6 +29,8 @@ import {
 	Slugifier
 } from './render';
 
+const preferredSignatureWidth = 60;
+
 hljs.registerLanguage(
 	'typescript',
 	require('highlight.js/lib/languages/typescript')
@@ -235,20 +237,34 @@ function renderClass(
 	const heading = renderHeading(level, cls, context);
 	slugIndex[cls.id] = heading.id;
 
-	if (cls.extendedTypes) {
-		renderParent(cls.extendedTypes, Relationship.Extends, context);
-	}
+	let declaration = `class ${cls.name}`;
 
 	if (isGenericReflection(cls)) {
 		const typeParams = cls.typeParameter
 			.map(param => typeParameterToString(param))
 			.join(', ');
-		const declaration = `${cls.name}<${typeParams}>`;
-		const html = hljs.highlight('typescript', declaration, true).value;
-		context.page.element.appendChild(
-			h('p', {}, h('code.hljs.lang-typescript', { innerHTML: html }))
-		);
+		declaration += `<${typeParams}>`;
 	}
+
+	if (cls.extendedTypes) {
+		const types = cls.extendedTypes
+			.map(type => typeToString(type))
+			.join(', ');
+		declaration += ` extends ${types}`;
+	}
+
+	if (cls.implementedTypes) {
+		const types = cls.implementedTypes
+			.map(type => typeToString(type))
+			.join(', ');
+		declaration += ` implements ${types}`;
+	}
+
+	const formatted = formatDeclaration(declaration);
+	const html = hljs.highlight('typescript', formatted, true).value;
+	context.page.element.appendChild(
+		h('pre', {}, h('code.hljs.lang-typescript', { innerHTML: html }))
+	);
 
 	if (hasComment(cls)) {
 		page.element.appendChild(
@@ -345,9 +361,34 @@ function renderInterface(
 	const heading = renderHeading(level, iface, context);
 	slugIndex[iface.id] = heading.id;
 
-	if (iface.extendedTypes) {
-		renderParent(iface.extendedTypes, Relationship.Extends, context);
+	let declaration = `interface ${iface.name}`;
+
+	if (isGenericReflection(iface)) {
+		const typeParams = iface.typeParameter
+			.map(param => typeParameterToString(param))
+			.join(', ');
+		declaration += `<${typeParams}>`;
 	}
+
+	if (iface.extendedTypes) {
+		const types = iface.extendedTypes
+			.map(type => typeToString(type))
+			.join(', ');
+		declaration += ` extends ${types}`;
+	}
+
+	if (iface.implementedTypes) {
+		const types = iface.implementedTypes
+			.map(type => typeToString(type))
+			.join(', ');
+		declaration += ` implements ${types}`;
+	}
+
+	const formatted = formatDeclaration(declaration);
+	const html = hljs.highlight('typescript', formatted, true).value;
+	context.page.element.appendChild(
+		h('pre', {}, h('code.hljs.lang-typescript', { innerHTML: html }))
+	);
 
 	if (hasComment(iface)) {
 		page.element.appendChild(
@@ -494,10 +535,11 @@ function renderSignatures(
 ) {
 	const { page } = context;
 	for (const sig of signatures) {
-		const html = hljs.highlight('typescript', signatureToString(sig), true)
-			.value;
+		const text = signatureToString(sig);
+		const formatted = formatSignature(text);
+		const html = hljs.highlight('typescript', formatted, true).value;
 		page.element.appendChild(
-			h('p', {}, [h('code.hljs.lang-typescript', { innerHTML: html })])
+			h('pre', {}, [h('code.hljs.lang-typescript', { innerHTML: html })])
 		);
 	}
 
@@ -559,9 +601,7 @@ function renderValue(
 	slugIndex[value.id] = heading.id;
 
 	if (hasComment(value)) {
-		page.element.appendChild(
-			renderComment(value.comment, value, context)
-		);
+		page.element.appendChild(renderComment(value.comment, value, context));
 	}
 
 	if (value.kindString === 'Object literal') {
@@ -880,19 +920,27 @@ function findModule(id: number, index: ApiIndex) {
 
 /**
  * Get all the exported, public members from an API item. Members
- * prefixed by '_', and inherited members, are currently excluded.
+ * prefixed by '_' and those inherited from external sources are currently
+ * excluded.
  */
-function getExports(entry: ContainerReflection) {
-	if (!entry.children) {
+function getExports(reflection: ContainerReflection) {
+	if (!reflection.children) {
 		return [];
 	}
-	return entry.children.filter(
-		child =>
-			(child.flags.isExported &&
-				// Don't include private (by convention) members
-				!/^_/.test(child.name)) ||
-			child.name === '__global'
-	);
+	const exports: DeclarationReflection[] = [];
+	for (let child of reflection.children) {
+		if (child.name === '_global') {
+			exports.push(child);
+		}
+		if (child.flags.isExported) {
+			const source = child.sources[0].fileName;
+			// Don't include private (by convention) members
+			if (!/^_/.test(child.name) && !/node_modules\//.test(source)) {
+				exports.push(child);
+			}
+		}
+	}
+	return exports;
 }
 
 // Create a heading element at a given level, including an anchor ID.
@@ -1025,6 +1073,206 @@ function nameSorter(a: Reflection, b: Reflection) {
 		return 1;
 	}
 	return 0;
+}
+
+/**
+ * Format a TypeScript class or interface declaration.
+ *
+ * This is an extremely simple format function whose goal is to keep
+ * declaration lines from being too long.
+ */
+function formatDeclaration(text: string) {
+	if (text.length <= preferredSignatureWidth) {
+		return text;
+	}
+
+	return formatSignature(text);
+}
+
+/**
+ * Format a TypeScript method signature.
+ *
+ * This is an extremely simple format function whose goal is to keep
+ * declaration lines from being too long.
+ */
+function formatSignature(text: string) {
+	if (text.length <= preferredSignatureWidth) {
+		return text;
+	}
+
+	let output = [text];
+	let input: string[] = [];
+	let changed = true;
+
+	while (
+		output.some(line => line.length > preferredSignatureWidth) &&
+		changed
+	) {
+		input = output;
+		output = [];
+		changed = false;
+
+		while (input.length > 0) {
+			const text = input.shift()!;
+			if (text.length <= preferredSignatureWidth) {
+				output.push(text);
+			} else {
+				const range = findSplitCandidate(text);
+				if (range) {
+					const indent = getIndent(text);
+					output.push(text.slice(0, range[0]));
+					output.push(
+						...splitList(text, range[0], range[1]).map(line => {
+							return `${indent}    ${line}`;
+						})
+					);
+					output.push(`${indent}${text.slice(range[1])}`);
+					changed = true;
+				} else {
+					output.push(text);
+				}
+			}
+		}
+	}
+
+	return output.join('\n');
+}
+
+/**
+ * Find the best group expression to split in a given line of code
+ */
+function findSplitCandidate(text: string) {
+	let width = 0;
+	let best: number[] | undefined;
+	let hasGroups = true;
+
+	for (let i = 0; i < text.length; i++) {
+		const char = text[i];
+		let end = i;
+		if (char === '(' || char === '{' || char === '<') {
+			end = findGroupEnd(text, i + 1);
+		}
+		if (end > i) {
+			hasGroups = true;
+			if (canSplit(text, i + 1, end)) {
+				if (!best || end - i > width) {
+					if (text[i + 1] === ' ') {
+						// There are spaces around the expression, like { foo }
+						best = [i + 2, end - 1];
+					} else {
+						best = [i + 1, end];
+					}
+					width = end - i;
+				}
+			}
+		}
+	}
+
+	if (!best && hasGroups) {
+		// There wasn't a list to split, so split the longest group
+		for (let i = 0; i < text.length; i++) {
+			const char = text[i];
+			let end = i;
+			if (char === '(' || char === '{' || char === '<') {
+				end = findGroupEnd(text, i + 1);
+			}
+			if (end > i) {
+				if (!best || end - i > width) {
+					if (text[i + 1] === ' ') {
+						// There are spaces around the expression, like { foo }
+						best = [i + 2, end - 1];
+					} else {
+						best = [i + 1, end];
+					}
+					width = end - i;
+				}
+			}
+		}
+	}
+
+	return best;
+}
+
+/**
+ * Find the end of a group expression
+ */
+function findGroupEnd(text: string, start: number) {
+	let depth = 1;
+	for (let i = start; i < text.length; i++) {
+		const char = text[i];
+		if (char === '(' || char === '{' || char === '<') {
+			depth++;
+		} else if (
+			char === ')' ||
+			char === '}' ||
+			(char === '>' && text[i - 1] !== '=')
+		) {
+			depth--;
+		}
+		if (depth === 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/**
+ * Return true if the given segment be split as an expression list
+ */
+function canSplit(text: string, start: number, end: number) {
+	let depth = 0;
+	for (let i = start; i < end; i++) {
+		const char = text[i];
+		if (char === '(' || char === '{' || char === '<') {
+			depth++;
+		} else if (
+			char === ')' ||
+			char === '}' ||
+			(char === '>' && text[i - 1] !== '=')
+		) {
+			depth--;
+		} else if (char === ',' && depth === 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
+ * Split a list of TS expressions
+ */
+function splitList(text: string, start: number, end: number) {
+	let depth = 0;
+	let partStart = start;
+	const parts: string[] = [];
+	for (let i = start; i < end; i++) {
+		const char = text[i];
+		if (char === '(' || char === '{' || char === '<') {
+			depth++;
+		} else if (
+			char === ')' ||
+			char === '}' ||
+			(char === '>' && text[i - 1] !== '=')
+		) {
+			depth--;
+		} else if (char === ',' && depth === 0) {
+			parts.push(text.slice(partStart, i + 1));
+			partStart = i + 2;
+		}
+	}
+	parts.push(text.slice(partStart, end));
+	return parts;
+}
+
+/**
+ * Get the initial blank space at the start of a string
+ */
+function getIndent(text: string) {
+	const textStart = text.search(/\S/);
+	if (textStart !== -1) {
+		return text.slice(0, textStart);
+	}
+	return '';
 }
 
 type ApiIndex = { [key: number]: DeclarationReflection };

@@ -548,7 +548,7 @@ function processHash() {
 			h('span', {}, [
 				'The URL hash ',
 				h('code', {}, location.hash),
-				" isn't valid. Click ",
+				' isn\'t valid. Click ',
 				h('a', { href: `${newHash || '#'}` }, 'here'),
 				' to open the default doc set.'
 			]),
