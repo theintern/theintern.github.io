@@ -974,7 +974,7 @@ function getHeadingRenderer(slugify: Slugifier) {
 		} else if (type === 'Interface') {
 			classes.push('is-type-interface');
 		} else if (type === 'Object literal') {
-			classes.push('is-type-constant');
+			classes.push('is-type-value');
 		}
 
 		const text =
