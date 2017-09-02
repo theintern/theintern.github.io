@@ -12,6 +12,15 @@ import {
 } from './docs';
 import { createHash } from './hash';
 
+hljs.registerLanguage(
+	'typescript',
+	require('highlight.js/lib/languages/typescript')
+);
+hljs.registerLanguage(
+	'javascript',
+	require('highlight.js/lib/languages/javascript')
+);
+
 export interface Slugifier {
 	(url: string): string;
 }

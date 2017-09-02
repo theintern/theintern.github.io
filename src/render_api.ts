@@ -17,10 +17,7 @@ import { ReferenceType } from 'typedoc/dist/lib/models/types/reference';
 import { IntrinsicType } from 'typedoc/dist/lib/models/types/intrinsic';
 import { UnknownType } from 'typedoc/dist/lib/models/types/unknown';
 import * as h from 'hyperscript';
-
-interface GenericReflection extends Reflection {
-	typeParameter: TypeParameterReflection[];
-}
+import * as hljs from 'highlight.js';
 
 import { DocSetId, DocPage, DocType, getDocSet } from './docs';
 import { createHash } from './hash';
@@ -31,6 +28,19 @@ import {
 	renderMarkdown,
 	Slugifier
 } from './render';
+
+hljs.registerLanguage(
+	'typescript',
+	require('highlight.js/lib/languages/typescript')
+);
+hljs.registerLanguage(
+	'javascript',
+	require('highlight.js/lib/languages/javascript')
+);
+
+interface GenericReflection extends Reflection {
+	typeParameter: TypeParameterReflection[];
+}
 
 /**
  * Render the API pages for a docset
