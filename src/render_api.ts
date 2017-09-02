@@ -673,7 +673,12 @@ function renderText(text: string, pageName: string) {
 			const lastSlash = p1.lastIndexOf('/');
 			name = p1.slice(Math.max(lastDot, lastSlash) + 1);
 		}
-		return `[${name}](api:${p1})`;
+		if (/^https?:\/\//.test(p1)) {
+			// p1 is an absolute address
+			return `[${name}](${p1})`;
+		} else {
+			return `[${name}](api:${p1})`;
+		}
 	});
 	return renderMarkdown(text, {
 		info: { page: pageName, type: DocType.api }
