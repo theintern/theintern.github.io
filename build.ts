@@ -21,14 +21,14 @@ const publicDir = 'public';
 	let publish = false;
 	let serve = false;
 	let remote = 'origin';
-	let production = process.env.NODE_ENV === 'production';
 
 	process.argv.slice(2).forEach(arg => {
 		if (arg === 'serve') {
 			serve = true;
 		} else if (/^publish=?/.test(arg)) {
 			publish = true;
-			production = true;
+			// Always publish production code
+			process.env.NODE_ENV = 'production';
 		} else if (/^remote=/.test(arg)) {
 			remote = arg.split('=')[1];
 		} else if (/\bhelp$/.test(arg) || arg === '-h') {
@@ -47,6 +47,7 @@ const publicDir = 'public';
 	}
 
 	if (serve) {
+		await runMetalsmith();
 		await runServer();
 	} else {
 		if (publish) {
@@ -60,7 +61,7 @@ const publicDir = 'public';
 			execSync('git checkout -q master', { cwd: publishDir });
 		}
 
-		await runMetalsmith({ production, destination: publishDir });
+		await runMetalsmith({ destination: publishDir });
 		await runWebpack({ destination: publishDir });
 
 		if (publish) {
@@ -92,7 +93,7 @@ function runServer() {
 	const compiler = webpack(webpackConfig);
 	const webpackMiddlware = WebpackMiddleware(compiler, {
 		publicPath: webpackConfig.output!.publicPath!,
-		noInfo: false,
+		noInfo: true,
 		stats: false
 	});
 
@@ -104,6 +105,7 @@ function runServer() {
 				timeout: 100000
 			});
 		} else {
+			console.log('Webpack finished');
 			browserSync.reload();
 		}
 	});
@@ -126,8 +128,6 @@ function runServer() {
 			}
 		]
 	});
-
-	runMetalsmith();
 }
 
 function runWebpack(options?: { destination?: string }) {
@@ -144,22 +144,22 @@ function runWebpack(options?: { destination?: string }) {
 				const info = stats.toJson();
 				reject(new Error(info.errors));
 			} else {
+				console.log('Webpack finished');
 				resolve();
 			}
-			console.log('Webpack finished');
 		});
 	});
 }
 
 function runMetalsmith(options?: {
-	production?: boolean;
 	clean?: boolean;
 	destination?: string;
 }) {
 	console.log('Running Metalsmith...');
 
-	const { production = false, clean = true, destination = publicDir } =
+	const { clean = true, destination = publicDir } =
 		options || {};
+	const production = process.env.NODE_ENV === 'production';
 
 	const metalsmith = new Metalsmith(__dirname)
 		.metadata({
