@@ -87,7 +87,10 @@ const publicDir = 'public';
 			await runWebpack();
 		}
 	}
-})();
+})().catch(error => {
+	console.error('Build failed!');
+	console.error(error);
+});
 
 function runServer() {
 	webpackConfig.output!.path = resolve(publicDir);
