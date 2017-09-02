@@ -59,12 +59,10 @@ const publicDir = 'public';
 			console.log('Creating a clone of the master branch');
 			execSync(`git clone -q . ${publishDir}`);
 			execSync('git checkout -q master', { cwd: publishDir });
-		}
 
-		await runMetalsmith({ destination: publishDir });
-		await runWebpack({ destination: publishDir });
+			await runMetalsmith({ destination: publishDir });
+			await runWebpack({ destination: publishDir });
 
-		if (publish) {
 			console.log('Publishing...');
 			const { status } = spawnSync('git', ['diff', '--quiet', 'HEAD'], {
 				cwd: publishDir
@@ -84,11 +82,15 @@ const publicDir = 'public';
 			} else {
 				console.log('Nothing to publish (no changes)');
 			}
+		} else {
+			await runMetalsmith();
+			await runWebpack();
 		}
 	}
 })();
 
 function runServer() {
+	webpackConfig.output!.path = resolve(publicDir);
 	const browserSync = BrowserSync.create();
 	const compiler = webpack(webpackConfig);
 	const webpackMiddlware = WebpackMiddleware(compiler, {
