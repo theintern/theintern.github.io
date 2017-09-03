@@ -480,11 +480,11 @@ function renderProperty(
 	const codeP = renderCode(text);
 	if (!access.canRead) {
 		const code = codeP.childNodes[0];
-		const tag = h('span.tag', {}, 'write only');
+		const tag = h('span.tag.is-primary', {}, 'write only');
 		code.insertBefore(tag, code.firstChild);
 	} else if (!access.canWrite) {
 		const code = codeP.childNodes[0];
-		const tag = h('span.tag', {}, 'read only');
+		const tag = h('span.tag.is-primary', {}, 'read only');
 		code.insertBefore(tag, code.firstChild);
 	}
 
