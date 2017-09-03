@@ -580,9 +580,15 @@ function renderParameterTable(
 			return [param.name, comment || '', param.defaultValue || ''];
 		});
 
+		const header = ['Parameter', 'Description', 'Default'];
+		if (!rows.some(row => Boolean(row[2]))) {
+			header.pop();
+			rows.forEach(row => row.pop());
+		}
+
 		page.element.appendChild(
 			h('p', {}, [
-				createTable(['Parameter', 'Description', 'Default'], rows)
+				createTable(header, rows)
 			])
 		);
 	}
