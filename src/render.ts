@@ -13,12 +13,20 @@ import {
 import { createHash } from './hash';
 
 hljs.registerLanguage(
-	'typescript',
-	require('highlight.js/lib/languages/typescript')
+	'html',
+	require('highlight.js/lib/languages/xml')
+);
+hljs.registerLanguage(
+	'nginx',
+	require('highlight.js/lib/languages/nginx')
 );
 hljs.registerLanguage(
 	'javascript',
 	require('highlight.js/lib/languages/javascript')
+);
+hljs.registerLanguage(
+	'typescript',
+	require('highlight.js/lib/languages/typescript')
 );
 
 export interface Slugifier {
