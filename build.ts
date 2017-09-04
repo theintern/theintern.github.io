@@ -128,7 +128,10 @@ function runServer() {
 				match: ['site/**/*', 'assets/**/*'],
 				fn: () => {
 					// Don't clean when rebuilding while serving
-					runMetalsmith({ clean: false });
+					runMetalsmith({ clean: false }).catch(error => {
+						console.error('Build failed!');
+						console.error(error);
+					});
 				}
 			}
 		]
