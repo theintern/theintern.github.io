@@ -376,10 +376,10 @@
 			flex-shrink: 0;
 			width: 60px;
 			text-align: center;
+		}
 
-			.fa {
-				font-size: 1.5em;
-			}
+		.fa {
+			font-size: 1.5em;
 		}
 
 		p {
@@ -387,13 +387,13 @@
 		}
 	}
 	blockquote.warning .fa {
-		color: $warning-highlight;
+		color: $warning;
 	}
 	blockquote.info .fa {
-		color: $info-highlight;
+		color: $primary;
 	}
 	blockquote.deprecated .fa {
-		color: $deprecated-highlight;
+		color: $grey;
 	}
 
 	table {

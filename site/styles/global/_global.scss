@@ -35,8 +35,17 @@
 
 blockquote {
 	padding: 0.5rem 0.75rem;
-	background: $grey;
-	border-radius: 3px;
+	background: $grey-dark;
+	color: $light;
+
+	code {
+		background: $grey-darker;
+		color: lighten($code, 10%);
+	}
+
+	a:hover {
+		color: $light;
+	}
 }
 
 .columns {
@@ -45,4 +54,9 @@ blockquote {
 
 a img {
 	border: none;
+}
+
+blockquote,
+pre {
+	border-radius: 3px;
 }
