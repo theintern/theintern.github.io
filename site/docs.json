@@ -101,5 +101,17 @@
 				"branch": "master"
 			}
 		}
-	}
+	},
+
+    "Intern Recorder": {
+		"url": "https://github.com/theintern/recorder",
+		"logo":
+			"https://cdn.rawgit.com/theintern/recorder/master/docs/logo.svg",
+		"latest": "1",
+		"versions": {
+			"1": {
+				"branch": "master"
+			}
+		}
+    }
 }
