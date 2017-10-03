@@ -476,7 +476,7 @@ function renderProperty(
 		typeString = typeToString(property.type);
 	}
 
-	const text = `${property.name}: ${typeString}`;
+	const text = `${property.name}: ${formatSignature(typeString!)}`;
 	const codeP = renderCode(text);
 	if (!access.canRead) {
 		const code = codeP.childNodes[0];
@@ -586,11 +586,7 @@ function renderParameterTable(
 			rows.forEach(row => row.pop());
 		}
 
-		page.element.appendChild(
-			h('p', {}, [
-				createTable(header, rows)
-			])
-		);
+		page.element.appendChild(h('p', {}, [createTable(header, rows)]));
 	}
 }
 
@@ -662,7 +658,8 @@ function commentToHtml(comment: Comment, pageName: string) {
 	}
 
 	if (comment.returns) {
-		const returns = comment.returns[0].toLowerCase() + comment.returns.slice(1);
+		const returns =
+			comment.returns[0].toLowerCase() + comment.returns.slice(1);
 		parts.push(renderText(`Returns ${returns}`, pageName));
 	}
 
@@ -704,7 +701,7 @@ function renderCode(text: string, language = 'typescript') {
 		.highlight(language, text, true)
 		.value.replace(/\n/g, '<br>')
 		.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;');
-	return h('p', {}, [h(`code.hljs.lang-${language}`, { innerHTML: html })]);
+	return h('pre', {}, [h(`code.hljs.lang-${language}`, { innerHTML: html })]);
 }
 
 /**
