@@ -103,3 +103,5 @@ npm run publish remote=
 ## Credits
 
 The Intern version badghes were generated at https://shields.io with https://img.shields.io/badge/intern-v4-green.svg?colorB=2EC186.
+
+© [SitePen, Inc.](http://sitepen.com) and its [contributors](https://github.com/theintern/theintern.github.io/graphs/contributors)
