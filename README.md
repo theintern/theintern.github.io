@@ -1,5 +1,7 @@
 # The Intern website
 
+**Please note that the `master` branch contains the built website. Any PRs should be made against the `source` branch.**
+
 ## Doc viewer
 
 The doc viewer is a single-page application that loads markdown pages and API data from GitHub and renders documentation on the fly. It must have, at a minimum, a list of project descriptors (described below) that describe where to load doc data from. These descriptors may also contain more detailed information, such as a list of pages to load. The viewer will first load a project's README (this is assumed to always exist) and look for configuration data. If any exists it is merged with the existing doc set descriptor, and any doc pages or API data list in the descriptor are loaded and rendered.
