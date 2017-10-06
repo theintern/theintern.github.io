@@ -2,8 +2,7 @@
 	"Intern": {
 		"url": "https://github.com/theintern/intern",
 		"logo": "/images/intern-logo.svg",
-		"latest": "3",
-		"next": "4",
+		"latest": "4",
 		"versions": {
 			"3": {
 				"branch": "3.4"
@@ -16,8 +15,7 @@
 
 	"Intern tutorial": {
 		"url": "https://github.com/theintern/intern-tutorial",
-		"latest": "3",
-		"next": "4",
+		"latest": "4",
 		"versions": {
 			"3": {
 				"branch": "intern-3"
@@ -30,8 +28,7 @@
 
 	"Intern examples": {
 		"url": "https://github.com/theintern/intern-examples",
-		"latest": "1",
-		"next": "2",
+		"latest": "2",
 		"versions": {
 			"1": {
 				"branch": "master"
@@ -46,8 +43,7 @@
 		"url": "https://github.com/theintern/leadfoot",
 		"logo":
 			"https://cdn.rawgit.com/theintern/leadfoot/master/docs/logo.svg",
-		"latest": "1",
-		"next": "2",
+		"latest": "2",
 		"versions": {
 			"1": {
 				"branch": "1.7"
@@ -61,8 +57,7 @@
 	"Dig Dug": {
 		"url": "https://github.com/theintern/digdug",
 		"logo": "https://cdn.rawgit.com/theintern/digdug/master/docs/logo.svg",
-		"latest": "1",
-		"next": "2",
+		"latest": "2",
 		"versions": {
 			"1": {
 				"branch": "1.6"
@@ -103,7 +98,7 @@
 		}
 	},
 
-    "Intern Recorder": {
+	"Intern Recorder": {
 		"url": "https://github.com/theintern/recorder",
 		"logo":
 			"https://cdn.rawgit.com/theintern/recorder/master/docs/logo.svg",
@@ -113,5 +108,5 @@
 				"branch": "master"
 			}
 		}
-    }
+	}
 }
