@@ -266,7 +266,7 @@ export function getLatestVersion(project: string) {
 	const docSet = docSets[project];
 	let version = docSet.latest;
 	if (!version) {
-		const versions = Object.keys(docSet.versions);
+		const versions = Object.keys(docSet.versions).sort(compareVersions);
 		version = versions[versions.length - 1];
 	}
 	return version;
@@ -281,7 +281,7 @@ export function getNextVersion(project: string) {
 	const docSet = docSets[project];
 	let version = docSet.next;
 	if (!version) {
-		const versions = Object.keys(docSet.versions);
+		const versions = Object.keys(docSet.versions).sort(compareVersions);
 		const latest = getLatestVersion(project);
 		const idx = versions.indexOf(latest);
 		if (idx !== -1 && versions[idx + 1]) {
@@ -305,7 +305,7 @@ export function getVersions(project: string) {
 	if (!docSets[project]) {
 		throw new Error(`Invalid project: ${project}`);
 	}
-	return Object.keys(docSets[project].versions);
+	return Object.keys(docSets[project].versions).sort(compareVersions);
 }
 
 /**
@@ -339,6 +339,22 @@ function resolveVersion(id: DocSetId) {
 		return getNextVersion(id.project);
 	}
 	return id.version;
+}
+
+/**
+ * Loosely compare two version strings
+ */
+function compareVersions(a: string, b: string) {
+	const aParts = a.split('.').map(part => Number(part) || 0);
+	const bParts = b.split('.').map(part => Number(part) || 0);
+	const length = Math.max(aParts.length, bParts.length);
+	for (let i = 0; i < length; i++) {
+		const diff = aParts[i] - bParts[i];
+		if (diff !== 0) {
+			return diff;
+		}
+	}
+	return aParts.length - bParts.length;
 }
 
 declare const docSets: { [name: string]: ProjectDocs };

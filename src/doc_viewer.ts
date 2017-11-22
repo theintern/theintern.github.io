@@ -176,11 +176,7 @@ function loadDocSet(id: DocSetId): Promise<DocSet> {
 
 	// The message will be hidden in process hash, after the UI has been
 	// updated
-	showMessage(
-		'',
-		'',
-		'loading'
-	);
+	showMessage('', '', 'loading');
 
 	const docBase = getDocBaseUrl(id);
 	const cache = (docSet.pageCache = <{
@@ -240,7 +236,12 @@ function loadDocSet(id: DocSetId): Promise<DocSet> {
 			return docSet;
 		});
 
-	function renderPage(text: string, name: string, id: DocSetId, logo?: string) {
+	function renderPage(
+		text: string,
+		name: string,
+		id: DocSetId,
+		logo?: string
+	) {
 		return ready.then(() => {
 			const element = renderDocPage(text, name, id);
 			const h1 = element.querySelector('h1');
@@ -304,7 +305,7 @@ function updateDocsetSelector() {
 		option.selected = true;
 	}
 
-	const versions = getVersions(pageId.project);
+	const versions = getVersions(pageId.project).reverse();
 	// If more than one version is available, show the version selector
 	if (versions.length > 1) {
 		viewer.classList.add('multi-version');
@@ -467,55 +468,65 @@ function processHash() {
 
 	try {
 		const docSetId = getCurrentDocSetId();
-		loadDocSet(docSetId).then(docSet => {
-			const { type } = parseHash();
-			const ready =
-				type === DocType.api ? docSet.apiReady! : docSet.ready!;
-			ready
-				.then(() => {
-					const pageId = getCurrentPageId();
-					const { project, version, type, page, section } = pageId;
+		loadDocSet(docSetId)
+			.then(docSet => {
+				const { type } = parseHash();
+				const ready =
+					type === DocType.api ? docSet.apiReady! : docSet.ready!;
+				ready
+					.then(() => {
+						const pageId = getCurrentPageId();
+						const {
+							project,
+							version,
+							type,
+							page,
+							section
+						} = pageId;
 
-					viewer.setAttribute('data-doc-type', type);
+						viewer.setAttribute('data-doc-type', type);
 
-					const container = document.querySelector('.docs-content')!;
-					container.setAttribute('data-doc-project', project);
-					container.setAttribute('data-doc-version', version);
+						const container = document.querySelector(
+							'.docs-content'
+						)!;
+						container.setAttribute('data-doc-project', project);
+						container.setAttribute('data-doc-version', version);
 
-					showMenu(type);
-					showPage(type, page, section);
-					updateGitHubButtons(pageId);
-					updateNavBarLinks(pageId);
-					updateDocsetSelector();
-					hideMessage();
-				})
-				.catch(error => {
-					// The current hash doesn't specify a valid page ID
-					const { type, page } = parseHash();
-					if (page) {
-						// The URL contains a page, and it is invalid
-						throw error;
-					}
+						showMenu(type);
+						showPage(type, page, section);
+						updateGitHubButtons(pageId);
+						updateNavBarLinks(pageId);
+						updateDocsetSelector();
+						hideMessage();
+					})
+					.catch(error => {
+						// The current hash doesn't specify a valid page ID
+						const { type, page } = parseHash();
+						if (page) {
+							// The URL contains a page, and it is invalid
+							throw error;
+						}
 
-					// The URL doesn't contain a page
-					updateHash(
-						createHash(
-							getDefaultPageId(docSetId, type || DocType.docs)
-						),
-						HashEvent.rename
-					);
-					processHash();
-				})
-				.catch(error => {
-					let { type } = parseHash();
-					type = type in DocType ? type : DocType.docs;
-					const newHash = createHash({ ...docSetId, type });
-					showError(error, newHash);
-				});
-		}).catch(error => {
-			const newHash = createHash({ ...docSetId, type: DocType.docs });
-			showError(error, newHash);
-		});
+						// The URL doesn't contain a page
+						updateHash(
+							createHash(
+								getDefaultPageId(docSetId, type || DocType.docs)
+							),
+							HashEvent.rename
+						);
+						processHash();
+					})
+					.catch(error => {
+						let { type } = parseHash();
+						type = type in DocType ? type : DocType.docs;
+						const newHash = createHash({ ...docSetId, type });
+						showError(error, newHash);
+					});
+			})
+			.catch(error => {
+				const newHash = createHash({ ...docSetId, type: DocType.docs });
+				showError(error, newHash);
+			});
 	} catch (error) {
 		// The current hash doesn't identify a valid doc set
 		if (!location.hash.slice(1)) {
@@ -548,7 +559,7 @@ function processHash() {
 			h('span', {}, [
 				'The URL hash ',
 				h('code', {}, location.hash),
-				' isn\'t valid. Click ',
+				" isn't valid. Click ",
 				h('a', { href: `${newHash || '#'}` }, 'here'),
 				' to open the default doc set.'
 			]),
