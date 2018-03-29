@@ -105,9 +105,12 @@
 		"url": "https://github.com/theintern/recorder",
 		"logo":
 			"https://cdn.rawgit.com/theintern/recorder/master/docs/logo.svg",
-		"latest": "1",
+		"latest": "2",
 		"versions": {
 			"1": {
+				"branch": "1.0"
+			},
+			"2": {
 				"branch": "master"
 			}
 		}
