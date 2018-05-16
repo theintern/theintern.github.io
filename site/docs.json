@@ -93,6 +93,8 @@
 
 	"intern-visual": {
 		"url": "https://github.com/theintern/intern-visual",
+		"logo":
+			"https://cdn.rawgit.com/theintern/intern-visual/master/docs/logo.svg",
 		"latest": "1",
 		"versions": {
 			"1": {
