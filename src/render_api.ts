@@ -607,16 +607,43 @@ function renderValue(
 	}
 
 	if (value.kindString === 'Object literal') {
-		const parts = value.children.map(child => {
-			if (child.name) {
-				return `${child.name}: ${child.defaultValue}`;
-			}
-			return child.defaultValue;
-		});
-		let type = typeToString(value.type!);
-		const text = `${value.name}: ${type} = {\n\t${parts.join(',\n\t')}\n}`;
+		const text = objectLiteralToText(value);
 		page.element.appendChild(renderCode(text));
 	}
+}
+
+function objectLiteralToText(value: DeclarationReflection, level = 0) {
+	const parts = value.children.map(child => {
+		let val: string;
+
+		if (child.kindString === 'Object literal') {
+			val = objectLiteralToText(child, level + 1);
+		} else {
+			val = child.defaultValue;
+		}
+
+		if (child.name) {
+			const name = /[ -]/.test(child.name)
+				? `'${child.name}'`
+				: child.name;
+			val = `${name}: ${val}`;
+		}
+
+		return val;
+	});
+	let type = typeToString(value.type!);
+
+	let endIndent = '';
+	for (let i = 0; i < level; i++) {
+		endIndent += '\t';
+	}
+
+	const startIndent = `${endIndent}\t`;
+
+	const joinIndent = `,\n${startIndent}`;
+	return `${value.name}: ${type} = {\n${startIndent}${parts.join(
+		joinIndent
+	)}\n${endIndent}}`;
 }
 
 /**
@@ -1005,7 +1032,7 @@ function getHeadingRenderer(slugify: Slugifier) {
 			typeof content === 'string'
 				? content
 				: // Module names are surrounded by '"'
-					content.name.replace(/^"|"$/g, '');
+				  content.name.replace(/^"|"$/g, '');
 		const className = classes.join(' ');
 		const heading = <HTMLElement>h(
 			`h${level}`,
