@@ -91,7 +91,7 @@
 		}
 	},
 
-	"Visual Plugin": {
+	"visual-plugin": {
 		"url": "https://github.com/theintern/visual-plugin",
 		"logo":
 			"https://cdn.rawgit.com/theintern/visual-plugin/master/docs/logo.svg",
