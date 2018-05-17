@@ -10,6 +10,7 @@ export interface ProjectDocs {
 	logo?: string;
 	latest: string;
 	next: string;
+	previousNames?: string[];
 	versions: { [version: string]: DocSet };
 }
 
@@ -326,6 +327,30 @@ export function getProjectUrl(project: string) {
 		throw new Error(`Invalid project: ${project}`);
 	}
 	return docSets[project].url;
+}
+
+/**
+ * Resolve a name to a valid project name. This considers any previous names a
+ * project may have had.
+ */
+export function resolveProject(project: string) {
+	if (docSets[project]) {
+		return project;
+	}
+
+	const projects = getProjects();
+	for (let i = 0; i < projects.length; i++) {
+		let proj = projects[i];
+		let docSet = docSets[proj];
+		if (
+			docSet.previousNames &&
+			docSet.previousNames.indexOf(project) !== -1
+		) {
+			return proj;
+		}
+	}
+
+	return;
 }
 
 /**

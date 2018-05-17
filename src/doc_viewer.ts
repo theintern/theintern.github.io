@@ -21,7 +21,8 @@ import {
 	getDocVersionUrl,
 	getLatestVersion,
 	getNextVersion,
-	getProjectLogo
+	getProjectLogo,
+	resolveProject
 } from './docs';
 import { renderApiPages } from './render_api';
 import { renderMenu, renderDocPage } from './render';
@@ -464,6 +465,15 @@ function showMenu(type?: DocType) {
  * Process the current URL hash value.
  */
 function processHash() {
+	const pageId = parseHash();
+	if (pageId.project) {
+		let realProj = resolveProject(pageId.project);
+		if (realProj && realProj !== pageId.project) {
+			const newPageId = { ...pageId, project: realProj };
+			updateHash(createHash(newPageId), HashEvent.rename);
+		}
+	}
+
 	highlightActiveSection();
 
 	try {

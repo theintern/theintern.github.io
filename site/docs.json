@@ -100,7 +100,10 @@
 			"1": {
 				"branch": "master"
 			}
-		}
+		},
+		"previousNames": [
+			"intern-visual"
+		]
 	},
 
 	"Intern Recorder": {

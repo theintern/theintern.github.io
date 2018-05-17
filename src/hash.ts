@@ -32,8 +32,8 @@ export function parseHash() {
 /**
  * Push a new URL onto the history stack.
  *
- * By default this function replaces the current URL. Set `push` to true to
- * push the new URL onto the stack instead.
+ * By default this function pushes an element onto the current URL. Set `event`
+ * to HashEvent.rename to replace the URL instead.
  */
 export function updateHash(
 	newHash: string | PageId | (DocSetId & { type: DocType }),
