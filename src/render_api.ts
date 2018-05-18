@@ -11,6 +11,7 @@ import { Type } from 'typedoc/dist/lib/models/types/abstract';
 import { StringLiteralType } from 'typedoc/dist/lib/models/types/string-literal';
 import { TypeParameterType } from 'typedoc/dist/lib/models/types/type-parameter';
 import { UnionType } from 'typedoc/dist/lib/models/types/union';
+import { IntersectionType } from 'typedoc/dist/lib/models/types/intersection';
 import { ArrayType } from 'typedoc/dist/lib/models/types/array';
 import { ReflectionType } from 'typedoc/dist/lib/models/types/reflection';
 import { ReferenceType } from 'typedoc/dist/lib/models/types/reference';
@@ -807,6 +808,9 @@ function typeToString(type: Type): string {
 	} else if (isUnionType(type)) {
 		const strings = type.types!.map(typeToString);
 		return strings.join(' | ');
+	} else if (isIntersectionType(type)) {
+		const strings = type.types!.map(typeToString);
+		return strings.join(' & ');
 	} else if (isArrayType(type)) {
 		return `${typeToString(type.elementType!)}[]`;
 	} else if (isReflectionType(type)) {
@@ -861,6 +865,13 @@ function isStringLiteralType(type: Type): type is StringLiteralType {
  */
 function isUnionType(type: Type): type is UnionType {
 	return type.type === 'union';
+}
+
+/**
+ * Indicate whether a value is an intersection
+ */
+function isIntersectionType(type: Type): type is IntersectionType {
+	return type.type === 'intersection';
 }
 
 /**
