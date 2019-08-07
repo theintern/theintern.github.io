@@ -51,9 +51,11 @@ interface GenericReflection extends Reflection {
 export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
 	const docSet = getDocSet(docSetId)!;
 	const pages = (docSet.apiPages = <string[]>[]);
-	const cache = (docSet.apiCache = <{
-		[key: string]: DocPage;
-	}>Object.create(null));
+	const cache = (docSet.apiCache = <
+		{
+			[key: string]: DocPage;
+		}
+	>Object.create(null));
 	const modules = getExports(data)!;
 	const apiIndex = createApiIndex(data);
 	const slugIndex: SlugIndex = {};
@@ -709,8 +711,8 @@ function renderText(text: string, pageName: string) {
 			const lastSlash = p1.lastIndexOf('/');
 			name = p1.slice(Math.max(lastDot, lastSlash) + 1);
 		}
-		if (/^https?:\/\//.test(p1)) {
-			// p1 is an absolute address
+		if (/^https?:\/\//.test(p1) || /\.md$/.test(p1)) {
+			// p1 is an absolute address or a markdown file
 			return `[${name}](${p1})`;
 		} else {
 			return `[${name}](api:${p1})`;
@@ -1045,10 +1047,8 @@ function getHeadingRenderer(slugify: Slugifier) {
 				: // Module names are surrounded by '"'
 				  content.name.replace(/^"|"$/g, '');
 		const className = classes.join(' ');
-		const heading = <HTMLElement>h(
-			`h${level}`,
-			{ className, id: slugify(text) },
-			text
+		const heading = <HTMLElement>(
+			h(`h${level}`, { className, id: slugify(text) }, text)
 		);
 
 		let sourceLink: HTMLAnchorElement | undefined;
