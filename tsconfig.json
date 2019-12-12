@@ -1,32 +1,21 @@
 {
-    "compilerOptions": {
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "target": "es2015",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "lib": [
-            "dom",
-            "es5",
-            "es2015.collection",
-            "es2015.promise"
-        ],
-        "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "inlineSourceMap": false,
-        "inlineSources": false,
-        "sourceMap": true,
-        "outDir": "./public",
-        "typeRoots": [
-            "./node_modules/@types",
-            "./types"
-        ]
-    },
-    "include": [
-        "./scripts/*",
-        "./src/**/*"
-    ]
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["dom", "es5", "es2015.collection", "es2015.promise"],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "inlineSourceMap": false,
+    "inlineSources": false,
+    "sourceMap": true,
+    "outDir": "./public",
+    "typeRoots": ["./node_modules/@types", "./types"]
+  },
+  "include": ["./scripts/*", "./src/**/*"]
 }
