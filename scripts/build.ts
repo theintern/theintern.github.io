@@ -1,6 +1,8 @@
 import { execSync, spawnSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
-import { dirname, join, resolve } from 'path';
+import { dirname, join, relative, resolve } from 'path';
+import { createInterface } from 'readline';
+import { format } from 'util';
 import webpack from 'webpack';
 import webpackConfig from '../webpack.config';
 import WebpackMiddleware from 'webpack-dev-middleware';
@@ -10,14 +12,28 @@ import layouts from 'metalsmith-layouts';
 import sass from 'metalsmith-sass';
 import autoprefixer from 'metalsmith-autoprefixer';
 import assets from 'metalsmith-assets';
+import inPlace from 'metalsmith-in-place';
 import { inlineSource } from 'inline-source';
 import stripAnsi from 'strip-ansi';
+import { sync as rimraf } from 'rimraf';
+
+const rl = createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
 const baseDir = dirname(__dirname);
 const publishDir = join(baseDir, '_publish');
 const publicDir = join(baseDir, '_public');
 const siteDir = join(baseDir, 'site');
 const assetsDir = join(baseDir, 'assets');
+
+async function prompt(...args: any[]) {
+  const question = format(args[0], ...args.slice(1));
+  return new Promise<string>(function(resolve) {
+    rl.question(question, resolve);
+  });
+}
 
 (async () => {
   let publish = false;
@@ -51,20 +67,27 @@ const assetsDir = join(baseDir, 'assets');
   if (serve) {
     await runMetalsmith();
     runServer();
-  } else {
-    if (publish) {
-      if (existsSync(publishDir)) {
-        console.log(`Removing existing publish dir ${publishDir}`);
-        execSync(`rm -r ${publishDir}`);
-      }
+  } else if (publish) {
+    if (existsSync(publishDir)) {
+      console.log(`Removing existing publish dir ${relative('.', publishDir)}`);
+      rimraf(publishDir);
+    }
 
-      console.log('Creating a clone of the master branch');
-      execSync(`git clone -q . ${publishDir}`);
-      execSync('git checkout -q master', { cwd: publishDir });
+    console.log(
+      `Creating a clone of the master branch in ${relative('.', publishDir)}`
+    );
+    execSync(`git clone -q . ${publishDir}`);
+    execSync('git checkout -q master', { cwd: publishDir });
 
-      await runMetalsmith({ destination: publishDir });
-      await runWebpack({ destination: publishDir });
+    await runMetalsmith({ destination: publishDir, clean: false });
+    await runWebpack({ destination: publishDir });
 
+    const answer = await prompt(
+      'Please confirm build success, then' +
+        ' enter "y" to push to master. Enter any other key to bail.\n> '
+    );
+
+    if (answer === 'y') {
       console.log('Publishing...');
       const { status } = spawnSync('git', ['diff', '--quiet', 'HEAD'], {
         cwd: publishDir
@@ -85,13 +108,17 @@ const assetsDir = join(baseDir, 'assets');
         console.log('Nothing to publish (no changes)');
       }
     } else {
-      await runMetalsmith();
-      await runWebpack();
+      console.log('Not publishing');
     }
+  } else {
+    await runMetalsmith();
+    await runWebpack();
   }
+  rl.close();
 })().catch(error => {
   console.error('Build failed!');
   console.error(error);
+  rl.close();
 });
 
 function runServer() {
@@ -126,10 +153,7 @@ function runServer() {
     files: [
       `${publicDir}/**/*`,
       {
-        match: [
-          `${siteDir}/**/*`,
-          `${assetsDir}/**/*`
-        ],
+        match: [`${siteDir}/**/*`, `${assetsDir}/**/*`],
         fn: () => {
           // Don't clean when rebuilding while serving
           runMetalsmith({ clean: false }).catch(error => {
@@ -239,9 +263,10 @@ async function runMetalsmith(options?: {
     .source(siteDir)
     .destination(destination)
     .clean(clean)
+    // don't auto-process files in site/layouts
     .ignore('layouts')
     .use(docSets)
-    // .use(inPlace())
+    // apply templates to files
     .use(
       layouts({
         engine: 'ejs',
@@ -250,6 +275,8 @@ async function runMetalsmith(options?: {
         pattern: '**/*.{html,ejs}'
       })
     )
+    // process ejs directives in files
+    .use(inPlace({ setFilename: true }))
     .use(
       sass({
         outputStyle: production ? 'compressed' : 'expanded',
@@ -264,7 +291,7 @@ async function runMetalsmith(options?: {
     .use(
       assets({
         source: assetsDir,
-        destination: publicDir
+        destination: destination
       })
     )
     .use(copyCheck);
