@@ -137,7 +137,7 @@ export function getCurrentDocSetId() {
 /**
  * Get a doc set by id
  */
-export function getDocSet(id: DocSetId) {
+export function getDocSet(id: DocSetId): DocSet {
 	if (!isValidDocSetId(id)) {
 		throw new Error('getDocSet called with invalid ID');
 	}

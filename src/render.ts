@@ -1,6 +1,6 @@
-import * as MarkdownIt from 'markdown-it';
-import * as hljs from 'highlight.js';
-import * as h from 'hyperscript';
+import MarkdownIt from 'markdown-it';
+import hljs from 'highlight.js';
+import h from 'hyperscript';
 
 import {
 	PageId,
@@ -459,7 +459,7 @@ function filterGhContent(text: string) {
 	}, text);
 }
 
-let markdown: MarkdownIt.MarkdownIt;
+let markdown: MarkdownIt;
 
 interface MenuNode {
 	level: number;

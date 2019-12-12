@@ -14,7 +14,7 @@ $family-monospace: 'Source Code Pro', 'SFMono-Regular', Consolas,
 	'Liberation Mono', Menlo, Courier, monospace;
 $modal-background-background-color: $light;
 
-@import '../../node_modules/bulma/bulma';
+@import '../../node_modules/bulma/bulma.sass';
 @import 'global/variables';
 @import 'global/mixins';
 @import 'global/typography';

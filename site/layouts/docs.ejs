@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html class="html-fixed">
 	<head>
-		<% include partials/head %>
+		<%- include('partials/head') %>
 	</head>
 	<body class="page-docs page-secondary no-script">
-		<% include partials/header %>
+		<%- include('partials/header') %>
 
 		<header class="header">
 			<nav class="navbar docs-nav">
@@ -110,7 +110,7 @@
 			</div>
 		</div>
 
-		<% include partials/footer %>
+		<%- include('partials/footer') %>
 
 		<script>
 			document.body.classList.remove('no-script');
@@ -118,7 +118,6 @@
 
 
 		<script>var docSets = <%- JSON.stringify(docSets) %>;</script>
-		<script src="scripts/dependencies.js"></script>
 		<script src="scripts/doc_viewer.js"></script>
 	</body>
 </html>

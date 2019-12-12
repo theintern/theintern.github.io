@@ -1,5 +1,5 @@
-import * as h from 'hyperscript';
-import * as Mark from 'mark.js';
+import h from 'hyperscript';
+import Mark from 'mark.js';
 
 import { DocType, getDocSet, getCurrentDocSetId } from './docs';
 import { createLinkItem } from './render';
@@ -89,7 +89,7 @@ function findAllMatches(
 	saveMatches = true
 ): Promise<SearchResult[]> {
 	return new Promise(resolve => {
-		const highlighter = new Mark(page);
+		const highlighter = new Mark(page as HTMLElement);
 		highlighter.unmark();
 
 		const matches: SearchResult[] = [];
@@ -123,7 +123,7 @@ function createSnippet(searchMatch: Element) {
 	const container = getContainer(searchMatch);
 	const extraLength = maxSnippetLength - searchText.length;
 
-	const previousSibling = (node: HTMLElement) => node.previousSibling;
+	const previousSibling = (node: Node) => node.previousSibling;
 	let previousText = '';
 	let previous = getNextTextNode(searchMatch, previousSibling, getRightLeaf);
 	while (previous && previousText.length < extraLength) {
@@ -131,7 +131,7 @@ function createSnippet(searchMatch: Element) {
 		previous = getNextTextNode(previous, previousSibling, getRightLeaf)!;
 	}
 
-	const nextSibling = (node: HTMLElement) => node.nextSibling;
+	const nextSibling = (node: Node) => node.nextSibling;
 	let nextText = '';
 	let next = getNextTextNode(searchMatch, nextSibling, getLeftLeaf);
 	while (next && nextText.length < extraLength) {

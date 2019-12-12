@@ -17,8 +17,8 @@ import { ReflectionType } from 'typedoc/dist/lib/models/types/reflection';
 import { ReferenceType } from 'typedoc/dist/lib/models/types/reference';
 import { IntrinsicType } from 'typedoc/dist/lib/models/types/intrinsic';
 import { UnknownType } from 'typedoc/dist/lib/models/types/unknown';
-import * as h from 'hyperscript';
-import * as hljs from 'highlight.js';
+import h from 'hyperscript';
+import hljs from 'highlight.js';
 
 import { DocSetId, DocPage, DocType, getDocSet } from './docs';
 import { createHash } from './hash';
@@ -120,7 +120,7 @@ export function renderApiPages(docSetId: DocSetId, data: ProjectReflection) {
  */
 function getContainingModule(reflection: Reflection) {
 	while (reflection && reflection.kindString !== 'External module') {
-		reflection = reflection.parent;
+		reflection = reflection.parent!;
 	}
 	return <ContainerReflection>reflection;
 }
@@ -155,7 +155,7 @@ function findReflectionByName(
 	}
 
 	if (isContainerReflection(reflection)) {
-		for (const child of reflection.children) {
+		for (const child of reflection.children!) {
 			const childName = child.name.replace(/^"|"$/g, '');
 			if (childName === head) {
 				if (head !== name) {
@@ -194,7 +194,7 @@ function renderModule(
 	const global = exports.filter(ex => ex.name === '__global')[0];
 	if (global) {
 		renderHeading(level, 'Globals', context);
-		for (const child of global.children.slice().sort(nameSorter)) {
+		for (const child of global.children!.slice().sort(nameSorter)) {
 			renderProperty(child, level + 1, context);
 		}
 	}
@@ -476,7 +476,7 @@ function renderProperty(
 		access.canRead = true;
 		access.canWrite = true;
 		comment = property.comment;
-		typeString = typeToString(property.type);
+		typeString = typeToString(property.type!);
 	}
 
 	const text = `${property.name}: ${formatSignature(typeString!)}`;
@@ -616,13 +616,13 @@ function renderValue(
 }
 
 function objectLiteralToText(value: DeclarationReflection, level = 0) {
-	const parts = value.children.map(child => {
+	const parts = value.children!.map(child => {
 		let val: string;
 
 		if (child.kindString === 'Object literal') {
 			val = objectLiteralToText(child, level + 1);
 		} else {
-			val = child.defaultValue;
+			val = child.defaultValue!;
 		}
 
 		if (child.name) {
@@ -762,9 +762,9 @@ function signatureToString(
 	isParameter = false
 ): string {
 	if (signature.name === '__index') {
-		const param = signature.parameters[0];
-		return `[${param.name}: ${typeToString(param.type)}]: ${typeToString(
-			signature.type
+		const param = signature.parameters![0];
+		return `[${param.name}: ${typeToString(param.type!)}]: ${typeToString(
+			signature.type!
 		)}`;
 	} else {
 		let name = signature.name;
@@ -785,7 +785,7 @@ function signatureToString(
 		if (signature.parameters) {
 			const params = signature.parameters.map(param => {
 				const optional = param.flags.isOptional ? '?' : '';
-				return `${param.name}${optional}: ${typeToString(param.type)}`;
+				return `${param.name}${optional}: ${typeToString(param.type!)}`;
 			});
 			text += params.join(', ');
 		}
@@ -794,7 +794,7 @@ function signatureToString(
 
 		if (signature.kindString !== 'Constructor signature') {
 			const sep = isParameter ? ' => ' : ': ';
-			text += `${sep}${typeToString(signature.type)}`;
+			text += `${sep}${typeToString(signature.type!)}`;
 		}
 
 		return text;
@@ -977,7 +977,7 @@ function renderType(type: any, context: RenderContext): HTMLElement {
 function findModule(id: number, index: ApiIndex) {
 	let declaration = <Reflection>index[id];
 	while (declaration && declaration.kindString !== 'External module') {
-		declaration = declaration.parent;
+		declaration = declaration.parent!;
 	}
 	return declaration;
 }
@@ -997,7 +997,7 @@ function getExports(reflection: ContainerReflection) {
 			exports.push(child);
 		}
 		if (child.flags.isExported) {
-			const source = child.sources[0].fileName;
+			const source = child.sources![0].fileName;
 			// Don't include private (by convention) members
 			if (!/^_/.test(child.name) && !/node_modules\//.test(source)) {
 				exports.push(child);
@@ -1096,9 +1096,9 @@ function createTable(headings: string[], rows: (string | Element)[][]) {
 /**
  * Indicate whether a reflection has a comment element wiht content
  */
-function hasComment(reflection: Reflection) {
+function hasComment(reflection: Reflection): reflection is Reflection & { comment: Comment } {
 	const comment = reflection.comment;
-	return comment && (comment.text || comment.shortText);
+	return Boolean(comment && (comment.text || comment.shortText));
 }
 
 /**
@@ -1107,7 +1107,7 @@ function hasComment(reflection: Reflection) {
  */
 function createApiIndex(data: ProjectReflection) {
 	const index: ApiIndex = {};
-	for (const child of data.children) {
+	for (const child of data.children!) {
 		child.parent = data;
 		walkTree(child);
 	}

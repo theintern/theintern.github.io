@@ -88,6 +88,16 @@
 		color: $light;
 	}
 
+	@media screen and (min-width: $desktop) {
+		.container > .navbar .navbar-brand {
+			margin-left: 0;
+		}
+
+		.container > .navbar .navbar-menu {
+			margin-right: 0;
+		}
+	}
+
 	@media screen and (max-width: $desktop) {
 		.navbar-menu {
 			padding-top: 0;
