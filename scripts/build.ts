@@ -83,8 +83,8 @@ async function prompt(...args: any[]) {
     await runWebpack({ destination: publishDir });
 
     const answer = await prompt(
-      'Please confirm build success, then' +
-        ' enter "y" to push to master. Enter any other key to bail.\n> '
+      `Please confirm build success and make any desired changes in ${publishDir}.` +
+        ' When finished, enter "y" to push to master. Enter any other key to bail.\n> '
     );
 
     if (answer === 'y') {
