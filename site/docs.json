@@ -9,6 +9,9 @@
       },
       "4": {
         "branch": "4.7"
+      },
+      "dev": {
+        "branch": "master"
       }
     }
   },
