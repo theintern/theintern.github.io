@@ -4,4 +4,4 @@
 
 Jump over to the [source branch](https://github.com/theintern/theintern.github.io/tree/source) to see the site source as well as build instructions and contribution guidelines.
 
-© [SitePen, Inc.](http://sitepen.com) and its [contributors](https://github.com/theintern/theintern.github.io/graphs/contributors)
+© [OpenJS Foundation](https://openjsf.org/) and its [contributors](https://github.com/theintern/intern/graphs/contributors)
