@@ -8,7 +8,7 @@
         "branch": "3.4"
       },
       "4": {
-        "branch": "4.8"
+        "branch": "4.x"
       },
       "dev": {
         "branch": "master"
