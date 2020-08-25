@@ -997,9 +997,9 @@ function getExports(reflection: ContainerReflection) {
 			exports.push(child);
 		}
 		if (child.flags.isExported) {
-			const source = child.sources![0].fileName;
+			const source = child.sources?.[0]?.fileName;
 			// Don't include private (by convention) members
-			if (!/^_/.test(child.name) && !/node_modules\//.test(source)) {
+			if (source && !/^_/.test(child.name) && !/node_modules\//.test(source)) {
 				exports.push(child);
 			}
 		}
