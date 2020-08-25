@@ -976,7 +976,7 @@ function renderType(type: any, context: RenderContext): HTMLElement {
  */
 function findModule(id: number, index: ApiIndex) {
 	let declaration = <Reflection>index[id];
-	while (declaration && declaration.kindString !== 'External module') {
+	while (declaration?.kindString !== 'Module' && declaration?.kindString !== 'External module') {
 		declaration = declaration.parent!;
 	}
 	return declaration;
