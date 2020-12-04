@@ -19,7 +19,7 @@
 		"browser-sync": "~2.26.7",
 		"bs-fullscreen-message": "~1.1.0",
 		"bulma": "~0.8.0",
-		"highlight.js": "~9.17.1",
+		"highlight.js": "~10.4.1",
 		"hyperscript": "~2.0.2",
 		"inline-source": "~7.1.0",
 		"jstransformer-ejs": "~0.2.0",
