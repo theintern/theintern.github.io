@@ -24,7 +24,7 @@
 		"inline-source": "~7.1.0",
 		"jstransformer-ejs": "~0.2.0",
 		"mark.js": "~8.11.1",
-		"markdown-it": "~10.0.0",
+		"markdown-it": "~12.3.2",
 		"metalsmith": "~2.3.0",
 		"metalsmith-assets": "~0.1.0",
 		"metalsmith-autoprefixer": "~1.1.2",
